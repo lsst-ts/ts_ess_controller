@@ -24,3 +24,7 @@ try:
     from .version import *
 except ModuleNotFoundError:
     __version__ = "?"
+
+from .ess_instrument_object import *
+from .sel_temperature_reader import *
+from .serial_reader import *
