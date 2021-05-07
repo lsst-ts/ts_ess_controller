@@ -29,10 +29,12 @@ from lsst.ts.ess_sensors.mock.mock_temperature_sensor import (
 class MockTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_read_instrument(self):
         num_channels = 4
-        ess_sensor = MockTemperatureSensor("MockSensor", num_channels)
+        name = "MockSensor"
+        ess_sensor = MockTemperatureSensor(name, num_channels)
         ess_sensor.terminator = "\r\n"
         loop = asyncio.get_event_loop()
-        err, resp = await loop.run_in_executor(None, ess_sensor.readline)
+        device_name, err, resp = await loop.run_in_executor(None, ess_sensor.readline)
+        self.assertEqual(name, device_name)
         resp = resp.strip(ess_sensor.terminator)
         data = resp.split(",")
         for i in range(0, num_channels):
@@ -43,10 +45,12 @@ class MockTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_read_old_instrument(self):
         num_channels = 4
         count_offset = 1
-        ess_sensor = MockTemperatureSensor("MockSensor", num_channels, count_offset)
+        name = "MockSensor"
+        ess_sensor = MockTemperatureSensor(name, num_channels, count_offset)
         ess_sensor.terminator = "\r\n"
         loop = asyncio.get_event_loop()
-        err, resp = await loop.run_in_executor(None, ess_sensor.readline)
+        device_name, err, resp = await loop.run_in_executor(None, ess_sensor.readline)
+        self.assertEqual(name, device_name)
         resp = resp.strip(ess_sensor.terminator)
         data = resp.split(",")
         for i in range(0, num_channels):
@@ -58,12 +62,14 @@ class MockTestCase(unittest.IsolatedAsyncioTestCase):
         num_channels = 4
         count_offset = 1
         nan_channel = 2
+        name = "MockSensor"
         ess_sensor = MockTemperatureSensor(
-            "MockSensor", num_channels, count_offset, nan_channel
+            name, num_channels, count_offset, nan_channel
         )
         ess_sensor.terminator = "\r\n"
         loop = asyncio.get_event_loop()
-        err, resp = await loop.run_in_executor(None, ess_sensor.readline)
+        device_name, err, resp = await loop.run_in_executor(None, ess_sensor.readline)
+        self.assertEqual(name, device_name)
         resp = resp.strip(ess_sensor.terminator)
         data = resp.split(",")
         for i in range(0, num_channels):

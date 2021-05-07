@@ -232,7 +232,9 @@ class SelTemperature(SerialReader):
         # Set up loop variable for async calls
         loop = asyncio.get_event_loop()
 
-        err, ser_line = await loop.run_in_executor(None, self.comport.readline)
+        device_name, err, ser_line = await loop.run_in_executor(
+            None, self.comport.readline
+        )
         await self._message("Done.")
         if err == "OK":
             if (
@@ -261,6 +263,7 @@ class SelTemperature(SerialReader):
                 )
 
         self.output = []
+        self.output.append(device_name)
         self.output.append(time.time())
         self.output.append(err)
         for i in range(self._channels):

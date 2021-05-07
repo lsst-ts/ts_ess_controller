@@ -333,13 +333,15 @@ class RpiSerialHat:
 
         Returns
         -------
-        error, resp : 'tuple'
-        error : 'str'
+        name, error, resp : `tuple`
+        name : `str`
+            The name of the device.
+        error : `str`
             Error string.
             'OK' = No error
             'Non-ASCII data in response.'
             'Timed out with incomplete response.'
-        resp : 'str'
+        resp : `str`
             Response read from the VCP.
             Includes terminator string if there is one.
             May be returned empty if nothing was received, partial if the
@@ -376,6 +378,6 @@ class RpiSerialHat:
                         len(self._terminator) > 0
                         and resp[-len(self._terminator) :] == self._terminator
                     ):
-                        return err, resp
+                        return self.name, err, resp
                     elif 0 < self._line_size <= len(resp):
-                        return err, resp
+                        return self.name, err, resp

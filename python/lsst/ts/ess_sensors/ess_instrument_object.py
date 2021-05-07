@@ -104,8 +104,9 @@ class EssInstrument:
         """Terminate the instrument read loop."""
         msg = f"Stopping read loop for {self._reader.name!r} instrument."
         await self._message(msg)
-        self.telemetry_loop.cancel()
-        await self._reader.stop()
+        if self._enabled:
+            self.telemetry_loop.cancel()
+            await self._reader.stop()
         self._enabled = False
 
     async def _run(self):

@@ -15,19 +15,14 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+__all__ = ["ResponseCode"]
+
+import enum
 
 
-try:
-    from .version import *
-except ModuleNotFoundError:
-    __version__ = "?"
-
-from .command_handler import *
-from .ess_instrument_object import *
-from .response_code import *
-from .sel_temperature_reader import *
-from .socket_server import *
-from .serial_reader import *
+class ResponseCode(enum.IntEnum):
+    OK = 0
+    NOT_CONFIGURED = 1
+    NOT_STARTED = 2
+    ALREADY_STARTED = 3

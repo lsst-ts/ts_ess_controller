@@ -62,6 +62,20 @@ class MockTemperatureSensor:
         pass
 
     def format_temperature(self, i):
+        """Creates a formatted string representing a temperature for the given
+        channel.
+
+        Parameters
+        ----------
+        i: `int`
+            The temperature channel.
+
+        Returns
+        -------
+        s: `str`
+            A string represensting a temperature.
+
+        """
         temp = random.uniform(MIN_TEMP, MAX_TEMP)
         s = f"C{i + self.count_offset:02d}={temp:09.4f}"
         if i == self.nan_channel:
@@ -73,10 +87,27 @@ class MockTemperatureSensor:
         return s
 
     def readline(self):
+        """Creates a temperature readout response.
+
+        Returns
+        -------
+        name, error, resp : `tuple`
+        name : `str`
+            The name of the device.
+        error : `str`
+            Error string.
+            'OK' = No error
+            'Non-ASCII data in response.'
+            'Timed out with incomplete response.'
+        resp : `str`
+            Response read from the mock device.
+            Includes terminator string.
+
+        """
         self.log.info("read")
         time.sleep(1)
         err: str = "OK"
         resp = ""
         for i in range(0, self.channels):
             resp += self.format_temperature(i)
-        return err, resp
+        return self.name, err, resp
