@@ -35,9 +35,9 @@ class CommandHandler:
     Parameters
     ----------
     callback: coroutine
-        The callback coroutine used for sending replies, for insatnce for
-        indicating if the command has been executed successfully or not or for
-        sending telemetry.
+        The callback coroutine handling the sensor telemetry. This can be a
+        coroutine that sends the data via a socket connection or a coroutine in
+        a test class to verify that the command has been handled correctly.
     simulation_mode: `int`
         Indicating if a simulation mode (> 0) or not (0) is active.
 
@@ -148,8 +148,8 @@ class CommandHandler:
         return ResponseCode.OK
 
     async def connect_devices(self):
-        # TODO: Implement misconfiguration handling (DM-30069)
         """Loop over the configuration and start all devices."""
+        # TODO: Implement misconfiguration handling (DM-30069)
         self.log.info("connect_devices")
         configured_devices = self._configuration["devices"]
         for configured_device in configured_devices:

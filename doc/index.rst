@@ -6,7 +6,10 @@
 lsst.ts.ess.sensors
 ###################
 
-.. Paragraph that describes what this Python module does and links to related modules and frameworks.
+SocketServer and sensor reading code for the Environmental Sensors Support  system at Vera C. Rubin Observatory.
+The SocketServer is used to facilitate basic TCP/IP communication.
+This communication will allow for starting and stopping the sensor reading code, as well as for configuring which sensors to read.
+The sensor reading code will then send the sensor telemetry data back via the SocketServer.
 
 .. .. _lsst.ts.ess.sensors-using:
 

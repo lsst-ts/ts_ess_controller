@@ -36,7 +36,7 @@ setuptools.setup(
     name="ts_ess_sensors",
     description="Rubin Observatory Environment Sensors Support",
     use_scm_version={
-        "write_to": "python/lsst/ts/ess_sensors/version.py",
+        "write_to": "python/lsst/ts/ess/sensors/version.py",
         "write_to_template": scm_version_template,
     },
     setup_requires=["setuptools_scm", "pytest-runner"],

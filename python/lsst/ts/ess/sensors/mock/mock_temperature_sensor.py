@@ -27,6 +27,7 @@ import numpy as np
 
 from lsst.ts.ess.sensors.sel_temperature_reader import DELIMITER
 
+# Minimum and maximum temperatures (deg_C) for creating random sensor data.
 MIN_TEMP = 18.0
 MAX_TEMP = 30.0
 
@@ -87,7 +88,9 @@ class MockTemperatureSensor:
         return s
 
     def readline(self):
-        """Creates a temperature readout response.
+        """Creates a temperature readout response. The name of this function
+        does not reflect what it does. But this is the name of the functions
+        in the code that reads the real sensor data so I need to stick with it.
 
         Returns
         -------
