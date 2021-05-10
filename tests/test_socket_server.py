@@ -21,7 +21,7 @@ import json
 import logging
 import unittest
 
-from lsst.ts.ess_sensors import SocketServer
+from lsst.ts.ess.sensors import SocketServer
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG

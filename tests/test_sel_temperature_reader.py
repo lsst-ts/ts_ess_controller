@@ -18,8 +18,8 @@
 
 import unittest
 
-from lsst.ts.ess_sensors.sel_temperature_reader import SelTemperature, DELIMITER
-from lsst.ts.ess_sensors.mock.mock_temperature_sensor import (
+from lsst.ts.ess.sensors.sel_temperature_reader import SelTemperature, DELIMITER
+from lsst.ts.ess.sensors.mock.mock_temperature_sensor import (
     MockTemperatureSensor,
     MIN_TEMP,
     MAX_TEMP,

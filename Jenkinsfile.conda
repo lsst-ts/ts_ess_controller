@@ -1,2 +1,2 @@
 @Library('JenkinsShared')_
-CondaPipeline(["ts_config_ocs"], "ts-ess-sensors", "lsst.ts.ess_sensors", "linux-aarch64")
+CondaPipeline(["ts_config_ocs"], "ts-ess-sensors", "lsst.ts.ess.sensors", "linux-aarch64")

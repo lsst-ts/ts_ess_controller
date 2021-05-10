@@ -25,7 +25,7 @@ import time
 
 import numpy as np
 
-from lsst.ts.ess_sensors.sel_temperature_reader import DELIMITER
+from lsst.ts.ess.sensors.sel_temperature_reader import DELIMITER
 
 MIN_TEMP = 18.0
 MAX_TEMP = 30.0

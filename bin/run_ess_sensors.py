@@ -21,7 +21,7 @@
 import asyncio
 import logging
 
-from lsst.ts import ess_sensors
+from lsst.ts.ess import sensors
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s",
@@ -29,4 +29,4 @@ logging.basicConfig(
 )
 
 
-asyncio.run(ess_sensors.SocketServer.main())
+asyncio.run(sensors.SocketServer.main())

@@ -21,8 +21,8 @@ import json
 import logging
 import unittest
 
-from lsst.ts.ess_sensors import CommandHandler, ResponseCode
-from lsst.ts.ess_sensors.mock.mock_temperature_sensor import MIN_TEMP, MAX_TEMP
+from lsst.ts.ess.sensors import CommandHandler, ResponseCode
+from lsst.ts.ess.sensors.mock.mock_temperature_sensor import MIN_TEMP, MAX_TEMP
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG

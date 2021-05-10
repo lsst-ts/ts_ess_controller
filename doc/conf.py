@@ -22,7 +22,7 @@ This configuration only affects single-package Sphinx documentation builds.
 """
 
 from documenteer.conf.pipelinespkg import *  # noqa
-import lsst.ts.ess_sensors  # noqa
+import lsst.ts.ess.sensors  # noqa
 
 project = "ts_ess_sensors"
 html_theme_options["logotext"] = project  # noqa
