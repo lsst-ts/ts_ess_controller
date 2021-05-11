@@ -22,7 +22,7 @@ import logging
 import unittest
 
 from lsst.ts.ess.sensors import CommandHandler, ResponseCode
-from lsst.ts.ess.sensors.mock.mock_temperature_sensor import MIN_TEMP, MAX_TEMP
+from lsst.ts.ess.sensors.mock.mock_temperature_sensor import MockTemperatureSensor
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -105,7 +105,11 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         # TODO: Properly support multiple sensors (DM-30070)
         config = self.configuration["devices"][0]
         for i in range(3, config["channels"] + 3):
-            self.assertTrue(MIN_TEMP <= self.response[i] <= MAX_TEMP)
+            self.assertTrue(
+                MockTemperatureSensor.MIN_TEMP
+                <= self.response[i]
+                <= MockTemperatureSensor.MAX_TEMP
+            )
 
         await self.command_handler.handle_command(command="stop")
         self.assertEqual(self.response["response"], ResponseCode.OK)

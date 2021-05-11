@@ -28,6 +28,8 @@ import serial
 import time
 from threading import RLock
 
+from .sel_temperature_reader import DELIMITER
+
 
 class RpiSerialHat:
     r"""LSST Serial port using RPi4 serial hat.
@@ -364,7 +366,7 @@ class RpiSerialHat:
         err: str = "OK"
         await self._rpi_pin_state(self._pin_dirn, RpiSerialHat.STATE_DIRN_RX)
         with self._lock:
-            while not resp.endswith("\r\n"):
+            while not resp.endswith(DELIMITER):
                 try:
                     resp += str(self._ser.read(1), "ASCII")
                 except UnicodeError as e:

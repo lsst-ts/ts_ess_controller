@@ -22,6 +22,7 @@ import asyncio
 import logging
 import platform
 
+from . import CommandError
 from .ess_instrument_object import EssInstrument
 from .mock.mock_temperature_sensor import MockTemperatureSensor
 from .response_code import ResponseCode
@@ -82,7 +83,7 @@ class CommandHandler:
 
         # Unit tests may set this to an integer value to simulate a
         # disconnected or missing sensor.
-        self.nan_channel = None
+        self.disconnected_channel = None
 
     async def handle_command(self, command, **kwargs):
         """Handle incomming commands and parameters.
@@ -96,8 +97,11 @@ class CommandHandler:
         """
         self.log.info(f"Handling command {command} with kwargs {kwargs}")
         func = self.dispatch_dict[command]
-        response_code = await func(**kwargs)
-        response = {"response": response_code}
+        try:
+            await func(**kwargs)
+            response = {"response": ResponseCode.OK}
+        except CommandError as e:
+            response = {"response": e.responce_code}
         await self.callback(response)
 
     async def configure(self, configuration):
@@ -119,13 +123,11 @@ class CommandHandler:
         # TODO: Implement misconfiguration handling (DM-30069)
         self.log.info(f"configure with _configuration data {configuration}")
         if self._started:
-            self.log.error(
-                "Ignoring the configuration because telemetry loop already "
-                "running. Send a stop first."
+            raise CommandError(
+                msg="Ignoring the configuration because telemetry loop already running. Send a stop first.",
+                responce_code=ResponseCode.ALREADY_STARTED,
             )
-            return ResponseCode.ALREADY_STARTED
         self._configuration = configuration
-        return ResponseCode.OK
 
     async def start_sending_telemetry(self):
         """Connect the sensors and start reading the sensor data.
@@ -139,13 +141,12 @@ class CommandHandler:
         """
         self.log.info("start_sending_telemetry")
         if not self._configuration:
-            self.log.error(
-                "No configuration has been received yet. Ignoring start command."
+            raise CommandError(
+                msg="No configuration has been received yet. Ignoring start command.",
+                responce_code=ResponseCode.NOT_CONFIGURED,
             )
-            return ResponseCode.NOT_CONFIGURED
         await self.connect_devices()
         self._started = True
-        return ResponseCode.OK
 
     async def connect_devices(self):
         """Loop over the configuration and start all devices."""
@@ -182,8 +183,10 @@ class CommandHandler:
         """
         self.log.info("stop_sending_telemetry")
         if not self._started:
-            self.log.error("Not started yet. Ignoring stop command.")
-            return ResponseCode.NOT_STARTED
+            raise CommandError(
+                msg="Not started yet. Ignoring stop command.",
+                responce_code=ResponseCode.NOT_STARTED,
+            )
         self._started = False
         for ess_instrument in self._ess_instruments:
             await ess_instrument.stop()
@@ -209,7 +212,9 @@ class CommandHandler:
         if self.simulation_mode == 1:
             self.log.info("Connecting to the mock sensor.")
             device = MockTemperatureSensor(
-                configured_device["name"], 4, nan_channel=self.nan_channel
+                configured_device["name"],
+                4,
+                disconnected_channel=self.disconnected_channel,
             )
         elif configured_device["type"] == "FTDI":
             from .vcp_ftdi import VcpFtdi

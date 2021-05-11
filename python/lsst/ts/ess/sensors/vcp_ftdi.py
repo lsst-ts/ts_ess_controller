@@ -35,6 +35,8 @@ from threading import RLock
 import pylibftdi
 from pylibftdi import Device
 
+from .sel_temperature_reader import DELIMITER
+
 
 class VcpFtdi:
     r"""USB Virtual Communications Port (VCP) for FTDI device.
@@ -239,7 +241,7 @@ class VcpFtdi:
         err = "OK"
         resp: str = ""
         with self._lock:
-            while not resp.endswith("\r\n"):
+            while not resp.endswith(DELIMITER):
                 try:
                     resp += self._vcp.read(1)
                 except pylibftdi.FtdiError as e:

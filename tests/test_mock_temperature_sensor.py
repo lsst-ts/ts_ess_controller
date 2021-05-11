@@ -19,16 +19,33 @@
 import asyncio
 import unittest
 
-from lsst.ts.ess.sensors.mock.mock_temperature_sensor import (
-    MockTemperatureSensor,
-    MIN_TEMP,
-    MAX_TEMP,
-)
+from lsst.ts.ess.sensors.mock.mock_temperature_sensor import MockTemperatureSensor
 
 
 class MockTestCase(unittest.IsolatedAsyncioTestCase):
+    def check_data(self, data, num_channels, count_offset, disconnected_channel):
+        self.assertEqual(len(data), num_channels)
+        for i in range(0, num_channels):
+            data_item = data[i].split("=")
+            self.assertTrue(f"C{i + count_offset:02d}", data_item[0])
+            if i == disconnected_channel:
+                self.assertAlmostEqual(
+                    float(MockTemperatureSensor.DISCONNECTED_VALUE),
+                    float(data_item[1]),
+                    3,
+                )
+            else:
+                self.assertLessEqual(
+                    MockTemperatureSensor.MIN_TEMP, float(data_item[1])
+                )
+                self.assertLessEqual(
+                    float(data_item[1]), MockTemperatureSensor.MAX_TEMP
+                )
+
     async def test_read_instrument(self):
         num_channels = 4
+        count_offset = 0
+        disconnected_channel = None
         name = "MockSensor"
         ess_sensor = MockTemperatureSensor(name, num_channels)
         ess_sensor.terminator = "\r\n"
@@ -37,14 +54,12 @@ class MockTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(name, device_name)
         resp = resp.strip(ess_sensor.terminator)
         data = resp.split(",")
-        for i in range(0, num_channels):
-            data_item = data[i].split("=")
-            self.assertTrue(f"C{i:02d}", data_item[0])
-            self.assertTrue(MIN_TEMP <= float(data_item[1]) <= MAX_TEMP)
+        self.check_data(data, num_channels, count_offset, disconnected_channel)
 
     async def test_read_old_instrument(self):
         num_channels = 4
         count_offset = 1
+        disconnected_channel = None
         name = "MockSensor"
         ess_sensor = MockTemperatureSensor(name, num_channels, count_offset)
         ess_sensor.terminator = "\r\n"
@@ -53,18 +68,15 @@ class MockTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(name, device_name)
         resp = resp.strip(ess_sensor.terminator)
         data = resp.split(",")
-        for i in range(0, num_channels):
-            data_item = data[i].split("=")
-            self.assertTrue(f"C{i + count_offset:02d}", data_item[0])
-            self.assertTrue(MIN_TEMP <= float(data_item[1]) <= MAX_TEMP)
+        self.check_data(data, num_channels, count_offset, disconnected_channel)
 
     async def test_read_nan(self):
         num_channels = 4
         count_offset = 1
-        nan_channel = 2
+        disconnected_channel = 2
         name = "MockSensor"
         ess_sensor = MockTemperatureSensor(
-            name, num_channels, count_offset, nan_channel
+            name, num_channels, count_offset, disconnected_channel
         )
         ess_sensor.terminator = "\r\n"
         loop = asyncio.get_event_loop()
@@ -72,10 +84,4 @@ class MockTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(name, device_name)
         resp = resp.strip(ess_sensor.terminator)
         data = resp.split(",")
-        for i in range(0, num_channels):
-            data_item = data[i].split("=")
-            self.assertTrue(f"C{i + count_offset:02d}", data_item[0])
-            if i == nan_channel:
-                self.assertTrue(data_item[1] == "9999.9990")
-            else:
-                self.assertTrue(MIN_TEMP <= float(data_item[1]) <= MAX_TEMP)
+        self.check_data(data, num_channels, count_offset, disconnected_channel)

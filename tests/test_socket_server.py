@@ -22,6 +22,7 @@ import logging
 import unittest
 
 from lsst.ts.ess.sensors import SocketServer
+from lsst.ts.ess.sensors import ResponseCode
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -49,6 +50,12 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
         rw_coro = asyncio.open_connection(host="127.0.0.1", port=port)
         self.reader, self.writer = await asyncio.wait_for(rw_coro, timeout=1)
 
+    async def asyncTearDown(self):
+        if self.srv._started:
+            await self.srv.exit()
+        if self.writer:
+            self.writer.close()
+
     async def read(self):
         """Utility function to read a string from the reader and unmarshal it
 
@@ -74,12 +81,6 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
         self.log.debug(st)
         await self.writer.drain()
 
-    async def asyncTearDown(self):
-        if self.srv._started:
-            await self.srv.exit()
-        if self.writer:
-            self.writer.close()
-
     async def test_exit(self):
         await self.write(command="exit", parameters={})
         # Give time to the socket server to clean up internal state and exit.
@@ -92,10 +93,13 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
             command="configure", parameters={"configuration": configuration}
         )
         self.data = await self.read()
+        self.assertEqual(ResponseCode.OK, self.data["response"])
         await self.write(command="start", parameters={})
         self.data = await self.read()
+        self.assertEqual(ResponseCode.OK, self.data["response"])
         await self.write(command="stop", parameters={})
         self.data = await self.read()
+        self.assertEqual(ResponseCode.OK, self.data["response"])
         await self.write(command="exit", parameters={})
         # Give time to the socket server to clean up internal state and exit.
         await asyncio.sleep(0.5)
