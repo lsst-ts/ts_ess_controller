@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # This file is part of ts_ess_sensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
@@ -16,16 +18,15 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-"""Sphinx configuration file for an LSST stack package.
+import asyncio
+import logging
 
-This configuration only affects single-package Sphinx documentation builds.
-"""
+from lsst.ts.ess import sensors
 
-from documenteer.conf.pipelinespkg import *  # noqa
-import lsst.ts.ess.sensors  # noqa
+logging.basicConfig(
+    format="%(asctime)s:%(levelname)s:%(name)s:%(message)s",
+    level=logging.DEBUG,
+)
 
-project = "ts_ess_sensors"
-html_theme_options["logotext"] = project  # noqa
-html_title = project
-html_short_title = project
-doxylink = {}  # Avoid warning: Could not find tag file _doxygen/doxygen.tag
+
+asyncio.run(sensors.SocketServer.main())

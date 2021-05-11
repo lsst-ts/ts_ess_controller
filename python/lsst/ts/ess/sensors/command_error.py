@@ -16,16 +16,21 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-"""Sphinx configuration file for an LSST stack package.
+__all__ = ["CommandError"]
 
-This configuration only affects single-package Sphinx documentation builds.
-"""
+from .response_code import ResponseCode
 
-from documenteer.conf.pipelinespkg import *  # noqa
-import lsst.ts.ess.sensors  # noqa
 
-project = "ts_ess_sensors"
-html_theme_options["logotext"] = project  # noqa
-html_title = project
-html_short_title = project
-doxylink = {}  # Avoid warning: Could not find tag file _doxygen/doxygen.tag
+class CommandError(Exception):
+    """Exception raised if a command fails.
+    Parameters
+    ----------
+    msg : `str`
+        Error message
+    responce_code : `ResponseCode`
+        Response code.
+    """
+
+    def __init__(self, msg, responce_code):
+        super().__init__(msg)
+        self.responce_code = responce_code

@@ -16,16 +16,13 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-"""Sphinx configuration file for an LSST stack package.
+__all__ = ["ResponseCode"]
 
-This configuration only affects single-package Sphinx documentation builds.
-"""
+import enum
 
-from documenteer.conf.pipelinespkg import *  # noqa
-import lsst.ts.ess.sensors  # noqa
 
-project = "ts_ess_sensors"
-html_theme_options["logotext"] = project  # noqa
-html_title = project
-html_short_title = project
-doxylink = {}  # Avoid warning: Could not find tag file _doxygen/doxygen.tag
+class ResponseCode(enum.IntEnum):
+    OK = 0
+    NOT_CONFIGURED = 1
+    NOT_STARTED = 2
+    ALREADY_STARTED = 3
