@@ -84,16 +84,21 @@ class SocketServer:
     async def write(self, data):
         """Write the data appended with a newline character.
 
+        The data are encoded via JSON and then passed on to the StreamWriter
+        associated with the socket.
+
         Parameters
         ----------
         data:
             The data to write.
         """
+        self.log.debug(f"Writing data {data}")
         st = json.dumps({**data})
+        self.log.debug(st)
         if self._writer:
             self._writer.write(st.encode() + b"\r\n")
-            self.log.debug(st)
             await self._writer.drain()
+        self.log.debug("Done")
 
     async def read_loop(self, reader, writer):
         """Read commands and output replies.
@@ -146,28 +151,3 @@ class SocketServer:
         self.log.info("Closing reader")
         self._reader = None
         self.log.info("Done closing")
-
-
-async def main():
-    """Main method that gets executed in stand alone mode."""
-    logging.info("main method")
-    # An arbitrarily chosen port. Nothing special about it.
-    port = 5000
-    logging.info("Constructing the sensor server.")
-    srv = SocketServer(port=port)
-    logging.info("Starting the sensor server.")
-    await srv.start()
-
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
-    )
-
-    logging.info("main")
-    loop = asyncio.get_event_loop()
-    try:
-        logging.info("Calling main method")
-        loop.run_until_complete(main())
-    except (asyncio.CancelledError, KeyboardInterrupt):
-        pass

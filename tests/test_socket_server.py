@@ -21,12 +21,15 @@ import json
 import logging
 import unittest
 
-from lsst.ts.ess.sensors import SocketServer
-from lsst.ts.ess.sensors import ResponseCode
+from lsst.ts.ess.sensors import SocketServer, ResponseCode
+from lsst.ts.ess.sensors.mock.mock_temperature_sensor import MockTemperatureSensor
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
 )
+
+TIMEOUT = 5
+"""Standard timeout in seconds."""
 
 
 class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
@@ -48,7 +51,7 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
         port = self.srv.port
 
         rw_coro = asyncio.open_connection(host="127.0.0.1", port=port)
-        self.reader, self.writer = await asyncio.wait_for(rw_coro, timeout=1)
+        self.reader, self.writer = await asyncio.wait_for(rw_coro, timeout=TIMEOUT)
 
     async def asyncTearDown(self):
         if self.srv._started:
@@ -64,7 +67,9 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
         data : `dict`
             A dictionary with objects representing the string read.
         """
-        read_bytes = await asyncio.wait_for(self.reader.readuntil(b"\r\n"), timeout=1)
+        read_bytes = await asyncio.wait_for(
+            self.reader.readuntil(b"\r\n"), timeout=TIMEOUT
+        )
         data = json.loads(read_bytes.decode())
         return data
 
@@ -88,7 +93,9 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.srv._started)
 
     async def test_full_command_sequence(self):
-        configuration = {"devices": [{"name": "Test1", "channels": 1}]}
+        name = "Test1"
+        channels = 1
+        configuration = {"devices": [{"name": name, "channels": channels}]}
         await self.write(
             command="configure", parameters={"configuration": configuration}
         )
@@ -97,6 +104,16 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
         await self.write(command="start", parameters={})
         self.data = await self.read()
         self.assertEqual(ResponseCode.OK, self.data["response"])
+        self.data = await self.read()
+        telemetry = self.data["telemetry"]
+        self.assertEqual(telemetry[0], name)
+        self.assertEqual(telemetry[2], "OK")
+        assert (
+            MockTemperatureSensor.MIN_TEMP
+            <= telemetry[3]
+            <= MockTemperatureSensor.MAX_TEMP
+        )
+
         await self.write(command="stop", parameters={})
         self.data = await self.read()
         self.assertEqual(ResponseCode.OK, self.data["response"])

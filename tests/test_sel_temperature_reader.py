@@ -35,7 +35,7 @@ class SelTemperatureReaderTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(name, data[0])
         for i in range(0, 4):
             data_item = data[i + 3]
-            self.assertTrue(
+            assert (
                 MockTemperatureSensor.MIN_TEMP
                 <= float(data_item)
                 <= MockTemperatureSensor.MAX_TEMP
@@ -55,7 +55,7 @@ class SelTemperatureReaderTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(name, data[0])
         for i in range(0, 4):
             data_item = data[i + 3]
-            self.assertTrue(
+            assert (
                 MockTemperatureSensor.MIN_TEMP
                 <= float(data_item)
                 <= MockTemperatureSensor.MAX_TEMP
@@ -83,7 +83,7 @@ class SelTemperatureReaderTestCase(unittest.IsolatedAsyncioTestCase):
                     float(MockTemperatureSensor.DISCONNECTED_VALUE), float(data_item), 3
                 )
             else:
-                self.assertTrue(
+                assert (
                     MockTemperatureSensor.MIN_TEMP
                     <= float(data_item)
                     <= MockTemperatureSensor.MAX_TEMP

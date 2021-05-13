@@ -35,7 +35,7 @@ class EssInstrumentObjectTestCase(unittest.IsolatedAsyncioTestCase):
                     float(MockTemperatureSensor.DISCONNECTED_VALUE), float(data_item), 3
                 )
             else:
-                self.assertTrue(
+                assert (
                     MockTemperatureSensor.MIN_TEMP
                     <= float(data_item)
                     <= MockTemperatureSensor.MAX_TEMP

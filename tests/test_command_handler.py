@@ -101,13 +101,15 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.response["response"], ResponseCode.OK)
         self.assertTrue(self.command_handler._started)
 
+        # Give some time to the mock sensor to produce data
         await asyncio.sleep(2)
+        telemetry = self.response["telemetry"]
         # TODO: Properly support multiple sensors (DM-30070)
         config = self.configuration["devices"][0]
         for i in range(3, config["channels"] + 3):
-            self.assertTrue(
+            assert (
                 MockTemperatureSensor.MIN_TEMP
-                <= self.response[i]
+                <= telemetry[i]
                 <= MockTemperatureSensor.MAX_TEMP
             )
 

@@ -40,7 +40,7 @@ where:
     '\r\n'      2-character terminator.
 """
 
-__all__ = ["SelTemperature", "DELIMITER"]
+__all__ = ["SelTemperature", "DELIMITER", "TERMINATOR"]
 
 import asyncio
 import logging
