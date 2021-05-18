@@ -35,11 +35,10 @@ class MockTestCase(unittest.IsolatedAsyncioTestCase):
                     3,
                 )
             else:
-                self.assertLessEqual(
-                    MockTemperatureSensor.MIN_TEMP, float(data_item[1])
-                )
-                self.assertLessEqual(
-                    float(data_item[1]), MockTemperatureSensor.MAX_TEMP
+                assert (
+                    MockTemperatureSensor.MIN_TEMP
+                    <= float(data_item[1])
+                    <= MockTemperatureSensor.MAX_TEMP
                 )
 
     async def test_read_instrument(self):

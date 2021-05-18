@@ -21,7 +21,7 @@
 import asyncio
 import logging
 
-from lsst.ts.ess import sensors
+from lsst.ts.ess.sensors import SocketServer
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s",
@@ -29,4 +29,32 @@ logging.basicConfig(
 )
 
 
-asyncio.run(sensors.SocketServer.main())
+async def main():
+    """Main method that, when executed in stand alone mode, starts the socket
+    server.
+
+    The SocketServer automatically stops once the client exits and at that
+    moment this script will exit as well.
+    """
+    logging.info("main method")
+    # An arbitrarily chosen port. Nothing special about it.
+    port = 5000
+    logging.info("Constructing the sensor server.")
+    # Simulation mode 0 means "connect to the real sensors."
+    # Set simulation_mode to 1 to enable simulation mode and connect to a mock
+    # sensor.
+    srv = SocketServer(port=port, simulation_mode=0)
+    logging.info("Starting the sensor server.")
+    await srv.start()
+
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
+    )
+
+    try:
+        logging.info("Calling main method")
+        asyncio.run(main())
+    except (asyncio.CancelledError, KeyboardInterrupt):
+        pass

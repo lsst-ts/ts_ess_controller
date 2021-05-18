@@ -35,7 +35,7 @@ from threading import RLock
 import pylibftdi
 from pylibftdi import Device
 
-from .sel_temperature_reader import DELIMITER
+from .sel_temperature_reader import DELIMITER, TERMINATOR
 
 
 class VcpFtdi:
@@ -241,7 +241,7 @@ class VcpFtdi:
         err = "OK"
         resp: str = ""
         with self._lock:
-            while not resp.endswith(DELIMITER):
+            while not resp.endswith(TERMINATOR):
                 try:
                     resp += self._vcp.read(1)
                 except pylibftdi.FtdiError as e:

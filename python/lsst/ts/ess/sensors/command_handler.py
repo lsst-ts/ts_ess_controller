@@ -70,7 +70,7 @@ class CommandHandler:
 
         self.simulation_mode = simulation_mode
 
-        self.callback = callback
+        self._callback = callback
         self._configuration = None
         self._started = False
         self._ess_instruments = []
@@ -102,7 +102,7 @@ class CommandHandler:
             response = {"response": ResponseCode.OK}
         except CommandError as e:
             response = {"response": e.responce_code}
-        await self.callback(response)
+        await self._callback(response)
 
     async def configure(self, configuration):
         """Apply the configuration.
@@ -156,16 +156,16 @@ class CommandHandler:
         for configured_device in configured_devices:
             device = self._get_device(configured_device)
             sel_temperature = SelTemperature(
-                configured_device["name"],
-                device,
-                configured_device["channels"],
-                self.log,
+                name=configured_device["name"],
+                uart_device=device,
+                channels=configured_device["channels"],
+                log=self.log,
             )
             ess_instrument = EssInstrument(
-                configured_device["name"],
-                sel_temperature,
-                self.callback,
-                self.log,
+                name=configured_device["name"],
+                reader=sel_temperature,
+                callback_func=self._process_sensor_telemetry,
+                log=self.log,
             )
 
             self._ess_instruments.append(ess_instrument)
@@ -193,6 +193,23 @@ class CommandHandler:
             self._ess_instruments.remove(ess_instrument)
         return ResponseCode.OK
 
+    async def _process_sensor_telemetry(self, telemetry):
+        """wrap the telemetry in a dictionary and pass it on to the callback
+        coroutine.
+
+        It is up to the callback coroutine to handle the telemetry further
+        (e.g. in case of the SocketServer the telemetry gets sent to the
+        client).
+
+        Parameters
+        ----------
+        telemetry: `list`
+            The telemetry data to send.
+        """
+        self.log.debug(f"Processing sensor data {telemetry}")
+        data = {"telemetry": telemetry}
+        await self._callback(data)
+
     def _get_device(self, configured_device):
         """Get the device to connect to by using the _configuration of the CSC
         and by detecting whether the code is running on an aarch64 architecture
@@ -213,7 +230,7 @@ class CommandHandler:
             self.log.info("Connecting to the mock sensor.")
             device = MockTemperatureSensor(
                 configured_device["name"],
-                4,
+                configured_device["channels"],
                 disconnected_channel=self.disconnected_channel,
             )
         elif configured_device["type"] == "FTDI":
