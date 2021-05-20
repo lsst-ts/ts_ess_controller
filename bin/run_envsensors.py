@@ -45,7 +45,7 @@ async def main():
     # sensor.
     srv = SocketServer(port=port, simulation_mode=0)
     logging.info("Starting the sensor server.")
-    await srv.start()
+    await srv.start(keep_running=True)
 
 
 if __name__ == "__main__":

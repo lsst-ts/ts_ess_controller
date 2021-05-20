@@ -65,11 +65,17 @@ class SocketServer:
             callback=self.write, simulation_mode=self.simulation_mode
         )
 
-    async def start(self):
+    async def start(self, keep_running=False):
         """Start the TCP/IP server.
 
         Start the command loop and make sure to keep running when instructed to
         do so.
+
+        Parameters
+        ----------
+        keep_running : bool
+            Used for command line testing and should generally be left to
+            False.
         """
         self.log.info("Start called")
         self._started = True
@@ -82,7 +88,8 @@ class SocketServer:
         if self.port == 0:
             self.port = self._server.sockets[0].getsockname()[1]
 
-        await self._server.serve_forever()
+        if keep_running:
+            await self._server.serve_forever()
 
     async def write(self, data):
         """Write the data appended with a newline character.
