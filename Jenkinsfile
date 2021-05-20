@@ -84,7 +84,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd repo && pip install --ignore-installed -e . && eups declare -r . -t saluser && setup ts_ess_sensors -t saluser && pytest --junitxml=\${XML_REPORT}\"
+                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd repo && pip install --ignore-installed -e . && eups declare -r . -t saluser && setup ts_envsensors -t saluser && pytest --junitxml=\${XML_REPORT}\"
                     """
                 }
             }
@@ -93,7 +93,7 @@ pipeline {
 //             steps {
 //                 script {
 //                     sh """
-//                     docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd repo && pip install --ignore-installed -e . && package-docs build && ltd upload --product ts-ess-sensors --git-ref \${GIT_BRANCH} --dir doc/_build/html\"
+//                     docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd repo && pip install --ignore-installed -e . && package-docs build && ltd upload --product ts-envsensors --git-ref \${GIT_BRANCH} --dir doc/_build/html\"
 //                     """
 //                 }
 //             }

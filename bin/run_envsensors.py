@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# This file is part of ts_ess_sensors.
+# This file is part of ts_envsensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -21,7 +21,7 @@
 import asyncio
 import logging
 
-from lsst.ts.ess.sensors import SocketServer
+from lsst.ts.envsensors import SocketServer
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s",
