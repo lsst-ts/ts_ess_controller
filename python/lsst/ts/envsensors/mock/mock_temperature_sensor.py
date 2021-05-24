@@ -25,7 +25,7 @@ import logging
 import random
 import time
 
-from lsst.ts.envsensors.sel_temperature_reader import DELIMITER
+from ..sel_temperature_reader import DELIMITER
 
 
 class MockTemperatureSensor:
