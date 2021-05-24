@@ -1,4 +1,4 @@
-# This file is part of ts_ess_sensors.
+# This file is part of ts_envsensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -15,17 +15,17 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ["MockTemperatureSensor"]
 
-import asyncio
 import logging
 import random
 import time
 
-import numpy as np
-
-from lsst.ts.ess.sensors.sel_temperature_reader import DELIMITER
+from ..sel_temperature_reader import DELIMITER
 
 
 class MockTemperatureSensor:

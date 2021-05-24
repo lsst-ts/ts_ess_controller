@@ -1,4 +1,4 @@
-# This file is part of ts_ess_sensors.
+# This file is part of ts_envsensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -33,10 +33,10 @@ base_prefix = pathlib.PurePosixPath(sys.base_prefix)
 data_files_path = tools_path.relative_to(base_prefix).parents[1]
 
 setuptools.setup(
-    name="ts_ess_sensors",
+    name="ts_envsensors",
     description="Rubin Observatory Environment Sensors Support",
     use_scm_version={
-        "write_to": "python/lsst/ts/ess/sensors/version.py",
+        "write_to": "python/lsst/ts/envsensors/version.py",
         "write_to_template": scm_version_template,
     },
     setup_requires=["setuptools_scm", "pytest-runner"],
@@ -45,12 +45,12 @@ setuptools.setup(
     packages=setuptools.find_namespace_packages(where="python"),
     package_data={"": ["*.rst", "*.yaml", "*.xml"]},
     data_files=[],
-    scripts=["bin/run_ess_sensors.py"],
+    scripts=["bin/run_envsensors.py"],
     tests_require=tests_require,
     extras_require={"dev": dev_requires},
     license="GPL",
     project_urls={
         "Bug Tracker": "https://jira.lsstcorp.org/secure/Dashboard.jspa",
-        "Source Code": "https://github.com/lsst-ts/ts_ess_sensors",
+        "Source Code": "https://github.com/lsst-ts/ts_envsensors",
     },
 )
