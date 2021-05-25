@@ -255,7 +255,7 @@ class RpiSerialHat:
         # Print a message prefaced with the object info ('Any').
         self.log.debug("RpiSerialHat:{}: {}".format(self.name, text))
 
-    async def _rpi_pin_cleanup(self, rpi_pin) -> None:
+    def _rpi_pin_cleanup(self, rpi_pin) -> None:
         # Clear RPi pin.
         # Ignored if pin number is None.
         if rpi_pin is not None:
@@ -264,7 +264,7 @@ class RpiSerialHat:
             except RuntimeError:
                 self._message("GPIO pin cleanup error.")
 
-    async def _rpi_pin_setup(self, rpi_pin: int, pin_type) -> None:
+    def _rpi_pin_setup(self, rpi_pin: int, pin_type) -> None:
         # Setup RPi pin.
         # True = Input, False = Output.
         # ignored if pin number is None.
@@ -274,7 +274,7 @@ class RpiSerialHat:
             except RuntimeError:
                 self._message("Error setting up GPIO pin.")
 
-    async def _rpi_pin_state(self, rpi_pin: int, state: bool) -> None:
+    def _rpi_pin_state(self, rpi_pin: int, state: bool) -> None:
         # Output transceiver pin state.
         # high = True, low = False.
         # ignored if pin number is None.
@@ -367,7 +367,7 @@ class RpiSerialHat:
 
         resp: str = ""
         err: str = "OK"
-        await self._rpi_pin_state(self._pin_dirn, RpiSerialHat.STATE_DIRN_RX)
+        self._rpi_pin_state(self._pin_dirn, RpiSerialHat.STATE_DIRN_RX)
         with self._lock:
             while not resp.endswith(TERMINATOR):
                 try:

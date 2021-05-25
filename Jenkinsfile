@@ -26,65 +26,11 @@ pipeline {
                 }
             }
         }
-        stage("Checkout sal") {
-            steps {
-                script {
-                    sh """
-                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd /home/saluser/repos/ts_sal && /home/saluser/.checkout_repo.sh \${work_branches} && git pull\"
-                    """
-                }
-            }
-        }
-        stage("Checkout salobj") {
-            steps {
-                script {
-                    sh """
-                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd /home/saluser/repos/ts_salobj && /home/saluser/.checkout_repo.sh \${work_branches} && git pull\"
-                    """
-                }
-            }
-        }
-        stage("Checkout xml") {
-            steps {
-                script {
-                    sh """
-                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd /home/saluser/repos/ts_xml && /home/saluser/.checkout_repo.sh \${work_branches} && git pull\"
-                    """
-                }
-            }
-        }
-        stage("Checkout IDL") {
-            steps {
-                script {
-                    sh """
-                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd /home/saluser/repos/ts_idl && /home/saluser/.checkout_repo.sh \${work_branches} && git pull\"
-                    """
-                }
-            }
-        }
         stage("Checkout ts_tcpip") {
             steps {
                 script {
                     sh """
-                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd /home/saluser/repos/ts_tcpip && /home/saluser/.checkout_repo.sh \${work_branches} && git pull\"
-                    """
-                }
-            }
-        }
-        stage("Build IDL files") {
-            steps {
-                script {
-                    sh """
-                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && setup ts_sal -t current && make_idl_files.py ESS\"
-                    """
-                }
-            }
-        }
-        stage("Checkout config_ocs") {
-            steps {
-                script {
-                    sh """
-                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd /home/saluser/repos/ts_config_ocs/ && /home/saluser/.checkout_repo.sh \${work_branches} \"
+                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd /home/saluser/repos && git clone https://github.com/lsst-ts/ts_tcpip.git && cd ts_tcpip && pip install --ignore-installed -e . && eups declare -r . -t saluser \"
                     """
                 }
             }
@@ -98,15 +44,15 @@ pipeline {
                 }
             }
         }
-//         stage("Build and Upload documentation") {
-//             steps {
-//                 script {
-//                     sh """
-//                     docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd repo && pip install --ignore-installed -e . && package-docs build && ltd upload --product ts-envsensors --git-ref \${GIT_BRANCH} --dir doc/_build/html\"
-//                     """
-//                 }
-//             }
-//         }
+        stage("Build and Upload documentation") {
+            steps {
+                script {
+                    sh """
+                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd repo && pip install --ignore-installed -e . && package-docs build && ltd upload --product ts-envsensors --git-ref \${GIT_BRANCH} --dir doc/_build/html\"
+                    """
+                }
+            }
+        }
     }
     post {
         always {

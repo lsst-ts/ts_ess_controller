@@ -223,9 +223,7 @@ class CommandHandler:
         data = {"telemetry": telemetry}
         await self._callback(data)
 
-    def _get_device(
-        self, configured_device: dict
-    ) -> typing.Optional[typing.Union[MockTemperatureSensor, VcpFtdi, RpiSerialHat]]:
+    def _get_device(self, configured_device: dict) -> typing.Optional[typing.Any]:
         """Get the device to connect to by using the _configuration of the CSC
         and by detecting whether the code is running on an aarch64 architecture
         or not.

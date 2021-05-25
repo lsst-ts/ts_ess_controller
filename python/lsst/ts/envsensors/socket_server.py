@@ -65,8 +65,15 @@ class SocketServer:
             callback=self.write, simulation_mode=self.simulation_mode
         )
 
-    async def start(self) -> None:
-        """Start the TCP/IP server and the command loop."""
+    async def start(self, keep_running: bool = False) -> None:
+        """Start the TCP/IP server and the command loop.
+
+        Parameters
+        ----------
+        keep_running: `bool`
+            Indicates whether the server should keep running or not. Set to
+            True when started from the command line.
+        """
         self.log.info("Start called")
         self._server = tcpip.OneClientServer(
             host=self.host,
@@ -81,6 +88,9 @@ class SocketServer:
         # mock controller can use it to connect.
         if self.port == 0:
             self.port = self._server.port
+
+        if keep_running:
+            await self._server.server.serve_forever()
 
     def connected_callback(self, server: tcpip.OneClientServer) -> None:
         """A client has connected or disconnected."""
