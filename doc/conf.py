@@ -29,3 +29,5 @@ html_theme_options["logotext"] = project  # noqa
 html_title = project
 html_short_title = project
 doxylink = {}  # Avoid warning: Could not find tag file _doxygen/doxygen.tag
+
+intersphinx_mapping["ts_tcpip"] = ("https://ts-tcpip.lsst.io", None)  # noqa
