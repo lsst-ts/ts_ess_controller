@@ -24,6 +24,8 @@ __all__ = ["CommandHandler"]
 import asyncio
 import logging
 import platform
+import time
+import typing
 
 from .command_error import CommandError
 from .ess_instrument_object import EssInstrument
@@ -32,13 +34,21 @@ from .response_code import ResponseCode
 from .sel_temperature_reader import SelTemperature
 
 
+class ReceivedCommand:
+    def __init__(self, sequence_number: int, command: str) -> None:
+        self.sequence_number = sequence_number
+        self.command = command
+        self.received = time.time()
+        self.replied = False
+
+
 class CommandHandler:
     """Handle incoming commands and send replies. Apply configuration and read
     sensor data.
 
     Parameters
     ----------
-    callback: coroutine
+    callback: `Callable`
         The callback coroutine handling the sensor telemetry. This can be a
         coroutine that sends the data via a socket connection or a coroutine in
         a test class to verify that the command has been handled correctly.
@@ -63,7 +73,7 @@ class CommandHandler:
 
     valid_simulation_modes = (0, 1)
 
-    def __init__(self, callback, simulation_mode):
+    def __init__(self, callback: typing.Callable, simulation_mode: int) -> None:
         self.log = logging.getLogger(type(self).__name__)
         if simulation_mode not in self.valid_simulation_modes:
             raise ValueError(
@@ -74,7 +84,7 @@ class CommandHandler:
         self.simulation_mode = simulation_mode
 
         self._callback = callback
-        self._configuration = None
+        self._configuration: dict = None
         self._started = False
         self._ess_instruments = []
 
@@ -88,7 +98,7 @@ class CommandHandler:
         # disconnected or missing sensor.
         self.disconnected_channel = None
 
-    async def handle_command(self, command, **kwargs):
+    async def handle_command(self, command: str, **kwargs) -> None:
         """Handle incomming commands and parameters.
 
         Parameters
@@ -107,7 +117,7 @@ class CommandHandler:
             response = {"response": e.responce_code}
         await self._callback(response)
 
-    async def configure(self, configuration):
+    async def configure(self, configuration: dict) -> None:
         """Apply the configuration.
 
         Parameters
@@ -132,7 +142,7 @@ class CommandHandler:
             )
         self._configuration = configuration
 
-    async def start_sending_telemetry(self):
+    async def start_sending_telemetry(self) -> None:
         """Connect the sensors and start reading the sensor data.
 
         Returns
@@ -151,7 +161,7 @@ class CommandHandler:
         await self.connect_devices()
         self._started = True
 
-    async def connect_devices(self):
+    async def connect_devices(self) -> None:
         """Loop over the configuration and start all devices."""
         # TODO: Implement misconfiguration handling (DM-30069)
         self.log.info("connect_devices")
@@ -174,7 +184,7 @@ class CommandHandler:
             self._ess_instruments.append(ess_instrument)
             await ess_instrument.start()
 
-    async def stop_sending_telemetry(self):
+    async def stop_sending_telemetry(self) -> ResponseCode:
         """Stop reading the sensor data.
 
         Returns
@@ -196,7 +206,7 @@ class CommandHandler:
             self._ess_instruments.remove(ess_instrument)
         return ResponseCode.OK
 
-    async def _process_sensor_telemetry(self, telemetry):
+    async def _process_sensor_telemetry(self, telemetry: list) -> None:
         """wrap the telemetry in a dictionary and pass it on to the callback
         coroutine.
 
@@ -213,15 +223,24 @@ class CommandHandler:
         data = {"telemetry": telemetry}
         await self._callback(data)
 
-    def _get_device(self, configured_device):
+    def _get_device(
+        self, configured_device: dict
+    ) -> typing.Optional[typing.Union[MockTemperatureSensor, VcpFtdi, RpiSerialHat]]:
         """Get the device to connect to by using the _configuration of the CSC
         and by detecting whether the code is running on an aarch64 architecture
         or not.
+
+        Parameters
+        ----------
+        configured_device: `dict`
+            A dict representing the device to connect to. The format of the
+            dict follows the configuration of the ts_ess project.
 
         Returns
         -------
         device: `MockTemperatureSensor` or `VcpFtdi` or `RpiSerialHat` or
             `None`
+            The device to connect to.
 
         Raises
         ------

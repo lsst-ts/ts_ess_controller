@@ -34,6 +34,6 @@ class CommandError(Exception):
         Response code.
     """
 
-    def __init__(self, msg, responce_code):
+    def __init__(self, msg: str, responce_code: ResponseCode) -> None:
         super().__init__(msg)
         self.responce_code = responce_code

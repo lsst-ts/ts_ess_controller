@@ -66,17 +66,7 @@ class SocketServer:
         )
 
     async def start(self) -> None:
-        """Start the TCP/IP server.
-
-        Start the command loop and make sure to keep running when instructed to
-        do so.
-
-        Parameters
-        ----------
-        keep_running : bool
-            Used for command line testing and should generally be left to
-            False.
-        """
+        """Start the TCP/IP server and the command loop."""
         self.log.info("Start called")
         self._server = tcpip.OneClientServer(
             host=self.host,
