@@ -47,50 +47,26 @@ class EssInstrument:
     """
 
     def __init__(self, name: str, reader, callback_func, log=None):
-        self._instances: Dict[str, "EssInstrument"] = {}
-        self._devices: Dict[str, "EssInstrument"] = {}
         if log is None:
             self.log = logging.getLogger(type(self).__name__)
         else:
             self.log = log.getChild(type(self).__name__)
-        if name not in self._instances:
-            if reader.comport not in self._devices:
-                try:
-                    self._reader = reader
-                except AttributeError:
-                    self.log.debug(
-                        f"EssInstrument:{name}: Failed to instantiate "
-                        f"using reader object {reader.name!r}."
-                    )
-                self._enabled: bool = False
-                self.name: str = name
-                self._callback_func = callback_func
-                self.telemetry_loop = None
-
-                self._instances[name] = self
-                self._devices[reader.comport] = self
-                self.log.debug(
-                    f"EssInstrument:{name}: First instantiation "
-                    f"using reader object {reader.name!r}."
-                )
-            else:
-                self.log.debug(
-                    f"EssInstrument:{name}: Error: "
-                    f"Attempted multiple use of reader serial device instance {reader.comport}."
-                )
-                raise IndexError(
-                    f"EssInstrument:{name}: "
-                    f"Attempted multiple use of reader serial device instance {reader.comport}."
-                )
-        else:
+        try:
+            self._reader = reader
+        except AttributeError:
             self.log.debug(
-                "EssInstrument: Error: "
-                f"Attempted multiple instantiation of {name!r}."
+                f"EssInstrument:{name}: Failed to instantiate "
+                f"using reader object {reader.name!r}."
             )
-            raise IndexError(
-                "EssInstrument: Error: "
-                f"Attempted multiple instantiation of {name!r}."
-            )
+        self._enabled: bool = False
+        self.name: str = name
+        self._callback_func = callback_func
+        self.telemetry_loop = None
+
+        self.log.debug(
+            f"EssInstrument:{name}: First instantiation "
+            f"using reader object {reader.name!r}."
+        )
 
     async def _message(self, text: Any) -> None:
         # Print a message prefaced with the InstrumentThread object info.

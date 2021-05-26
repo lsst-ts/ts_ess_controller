@@ -68,57 +68,28 @@ class VcpFtdi:
     IndexError if attempted multiple use of instance name.
     """
 
-    _instances: Dict[str, "VcpFtdi"] = {}
-    _devices: Dict[str, "VcpFtdi"] = {}
-
     def __init__(self, name: str, device_id: str, log=None):
         if log is None:
             self.log = logging.getLogger(type(self).__name__)
         else:
             self.log = log.getChild(type(self).__name__)
-        if name not in VcpFtdi._instances:
-            if device_id not in VcpFtdi._devices:
-                self.name: str = name
-                self._lock: RLock = RLock()
-                self._device_id: str = device_id
-                self._read_timeout = 1.0
-                self._terminator: str = "\r\n"
-                self._line_size: int = 0
-                self._vcp = Device(
-                    device_id,
-                    mode="t",
-                    encoding="ASCII",
-                    lazy_open=True,
-                    auto_detach=False,
-                )
-                VcpFtdi._instances[name] = self
-                VcpFtdi._devices[device_id] = self
-                self.log.debug(
-                    "VcpFtdi:{}: First instantiation "
-                    'using device SN "{}".'.format(name, device_id)
-                )
-            else:
-                self.log.debug(
-                    "VcpFtdi:{}: Error: "
-                    'Attempted multiple use of FTDI device "{}".'.format(
-                        name, device_id
-                    )
-                )
-                raise IndexError(
-                    "VcpFtdi:{}: "
-                    'Attempted multiple use of FTDI device "{}".'.format(
-                        name, device_id
-                    )
-                )
-        else:
-            self.log.debug(
-                "VcpFtdi: Error: "
-                'Attempted multiple instantiation of "{}".'.format(name)
-            )
-            raise IndexError(
-                "VcpFtdi: Error: "
-                'Attempted multiple instantiation of "{}".'.format(name)
-            )
+        self.name: str = name
+        self._lock: RLock = RLock()
+        self._device_id: str = device_id
+        self._read_timeout = 1.0
+        self._terminator: str = "\r\n"
+        self._line_size: int = 0
+        self._vcp = Device(
+            device_id,
+            mode="t",
+            encoding="ASCII",
+            lazy_open=True,
+            auto_detach=False,
+        )
+        self.log.debug(
+            "VcpFtdi:{}: First instantiation "
+            'using device SN "{}".'.format(name, device_id)
+        )
 
     @property
     def baudrate(self) -> int:
