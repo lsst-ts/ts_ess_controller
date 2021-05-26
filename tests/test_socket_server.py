@@ -57,9 +57,10 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
         )
 
     async def asyncTearDown(self):
-        await self.srv.exit()
+        await self.srv.disconnect()
         if self.writer:
             self.writer.close()
+        await self.srv.exit()
 
     async def read(self):
         """Utility function to read a string from the reader and unmarshal it
@@ -87,10 +88,19 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
         self.writer.write(st.encode() + TERMINATOR)
         await self.writer.drain()
 
+    async def test_disconnect(self):
+        self.assertTrue(self.srv._server.connected)
+        await self.write(command="disconnect", parameters={})
+        # Give time to the socket server to clean up internal state and exit.
+        await asyncio.sleep(0.5)
+        self.assertFalse(self.srv._server.connected)
+
     async def test_exit(self):
+        self.assertTrue(self.srv._server.connected)
         await self.write(command="exit", parameters={})
         # Give time to the socket server to clean up internal state and exit.
         await asyncio.sleep(0.5)
+        self.assertFalse(self.srv._server.connected)
 
     async def test_full_command_sequence(self):
         name = "Test1"
@@ -117,4 +127,5 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
         await self.write(command="stop", parameters={})
         self.data = await self.read()
         self.assertEqual(ResponseCode.OK, self.data["response"])
+        await self.write(command="disconnect", parameters={})
         await self.write(command="exit", parameters={})

@@ -137,6 +137,8 @@ class SocketServer:
                     kwargs = items["parameters"]
                     if cmd == "exit":
                         await self.exit()
+                    elif cmd == "disconnect":
+                        await self.disconnect()
                     else:
                         await self.command_handler.handle_command(cmd, **kwargs)
 
@@ -146,14 +148,13 @@ class SocketServer:
         except Exception:
             self.log.exception("read_loop failed")
 
+    async def disconnect(self) -> None:
+        await self._server.close_client()
+
     async def exit(self) -> None:
         """Stop the TCP/IP server."""
         if self._server is None:
             return
-
-        if self._server.writer:
-            self.log.info("Closing writer")
-            await tcpip.close_stream_writer(self._server.writer)
 
         self.log.info("Closing server")
         await self._server.close()
