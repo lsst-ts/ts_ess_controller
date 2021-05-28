@@ -34,14 +34,6 @@ from .response_code import ResponseCode
 from .sel_temperature_reader import SelTemperature
 
 
-class ReceivedCommand:
-    def __init__(self, sequence_number: int, command: str) -> None:
-        self.sequence_number = sequence_number
-        self.command = command
-        self.received = time.time()
-        self.replied = False
-
-
 class CommandHandler:
     """Handle incoming commands and send replies. Apply configuration and read
     sensor data.
@@ -84,9 +76,9 @@ class CommandHandler:
         self.simulation_mode = simulation_mode
 
         self._callback = callback
-        self._configuration: dict = None
+        self._configuration: typing.Optional[typing.Dict[str, typing.Any]] = None
         self._started = False
-        self._ess_instruments = []
+        self._ess_instruments: typing.List[EssInstrument] = []
 
         self.dispatch_dict = {
             "configure": self.configure,
@@ -98,7 +90,7 @@ class CommandHandler:
         # disconnected or missing sensor.
         self.disconnected_channel = None
 
-    async def handle_command(self, command: str, **kwargs) -> None:
+    async def handle_command(self, command: str, **kwargs: typing.Any) -> None:
         """Handle incomming commands and parameters.
 
         Parameters
@@ -114,7 +106,7 @@ class CommandHandler:
             await func(**kwargs)
             response = {"response": ResponseCode.OK}
         except CommandError as e:
-            response = {"response": e.responce_code}
+            response = {"response": e.response_code}
         await self._callback(response)
 
     async def configure(self, configuration: dict) -> None:
@@ -138,7 +130,7 @@ class CommandHandler:
         if self._started:
             raise CommandError(
                 msg="Ignoring the configuration because telemetry loop already running. Send a stop first.",
-                responce_code=ResponseCode.ALREADY_STARTED,
+                response_code=ResponseCode.ALREADY_STARTED,
             )
         self._configuration = configuration
 
@@ -156,7 +148,7 @@ class CommandHandler:
         if not self._configuration:
             raise CommandError(
                 msg="No configuration has been received yet. Ignoring start command.",
-                responce_code=ResponseCode.NOT_CONFIGURED,
+                response_code=ResponseCode.NOT_CONFIGURED,
             )
         await self.connect_devices()
         self._started = True
@@ -198,7 +190,7 @@ class CommandHandler:
         if not self._started:
             raise CommandError(
                 msg="Not started yet. Ignoring stop command.",
-                responce_code=ResponseCode.NOT_STARTED,
+                response_code=ResponseCode.NOT_STARTED,
             )
         self._started = False
         for ess_instrument in self._ess_instruments:

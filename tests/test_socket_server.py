@@ -26,7 +26,7 @@ import unittest
 
 from lsst.ts.envsensors import SocketServer, ResponseCode
 from lsst.ts.envsensors.mock.mock_temperature_sensor import MockTemperatureSensor
-from lsst.ts.tcpip import TERMINATOR
+from lsst.ts import tcpip
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -40,26 +40,23 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.ctrl = None
         self.writer = None
-        port = 0
         self.mock_ctrl = None
         self.data = None
-        self.srv = SocketServer(port=port, simulation_mode=1)
+        self.srv = SocketServer(host="0.0.0.0", port=0, simulation_mode=1)
 
         self.log = logging.getLogger(type(self).__name__)
 
-        await self.srv.start()
-        # Request the assigned port from the mock controller.
-        port = self.srv.port
-
-        logging.info(f"Connecting to port {port}")
+        await self.srv.start_task
+        self.assertTrue(self.srv.server.is_serving())
         self.reader, self.writer = await asyncio.open_connection(
-            host="127.0.0.1", port=port
+            host=tcpip.LOCAL_HOST, port=self.srv.port
         )
 
     async def asyncTearDown(self):
         await self.srv.disconnect()
         if self.writer:
             self.writer.close()
+            await self.writer.wait_closed()
         await self.srv.exit()
 
     async def read(self):
@@ -71,13 +68,13 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
             A dictionary with objects representing the string read.
         """
         read_bytes = await asyncio.wait_for(
-            self.reader.readuntil(TERMINATOR), timeout=TIMEOUT
+            self.reader.readuntil(tcpip.TERMINATOR), timeout=TIMEOUT
         )
         data = json.loads(read_bytes.decode())
         return data
 
     async def write(self, **data):
-        """Write the data appended with a newline character.
+        """Write the data appended with a TERMINATOR string.
 
         Parameters
         ----------
@@ -85,22 +82,22 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
             The data to write.
         """
         st = json.dumps({**data})
-        self.writer.write(st.encode() + TERMINATOR)
+        self.writer.write(st.encode() + tcpip.TERMINATOR)
         await self.writer.drain()
 
     async def test_disconnect(self):
-        self.assertTrue(self.srv._server.connected)
+        self.assertTrue(self.srv.connected)
         await self.write(command="disconnect", parameters={})
         # Give time to the socket server to clean up internal state and exit.
         await asyncio.sleep(0.5)
-        self.assertFalse(self.srv._server.connected)
+        self.assertFalse(self.srv.connected)
 
     async def test_exit(self):
-        self.assertTrue(self.srv._server.connected)
+        self.assertTrue(self.srv.connected)
         await self.write(command="exit", parameters={})
         # Give time to the socket server to clean up internal state and exit.
         await asyncio.sleep(0.5)
-        self.assertFalse(self.srv._server.connected)
+        self.assertFalse(self.srv.connected)
 
     async def test_full_command_sequence(self):
         name = "Test1"

@@ -51,13 +51,8 @@ class EssInstrument:
             self.log = logging.getLogger(type(self).__name__)
         else:
             self.log = log.getChild(type(self).__name__)
-        try:
-            self._reader = reader
-        except AttributeError:
-            self.log.debug(
-                f"EssInstrument:{name}: Failed to instantiate "
-                f"using reader object {reader.name!r}."
-            )
+
+        self._reader = reader
         self._enabled: bool = False
         self.name: str = name
         self._callback_func = callback_func
