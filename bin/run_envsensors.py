@@ -38,14 +38,16 @@ async def main():
     """
     logging.info("main method")
     # An arbitrarily chosen port. Nothing special about it.
+    host = "0.0.0.0"
     port = 5000
     logging.info("Constructing the sensor server.")
     # Simulation mode 0 means "connect to the real sensors."
     # Set simulation_mode to 1 to enable simulation mode and connect to a mock
     # sensor.
-    srv = SocketServer(port=port, simulation_mode=0)
+    srv = SocketServer(host=host, port=port, simulation_mode=0)
     logging.info("Starting the sensor server.")
-    await srv.start(keep_running=True)
+    await srv.start_task
+    await srv.server.wait_closed()
 
 
 if __name__ == "__main__":

@@ -61,9 +61,6 @@ class RpiSerialHat:
     IndexError if attempted multiple use of instance name.
     """
 
-    _instances: Dict[str, "RpiSerialHat"] = {}
-    _used_ports: Dict[str, "RpiSerialHat"] = {}
-
     # Define serial hub unit port identifiers
     SERIAL_CH_1: str = "serial_ch_1"
     SERIAL_CH_2: str = "serial_ch_2"
@@ -113,83 +110,53 @@ class RpiSerialHat:
             self.log = logging.getLogger(type(self).__name__)
         else:
             self.log = log.getChild(type(self).__name__)
-        if name not in RpiSerialHat._instances:
-            if port_id not in RpiSerialHat._used_ports:
-                self.name: str = name
-                self._port_id: str = port_id
-                self._lock: RLock = RLock()
-                self._terminator: str = "\r\n"
-                self._line_size: int = 0
-                self._serial_timeout: float = 1
-                if self._port_id in RpiSerialHat.serial_ports:
-                    (
-                        self._ser_port,
-                        self._pin_on,
-                        self._pin_din,
-                        self._pin_dout,
-                        self._pin_dirn,
-                    ) = RpiSerialHat.serial_ports[self._port_id]
-                    try:
-                        self._ser = serial.Serial()
-                        self._ser.port = self._ser_port
-                        print("Port:", self._ser.port)
-                    except serial.SerialException as e:
-                        self.log.exception(e)
-                        # Unrecoverable error, so propagate error
-                        raise e
-                    else:
-                        # Setup GPIO
-                        self._rpi_pin_setup(self._pin_on, gpio.OUT)
-                        self._rpi_pin_setup(self._pin_dout, gpio.OUT)
-                        self._rpi_pin_setup(self._pin_din, gpio.IN)
-                        self._rpi_pin_setup(self._pin_dirn, gpio.OUT)
-
-                        # Turn on transceiver module and default other pin
-                        # states
-                        self._rpi_pin_state(self._pin_on, RpiSerialHat.STATE_TRX_ON)
-                        self._rpi_pin_state(self._pin_dout, RpiSerialHat.STATE_DOUT_LO)
-                        self._rpi_pin_state(self._pin_dirn, RpiSerialHat.STATE_DIRN_RX)
-
-                        RpiSerialHat._instances[name] = self
-                        RpiSerialHat._used_ports[port_id] = self
-                        self.log.debug(
-                            "RpiSerialHat:{}: First instantiation "
-                            'using serial channel id: "{}".'.format(name, port_id)
-                        )
-                else:
-                    self.log.debug(
-                        "RpiSerialHat:{}: Error: "
-                        'A serial channel named "{}" does not exist.'.format(
-                            name, port_id
-                        )
-                    )
-                    raise IndexError(
-                        "RpiSerialHat:{}: "
-                        'A serial channel named "{}" does not exist.'.format(
-                            name, port_id
-                        )
-                    )
+        self.name: str = name
+        self._port_id: str = port_id
+        self._lock: RLock = RLock()
+        self._terminator: str = "\r\n"
+        self._line_size: int = 0
+        self._serial_timeout: float = 1
+        if self._port_id in RpiSerialHat.serial_ports:
+            (
+                self._ser_port,
+                self._pin_on,
+                self._pin_din,
+                self._pin_dout,
+                self._pin_dirn,
+            ) = RpiSerialHat.serial_ports[self._port_id]
+            try:
+                self._ser = serial.Serial()
+                self._ser.port = self._ser_port
+                print("Port:", self._ser.port)
+            except serial.SerialException as e:
+                self.log.exception(e)
+                # Unrecoverable error, so propagate error
+                raise e
             else:
+                # Setup GPIO
+                self._rpi_pin_setup(self._pin_on, gpio.OUT)
+                self._rpi_pin_setup(self._pin_dout, gpio.OUT)
+                self._rpi_pin_setup(self._pin_din, gpio.IN)
+                self._rpi_pin_setup(self._pin_dirn, gpio.OUT)
+
+                # Turn on transceiver module and default other pin
+                # states
+                self._rpi_pin_state(self._pin_on, RpiSerialHat.STATE_TRX_ON)
+                self._rpi_pin_state(self._pin_dout, RpiSerialHat.STATE_DOUT_LO)
+                self._rpi_pin_state(self._pin_dirn, RpiSerialHat.STATE_DIRN_RX)
+
                 self.log.debug(
-                    "RpiSerialHat:{}: Error: "
-                    'Attempted multiple use of serial channel "{}".'.format(
-                        name, port_id
-                    )
-                )
-                raise IndexError(
-                    "RpiSerialHat:{}: "
-                    'Attempted multiple use of serial channel "{}".'.format(
-                        name, port_id
-                    )
+                    "RpiSerialHat:{}: First instantiation "
+                    'using serial channel id: "{}".'.format(name, port_id)
                 )
         else:
             self.log.debug(
-                "RpiSerialHat: Error: "
-                'Attempted multiple instantiation of "{}".'.format(name)
+                "RpiSerialHat:{}: Error: "
+                'A serial channel named "{}" does not exist.'.format(name, port_id)
             )
             raise IndexError(
-                "RpiSerialHat: Error: "
-                'Attempted multiple instantiation of "{}".'.format(name)
+                "RpiSerialHat:{}: "
+                'A serial channel named "{}" does not exist.'.format(name, port_id)
             )
 
     def __del__(self):
@@ -255,7 +222,7 @@ class RpiSerialHat:
         # Print a message prefaced with the object info ('Any').
         self.log.debug("RpiSerialHat:{}: {}".format(self.name, text))
 
-    async def _rpi_pin_cleanup(self, rpi_pin) -> None:
+    def _rpi_pin_cleanup(self, rpi_pin) -> None:
         # Clear RPi pin.
         # Ignored if pin number is None.
         if rpi_pin is not None:
@@ -264,7 +231,7 @@ class RpiSerialHat:
             except RuntimeError:
                 self._message("GPIO pin cleanup error.")
 
-    async def _rpi_pin_setup(self, rpi_pin: int, pin_type) -> None:
+    def _rpi_pin_setup(self, rpi_pin: int, pin_type) -> None:
         # Setup RPi pin.
         # True = Input, False = Output.
         # ignored if pin number is None.
@@ -274,7 +241,7 @@ class RpiSerialHat:
             except RuntimeError:
                 self._message("Error setting up GPIO pin.")
 
-    async def _rpi_pin_state(self, rpi_pin: int, state: bool) -> None:
+    def _rpi_pin_state(self, rpi_pin: int, state: bool) -> None:
         # Output transceiver pin state.
         # high = True, low = False.
         # ignored if pin number is None.
@@ -367,7 +334,7 @@ class RpiSerialHat:
 
         resp: str = ""
         err: str = "OK"
-        await self._rpi_pin_state(self._pin_dirn, RpiSerialHat.STATE_DIRN_RX)
+        self._rpi_pin_state(self._pin_dirn, RpiSerialHat.STATE_DIRN_RX)
         with self._lock:
             while not resp.endswith(TERMINATOR):
                 try:

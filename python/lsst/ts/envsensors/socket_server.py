@@ -24,11 +24,14 @@ __all__ = ["SocketServer"]
 import asyncio
 import json
 import logging
+import socket
+import typing
 
 from .command_handler import CommandHandler
+from lsst.ts import tcpip
 
 
-class SocketServer:
+class SocketServer(tcpip.OneClientServer):
     """A server for exchanging messages that talks over TCP/IP.
 
     Upon initiation a socket server is set up which waits for incoming
@@ -37,16 +40,25 @@ class SocketServer:
 
     Parameters
     ----------
-    port : int
-        The port number.
+    host : `str` or `None`
+        IP address for this server.
+        If `None` then bind to all network interfaces.
+    port : `int`
+        IP port for this server. If 0 then use a random port.
     simulation_mode : `int`, optional
         Simulation mode. The default is 0: do not simulate.
     """
 
     valid_simulation_modes = (0, 1)
 
-    def __init__(self, port, simulation_mode=0):
-        self.port = port
+    def __init__(
+        self,
+        host: typing.Optional[str],
+        port: int,
+        simulation_mode: int = 0,
+        family: socket.AddressFamily = socket.AF_UNSPEC,
+    ) -> None:
+        self.name = "EnvSensor"
         if simulation_mode not in self.valid_simulation_modes:
             raise ValueError(
                 f"simulation_mode={simulation_mode} "
@@ -54,44 +66,31 @@ class SocketServer:
             )
 
         self.simulation_mode = simulation_mode
+        self.read_loop_task: asyncio.Future = asyncio.Future()
+        self.log: logging.Logger = logging.getLogger(type(self).__name__)
 
-        self._server = None
-        self._writer = None
-        self._reader = None
-        self._started = False
-        self.log = logging.getLogger(type(self).__name__)
-
-        self.command_handler = CommandHandler(
+        self.command_handler: CommandHandler = CommandHandler(
             callback=self.write, simulation_mode=self.simulation_mode
         )
-
-    async def start(self, keep_running=False):
-        """Start the TCP/IP server.
-
-        Start the command loop and make sure to keep running when instructed to
-        do so.
-
-        Parameters
-        ----------
-        keep_running : bool
-            Used for command line testing and should generally be left to
-            False.
-        """
-        self.log.info("Start called")
-        self._started = True
-        self._server = await asyncio.start_server(
-            self.read_loop, host="127.0.0.1", port=self.port
+        super().__init__(
+            name=self.name,
+            host=host,
+            port=port,
+            log=self.log,
+            connect_callback=self.connected_callback,
+            family=family,
         )
 
-        # Request the assigned port from the server so the code starting the
-        # mock controller can use it to connect.
-        if self.port == 0:
-            self.port = self._server.sockets[0].getsockname()[1]
+    def connected_callback(self, server: tcpip.OneClientServer) -> None:
+        """A client has connected or disconnected."""
+        self.read_loop_task.cancel()
+        if server.connected:
+            self.log.info("Client connected.")
+            self.read_loop_task = asyncio.create_task(self.read_loop())
+        else:
+            self.log.info("Client disconnected.")
 
-        if keep_running:
-            await self._server.serve_forever()
-
-    async def write(self, data):
+    async def write(self, data: dict) -> None:
         """Write the data appended with a newline character.
 
         The data are encoded via JSON and then passed on to the StreamWriter
@@ -99,65 +98,48 @@ class SocketServer:
 
         Parameters
         ----------
-        data:
+        data: `dict`
             The data to write.
         """
         self.log.debug(f"Writing data {data}")
         st = json.dumps({**data})
         self.log.debug(st)
-        if self._writer:
-            self._writer.write(st.encode() + b"\r\n")
-            await self._writer.drain()
+        self.writer.write(st.encode() + tcpip.TERMINATOR)
+        await self.writer.drain()
         self.log.debug("Done")
 
-    async def read_loop(self, reader, writer):
-        """Read commands and output replies.
+    async def read_loop(self) -> None:
+        """Read commands and output replies."""
+        try:
+            self.log.info(f"The read_loop begins connected? {self.connected}")
+            while self.connected:
+                self.log.debug("Waiting for next incoming message.")
+                try:
+                    line = await self.reader.readuntil(tcpip.TERMINATOR)
+                    line = line.decode().strip()
+                    self.log.debug(f"Read command line: {line!r}")
+                    items = json.loads(line)
+                    cmd = items["command"]
+                    kwargs = items["parameters"]
+                    if cmd == "exit":
+                        await self.exit()
+                    elif cmd == "disconnect":
+                        await self.disconnect()
+                    else:
+                        await self.command_handler.handle_command(cmd, **kwargs)
 
-        Parameters
-        ----------
-        reader: stream reader
-            The stream reader to read from.
-        writer: stream writer
-            The stream writer to write to.
-        """
-        self.log.info("The read_loop begins")
-        self._writer = writer
-        self._reader = reader
+                except asyncio.IncompleteReadError:
+                    self.log.exception("Read error encountered. Retrying.")
 
-        while self._started:
-            self.log.debug("Waiting for next incoming message.")
-            try:
-                line = await reader.readuntil(b"\r\n")
-                line = line.decode().strip()
-                self.log.debug(f"Read command line: {line!r}")
-                items = json.loads(line)
-                cmd = items["command"]
-                kwargs = items["parameters"]
-                if cmd == "exit":
-                    await self.exit()
-                else:
-                    await self.command_handler.handle_command(cmd, **kwargs)
+        except Exception:
+            self.log.exception("read_loop failed")
 
-            except asyncio.IncompleteReadError:
-                return
+    async def disconnect(self) -> None:
+        await self.close_client()
 
-    async def exit(self):
+    async def exit(self) -> None:
         """Stop the TCP/IP server."""
-        self._started = False
-
-        if self._server is None:
-            return
-
         self.log.info("Closing server")
-        server = self._server
-        self._server = None
-        server.close()
+        await self.close()
 
-        self.log.info("Closing writer")
-        writer = self._writer
-        self._writer = None
-        writer.close()
-
-        self.log.info("Closing reader")
-        self._reader = None
         self.log.info("Done closing")

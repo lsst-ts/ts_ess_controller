@@ -15,7 +15,6 @@ build:
     - OSPL_HOME
     - PYTHON_BUILD_VERSION
     - PYTHON_BUILD_LOCATION
-    - TS_CONFIG_OCS_DIR
     - LSST_DDS_DOMAIN
 
 test:
@@ -23,7 +22,7 @@ test:
     - ts-conda-build =0.3
     - ts-idl {{ idl_version }}
     - ts-salobj {{ salobj_version }}
-    - ts-dds
+    - ts-tcpip
     - pyserial
     - pyftdi
   source_files:
@@ -40,10 +39,8 @@ requirements:
     - pip
     - setuptools_scm
     - setuptools
-    - pytest-runner
   run:
     - python
     - setuptools
     - setuptools_scm
-    - ts-idl {{ idl_version }}
-    - ts-salobj {{ salobj_version }}
+    - ts-tcpip

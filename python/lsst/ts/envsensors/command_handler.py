@@ -24,6 +24,8 @@ __all__ = ["CommandHandler"]
 import asyncio
 import logging
 import platform
+import time
+import typing
 
 from .command_error import CommandError
 from .ess_instrument_object import EssInstrument
@@ -38,7 +40,7 @@ class CommandHandler:
 
     Parameters
     ----------
-    callback: coroutine
+    callback: `Callable`
         The callback coroutine handling the sensor telemetry. This can be a
         coroutine that sends the data via a socket connection or a coroutine in
         a test class to verify that the command has been handled correctly.
@@ -63,7 +65,7 @@ class CommandHandler:
 
     valid_simulation_modes = (0, 1)
 
-    def __init__(self, callback, simulation_mode):
+    def __init__(self, callback: typing.Callable, simulation_mode: int) -> None:
         self.log = logging.getLogger(type(self).__name__)
         if simulation_mode not in self.valid_simulation_modes:
             raise ValueError(
@@ -74,9 +76,9 @@ class CommandHandler:
         self.simulation_mode = simulation_mode
 
         self._callback = callback
-        self._configuration = None
+        self._configuration: typing.Optional[typing.Dict[str, typing.Any]] = None
         self._started = False
-        self._ess_instruments = []
+        self._ess_instruments: typing.List[EssInstrument] = []
 
         self.dispatch_dict = {
             "configure": self.configure,
@@ -88,7 +90,7 @@ class CommandHandler:
         # disconnected or missing sensor.
         self.disconnected_channel = None
 
-    async def handle_command(self, command, **kwargs):
+    async def handle_command(self, command: str, **kwargs: typing.Any) -> None:
         """Handle incomming commands and parameters.
 
         Parameters
@@ -104,10 +106,10 @@ class CommandHandler:
             await func(**kwargs)
             response = {"response": ResponseCode.OK}
         except CommandError as e:
-            response = {"response": e.responce_code}
+            response = {"response": e.response_code}
         await self._callback(response)
 
-    async def configure(self, configuration):
+    async def configure(self, configuration: dict) -> None:
         """Apply the configuration.
 
         Parameters
@@ -128,11 +130,11 @@ class CommandHandler:
         if self._started:
             raise CommandError(
                 msg="Ignoring the configuration because telemetry loop already running. Send a stop first.",
-                responce_code=ResponseCode.ALREADY_STARTED,
+                response_code=ResponseCode.ALREADY_STARTED,
             )
         self._configuration = configuration
 
-    async def start_sending_telemetry(self):
+    async def start_sending_telemetry(self) -> None:
         """Connect the sensors and start reading the sensor data.
 
         Returns
@@ -146,12 +148,12 @@ class CommandHandler:
         if not self._configuration:
             raise CommandError(
                 msg="No configuration has been received yet. Ignoring start command.",
-                responce_code=ResponseCode.NOT_CONFIGURED,
+                response_code=ResponseCode.NOT_CONFIGURED,
             )
         await self.connect_devices()
         self._started = True
 
-    async def connect_devices(self):
+    async def connect_devices(self) -> None:
         """Loop over the configuration and start all devices."""
         # TODO: Implement misconfiguration handling (DM-30069)
         self.log.info("connect_devices")
@@ -174,7 +176,7 @@ class CommandHandler:
             self._ess_instruments.append(ess_instrument)
             await ess_instrument.start()
 
-    async def stop_sending_telemetry(self):
+    async def stop_sending_telemetry(self) -> ResponseCode:
         """Stop reading the sensor data.
 
         Returns
@@ -188,7 +190,7 @@ class CommandHandler:
         if not self._started:
             raise CommandError(
                 msg="Not started yet. Ignoring stop command.",
-                responce_code=ResponseCode.NOT_STARTED,
+                response_code=ResponseCode.NOT_STARTED,
             )
         self._started = False
         for ess_instrument in self._ess_instruments:
@@ -196,7 +198,7 @@ class CommandHandler:
             self._ess_instruments.remove(ess_instrument)
         return ResponseCode.OK
 
-    async def _process_sensor_telemetry(self, telemetry):
+    async def _process_sensor_telemetry(self, telemetry: list) -> None:
         """wrap the telemetry in a dictionary and pass it on to the callback
         coroutine.
 
@@ -213,15 +215,22 @@ class CommandHandler:
         data = {"telemetry": telemetry}
         await self._callback(data)
 
-    def _get_device(self, configured_device):
+    def _get_device(self, configured_device: dict) -> typing.Optional[typing.Any]:
         """Get the device to connect to by using the _configuration of the CSC
         and by detecting whether the code is running on an aarch64 architecture
         or not.
+
+        Parameters
+        ----------
+        configured_device: `dict`
+            A dict representing the device to connect to. The format of the
+            dict follows the configuration of the ts_ess project.
 
         Returns
         -------
         device: `MockTemperatureSensor` or `VcpFtdi` or `RpiSerialHat` or
             `None`
+            The device to connect to.
 
         Raises
         ------

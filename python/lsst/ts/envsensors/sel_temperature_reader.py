@@ -112,57 +112,33 @@ class SelTemperature(SerialReader):
             self.log = logging.getLogger(type(self).__name__)
         else:
             self.log = log.getChild(type(self).__name__)
-        self._instances: Dict[str, "SelTemperature"] = {}
-        self._devices: Dict[str, "SelTemperature"] = {}
 
-        if name not in self._instances:
-            if uart_device not in self._devices:
-                self.name: str = name
-                self._channels: int = channels
-                self.comport = uart_device
+        self.name: str = name
+        self._channels: int = channels
+        self.comport = uart_device
 
-                self.temperature: float = []
-                self.output = []
+        self.temperature: float = []
+        self.output = []
 
-                self._preamble_str: str = []
-                self._old_preamble_str: str = []
-                self._tmp_temperature: float = []
-                for i in range(self._channels):
-                    self._tmp_temperature.append(DEFAULT_VAL)
-                    self.temperature.append(DEFAULT_VAL)
-                    self._preamble_str.append(f"C{i:02}=")
-                    self._old_preamble_str.append(f"C{i+1:02}=")
+        self._preamble_str: str = []
+        self._old_preamble_str: str = []
+        self._tmp_temperature: float = []
+        for i in range(self._channels):
+            self._tmp_temperature.append(DEFAULT_VAL)
+            self.temperature.append(DEFAULT_VAL)
+            self._preamble_str.append(f"C{i:02}=")
+            self._old_preamble_str.append(f"C{i+1:02}=")
 
-                self._read_line_size: int = (
-                    self._channels * (PREAMBLE_SIZE + VALUE_SIZE + len(DELIMITER))
-                    - (len(DELIMITER))
-                    + (len(TERMINATOR))
-                )
+        self._read_line_size: int = (
+            self._channels * (PREAMBLE_SIZE + VALUE_SIZE + len(DELIMITER))
+            - (len(DELIMITER))
+            + (len(TERMINATOR))
+        )
 
-                self._instances[name] = self
-                self._devices[uart_device] = self
-                self.log.debug(
-                    f"SelTemperature:{name}: First instantiation "
-                    f"using serial device {uart_device.name!r}."
-                )
-            else:
-                self.log.debug(
-                    f"SelTemperature:{name}: Error: "
-                    f"Attempted multiple use of serial device instance {uart_device!r}."
-                )
-                raise IndexError(
-                    f"SelTemperature:{name}: "
-                    f"Attempted multiple use of serial device instance {uart_device!r}."
-                )
-        else:
-            self.log.debug(
-                "SelTemperature: Error: "
-                f"Attempted multiple instantiation of {name!r}."
-            )
-            raise IndexError(
-                "SelTemperature: Error: "
-                f"Attempted multiple instantiation of {name!r}."
-            )
+        self.log.debug(
+            f"SelTemperature:{name}: First instantiation "
+            f"using serial device {uart_device.name!r}."
+        )
 
     async def start(self):
         """Open the comport and set the connection parameters."""

@@ -26,14 +26,15 @@ from .response_code import ResponseCode
 
 class CommandError(Exception):
     """Exception raised if a command fails.
+
     Parameters
     ----------
     msg : `str`
         Error message
-    responce_code : `ResponseCode`
+    response_code : `ResponseCode`
         Response code.
     """
 
-    def __init__(self, msg, responce_code):
+    def __init__(self, msg: str, response_code: ResponseCode) -> None:
         super().__init__(msg)
-        self.responce_code = responce_code
+        self.response_code = response_code
