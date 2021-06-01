@@ -21,7 +21,7 @@
 
 
 try:
-    from .version import *
+    from .version import *  # type: ignore
 except ModuleNotFoundError:
     __version__ = "?"
 

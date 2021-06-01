@@ -25,7 +25,7 @@ import asyncio
 import logging
 import platform
 import time
-import typing
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from .command_error import CommandError
 from .ess_instrument_object import EssInstrument
@@ -49,23 +49,23 @@ class CommandHandler:
 
     The commands that can be handled are:
 
-        configure: Load the _configuration that is passed on with the command
-        and connect to the devices specified in that _configuration. This
+        configure: Load the configuration that is passed on with the command
+        and connect to the devices specified in that configuration. This
         command can be sent multiple times before a start is received and only
-        the last _configuration is kept.
+        the last configuration is kept.
         start: Start reading the sensor data of the connected devices and send
-        it as plain text via the socket. If no _configuration was sent then the
-        start command is ignored. Once started no _configuration changes can be
+        it as plain text via the socket. If no configuration was sent then the
+        start command is ignored. Once started no configuration changes can be
         done anymore.
         stop: Stop sending sensor data and disconnect from all devices. Once
-        stopped, _configuration changes can be done again and/or reading of
+        stopped, configuration changes can be done again and/or reading of
         sensor data can be started again.
 
     """
 
     valid_simulation_modes = (0, 1)
 
-    def __init__(self, callback: typing.Callable, simulation_mode: int) -> None:
+    def __init__(self, callback: Callable, simulation_mode: int) -> None:
         self.log = logging.getLogger(type(self).__name__)
         if simulation_mode not in self.valid_simulation_modes:
             raise ValueError(
@@ -76,9 +76,9 @@ class CommandHandler:
         self.simulation_mode = simulation_mode
 
         self._callback = callback
-        self._configuration: typing.Optional[typing.Dict[str, typing.Any]] = None
+        self._configuration: Optional[Dict[str, Any]] = None
         self._started = False
-        self._ess_instruments: typing.List[EssInstrument] = []
+        self._ess_instruments: List[EssInstrument] = []
 
         self.dispatch_dict = {
             "configure": self.configure,
@@ -90,7 +90,7 @@ class CommandHandler:
         # disconnected or missing sensor.
         self.disconnected_channel = None
 
-    async def handle_command(self, command: str, **kwargs: typing.Any) -> None:
+    async def handle_command(self, command: str, **kwargs: Any) -> None:
         """Handle incomming commands and parameters.
 
         Parameters
@@ -103,7 +103,7 @@ class CommandHandler:
         self.log.info(f"Handling command {command} with kwargs {kwargs}")
         func = self.dispatch_dict[command]
         try:
-            await func(**kwargs)
+            await func(**kwargs)  # type: ignore
             response = {"response": ResponseCode.OK}
         except CommandError as e:
             response = {"response": e.response_code}
@@ -126,7 +126,7 @@ class CommandHandler:
 
         """
         # TODO: Implement misconfiguration handling (DM-30069)
-        self.log.info(f"configure with _configuration data {configuration}")
+        self.log.info(f"configure with configuration data {configuration}")
         if self._started:
             raise CommandError(
                 msg="Ignoring the configuration because telemetry loop already running. Send a stop first.",
@@ -157,7 +157,7 @@ class CommandHandler:
         """Loop over the configuration and start all devices."""
         # TODO: Implement misconfiguration handling (DM-30069)
         self.log.info("connect_devices")
-        configured_devices = self._configuration["devices"]
+        configured_devices = self._configuration["devices"]  # type: ignore
         for configured_device in configured_devices:
             device = self._get_device(configured_device)
             sel_temperature = SelTemperature(
@@ -215,8 +215,8 @@ class CommandHandler:
         data = {"telemetry": telemetry}
         await self._callback(data)
 
-    def _get_device(self, configured_device: dict) -> typing.Optional[typing.Any]:
-        """Get the device to connect to by using the _configuration of the CSC
+    def _get_device(self, configured_device: dict) -> Optional[Any]:
+        """Get the device to connect to by using the configuration of the CSC
         and by detecting whether the code is running on an aarch64 architecture
         or not.
 
@@ -235,9 +235,9 @@ class CommandHandler:
         Raises
         ------
         RuntimeError
-            In case an incorrect _configuration has been loaded.
+            In case an incorrect configuration has been loaded.
         """
-        device = None
+        device: Any = None
         if self.simulation_mode == 1:
             self.log.info("Connecting to the mock sensor.")
             device = MockTemperatureSensor(
@@ -251,7 +251,7 @@ class CommandHandler:
             device = VcpFtdi(
                 configured_device["name"], configured_device["ftdi_id"], self.log
             )
-        elif self.config.type == "Serial":
+        elif configured_device["type"] == "Serial":
             # make sure we are on a Raspberry Pi4
             if "aarch64" in platform.platform():
                 from .rpi_serial_hat import RpiSerialHat
@@ -262,7 +262,8 @@ class CommandHandler:
 
         if device is None:
             raise RuntimeError(
-                f"Could not get a {self.config.type!r} device on architecture "
-                f"{platform.platform()}. Please check the _configuration."
+                f"Could not get a {configured_device['type']!r} device on "
+                f"architecture {platform.platform()}. Please check the "
+                f"configuration."
             )
         return device

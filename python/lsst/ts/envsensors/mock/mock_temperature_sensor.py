@@ -59,20 +59,14 @@ class MockTemperatureSensor:
         self,
         name: str,
         channels: int,
-        count_offset=0,
-        disconnected_channel=None,
-        log=None,
-    ):
+        count_offset: int = 0,
+        disconnected_channel: int = None,
+        log: logging.Logger = None,
+    ) -> None:
         self.name = name
         self.channels = channels
         self.count_offset = count_offset
         self.disconnected_channel = disconnected_channel
-
-        # Device parameters
-        self.line_size = None
-        self.terminator = None
-        self.baudrate = None
-        self.read_timeout = None
 
         if log is None:
             self.log = logging.getLogger(type(self).__name__)
@@ -87,7 +81,7 @@ class MockTemperatureSensor:
     async def close(self) -> None:
         pass
 
-    def format_temperature(self, i):
+    def format_temperature(self, i: int):
         """Creates a formatted string representing a temperature for the given
         channel.
 

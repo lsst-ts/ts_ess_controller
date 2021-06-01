@@ -34,8 +34,9 @@ import logging
 import time
 from typing import Any, Dict
 from threading import RLock
+from typing import Tuple
 
-import pylibftdi
+import pylibftdi  # type: ignore
 from pylibftdi import Device
 
 from .sel_temperature_reader import DELIMITER, TERMINATOR
@@ -107,7 +108,7 @@ class VcpFtdi:
     def line_size(self) -> int:
         """Serial data line size ('int')."""
         self._message(
-            "Serial data line size read: {} characters.".format(self._baudrate)
+            "Serial data line size read: {} characters.".format(self.baudrate)
         )
         return self._line_size
 
@@ -181,7 +182,7 @@ class VcpFtdi:
                 self._message("VCP failed to close.")
                 raise IOError(f"VcpFtdi:{self.name}: Failed to close VCP.")
 
-    def readline(self) -> str:
+    def readline(self) -> Tuple[str, str, str]:  # type: ignore
         r"""Read a line of ASCII string data from the VCP.
 
         Returns

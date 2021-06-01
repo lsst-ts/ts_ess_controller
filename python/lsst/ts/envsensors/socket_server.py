@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # This file is part of ts_envsensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
@@ -28,7 +30,7 @@ import socket
 import typing
 
 from .command_handler import CommandHandler
-from lsst.ts import tcpip
+from lsst.ts import tcpip  # type: ignore
 
 
 class SocketServer(tcpip.OneClientServer):
@@ -81,8 +83,9 @@ class SocketServer(tcpip.OneClientServer):
             family=family,
         )
 
-    def connected_callback(self, server: tcpip.OneClientServer) -> None:
+    def connected_callback(self, server: SocketServer) -> None:
         """A client has connected or disconnected."""
+        print(type(server))
         self.read_loop_task.cancel()
         if server.connected:
             self.log.info("Client connected.")
