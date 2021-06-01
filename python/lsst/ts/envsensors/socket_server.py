@@ -85,7 +85,6 @@ class SocketServer(tcpip.OneClientServer):
 
     def connected_callback(self, server: SocketServer) -> None:
         """A client has connected or disconnected."""
-        print(type(server))
         self.read_loop_task.cancel()
         if server.connected:
             self.log.info("Client connected.")
