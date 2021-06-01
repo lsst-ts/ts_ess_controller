@@ -23,7 +23,23 @@ import asyncio
 import logging
 import unittest
 
-from lsst.ts.envsensors import CommandHandler, ResponseCode
+from lsst.ts.envsensors import (
+    CommandHandler,
+    ResponseCode,
+    CMD_CONFIGURE,
+    CMD_START,
+    CMD_STOP,
+    KEY_CHANNELS,
+    KEY_DEVICES,
+    KEY_FTDI_ID,
+    KEY_NAME,
+    KEY_RESPONSE,
+    KEY_SERIAL_PORT,
+    KEY_TELEMETRY,
+    KEY_TYPE,
+    VAL_FTDI,
+    VAL_SERIAL,
+)
 from lsst.ts.envsensors.mock.mock_temperature_sensor import MockTemperatureSensor
 
 logging.basicConfig(
@@ -31,92 +47,249 @@ logging.basicConfig(
 )
 
 
+class DeviceConfig:
+    """Container for device configurations.
+
+    Parameters
+    ----------
+    name: `str`
+        The name of the device.
+    channels: `int`
+        The number of channels the output data.
+    dev_type: `str`
+        The type of device.
+    dev_id: `str`
+        The ID of the device.
+
+    """
+
+    def __init__(self, name: str, channels: int, dev_type: str, dev_id: str):
+        self.name = name
+        self.channels = channels
+        self.dev_type = dev_type
+        self.dev_id = dev_id
+
+    def as_dict(self):
+        return {
+            KEY_NAME: self.name,
+            KEY_CHANNELS: self.channels,
+            KEY_TYPE: self.dev_type,
+            KEY_FTDI_ID: self.dev_id,
+        }
+
+
 class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.command_handler = CommandHandler(callback=self.callback, simulation_mode=1)
         self.assertIsNone(self.command_handler._configuration)
+        device_config_01 = DeviceConfig(
+            name="Test01", channels=4, dev_type=VAL_FTDI, dev_id="ABC"
+        )
+        device_config_02 = DeviceConfig(
+            name="Test02", channels=6, dev_type=VAL_FTDI, dev_id="ABC"
+        )
+        device_config_03 = DeviceConfig(
+            name="Test03", channels=2, dev_type=VAL_FTDI, dev_id="ABC"
+        )
         self.configuration = {
-            "devices": [
-                {
-                    "name": "Test1",
-                    "channels": 4,
-                    "type": "FTDI",
-                    "ftdi_id": "ABC",
-                }
+            KEY_DEVICES: [
+                device_config_01.as_dict(),
+                device_config_02.as_dict(),
+                device_config_03.as_dict(),
             ]
         }
-        self.response = None
+        self.device_configs = {
+            device_config_01.name: device_config_01,
+            device_config_02.name: device_config_02,
+            device_config_03.name: device_config_03,
+        }
+        self.responses = []
 
     async def callback(self, response):
-        self.response = response
+        self.responses.append(response)
+
+    async def test_validate_configuration(self):
+        configuration = {
+            KEY_DEVICES: [
+                {
+                    KEY_NAME: "Test1",
+                    KEY_CHANNELS: 4,
+                    KEY_TYPE: VAL_FTDI,
+                    KEY_FTDI_ID: "ABC",
+                },
+                {
+                    KEY_NAME: "Test1",
+                    KEY_CHANNELS: 4,
+                    KEY_TYPE: VAL_SERIAL,
+                    KEY_SERIAL_PORT: "ABC",
+                },
+            ]
+        }
+        self.assertTrue(
+            self.command_handler._validate_configuration(configuration=configuration)
+        )
+        configuration = {
+            KEY_DEVICES: [
+                {
+                    KEY_NAME: "Test1",
+                },
+                {
+                    KEY_NAME: "Test1",
+                    KEY_CHANNELS: 4,
+                },
+                {
+                    KEY_NAME: "Test1",
+                    KEY_CHANNELS: 4,
+                    KEY_TYPE: VAL_FTDI,
+                    "id": "ABC",
+                },
+                {
+                    KEY_NAME: "Test1",
+                    KEY_CHANNELS: 4,
+                    KEY_TYPE: VAL_SERIAL,
+                    "port": "ABC",
+                },
+            ]
+        }
+        self.assertFalse(
+            self.command_handler._validate_configuration(configuration=configuration)
+        )
+        configuration = {KEY_DEVICES: []}
+        self.assertFalse(
+            self.command_handler._validate_configuration(configuration=configuration)
+        )
+        configuration = {
+            "KEY_DEVICES": [
+                {
+                    KEY_NAME: "Test1",
+                },
+                {
+                    KEY_NAME: "Test1",
+                    KEY_CHANNELS: 4,
+                },
+                {
+                    KEY_NAME: "Test1",
+                    KEY_CHANNELS: 4,
+                    KEY_TYPE: VAL_FTDI,
+                    "id": "ABC",
+                },
+                {
+                    KEY_NAME: "Test1",
+                    KEY_CHANNELS: 4,
+                    KEY_TYPE: VAL_SERIAL,
+                    "port": "ABC",
+                },
+            ]
+        }
+        self.assertFalse(
+            self.command_handler._validate_configuration(configuration=configuration)
+        )
+
+    def validate_response(self, response_code):
+        response = self.responses.pop()
+        self.assertEqual(response[KEY_RESPONSE], response_code)
 
     async def test_configure(self):
         await self.command_handler.handle_command(
-            command="configure", configuration=self.configuration
+            command=CMD_CONFIGURE, configuration=self.configuration
         )
-        self.assertEqual(self.response["response"], ResponseCode.OK)
+        self.validate_response(ResponseCode.OK)
         self.assertDictEqual(self.configuration, self.command_handler._configuration)
 
+        configuration = {
+            "KEY_DEVICES": [
+                {
+                    KEY_NAME: "Test1",
+                },
+                {
+                    KEY_NAME: "Test1",
+                    KEY_CHANNELS: 4,
+                },
+                {
+                    KEY_NAME: "Test1",
+                    KEY_CHANNELS: 4,
+                    KEY_TYPE: VAL_FTDI,
+                    "id": "ABC",
+                },
+                {
+                    KEY_NAME: "Test1",
+                    KEY_CHANNELS: 4,
+                    KEY_TYPE: VAL_SERIAL,
+                    "port": "ABC",
+                },
+            ]
+        }
+        await self.command_handler.handle_command(
+            command=CMD_CONFIGURE, configuration=configuration
+        )
+        self.validate_response(ResponseCode.INVALID_CONFIGURATION)
+
     async def test_start(self):
-        await self.command_handler.handle_command(command="start")
-        self.assertEqual(self.response["response"], ResponseCode.NOT_CONFIGURED)
+        await self.command_handler.handle_command(command=CMD_START)
+        self.validate_response(ResponseCode.NOT_CONFIGURED)
         self.assertIsNone(self.command_handler._configuration)
         self.assertFalse(self.command_handler._started)
 
         await self.command_handler.handle_command(
-            command="configure", configuration=self.configuration
+            command=CMD_CONFIGURE, configuration=self.configuration
         )
-        self.assertEqual(self.response["response"], ResponseCode.OK)
+        self.validate_response(ResponseCode.OK)
         self.assertDictEqual(self.configuration, self.command_handler._configuration)
-        await self.command_handler.handle_command(command="start")
-        self.assertEqual(self.response["response"], ResponseCode.OK)
+        await self.command_handler.handle_command(command=CMD_START)
+        self.validate_response(ResponseCode.OK)
         self.assertTrue(self.command_handler._started)
 
     async def test_stop(self):
-        await self.command_handler.handle_command(command="stop")
-        self.assertEqual(self.response["response"], ResponseCode.NOT_STARTED)
+        await self.command_handler.handle_command(command=CMD_STOP)
+        self.validate_response(ResponseCode.NOT_STARTED)
         self.assertIsNone(self.command_handler._configuration)
         self.assertFalse(self.command_handler._started)
 
         await self.command_handler.handle_command(
-            command="configure", configuration=self.configuration
+            command=CMD_CONFIGURE, configuration=self.configuration
         )
-        self.assertEqual(self.response["response"], ResponseCode.OK)
+        self.validate_response(ResponseCode.OK)
         self.assertDictEqual(self.configuration, self.command_handler._configuration)
-        await self.command_handler.handle_command(command="start")
-        self.assertEqual(self.response["response"], ResponseCode.OK)
+        await self.command_handler.handle_command(command=CMD_START)
+        self.validate_response(ResponseCode.OK)
         self.assertTrue(self.command_handler._started)
 
-        await self.command_handler.handle_command(command="stop")
-        self.assertEqual(self.response["response"], ResponseCode.OK)
+        await self.command_handler.handle_command(command=CMD_STOP)
+        self.validate_response(ResponseCode.OK)
         # Give time to the telemetry_task to get cancelled.
         await asyncio.sleep(0.5)
         self.assertFalse(self.command_handler._started)
 
     async def test_get_telemetrey(self):
         await self.command_handler.handle_command(
-            command="configure", configuration=self.configuration
+            command=CMD_CONFIGURE, configuration=self.configuration
         )
-        self.assertEqual(self.response["response"], ResponseCode.OK)
+        self.validate_response(ResponseCode.OK)
         self.assertDictEqual(self.configuration, self.command_handler._configuration)
-        await self.command_handler.handle_command(command="start")
-        self.assertEqual(self.response["response"], ResponseCode.OK)
+        await self.command_handler.handle_command(command=CMD_START)
+        self.validate_response(ResponseCode.OK)
         self.assertTrue(self.command_handler._started)
 
         # Give some time to the mock sensor to produce data
-        await asyncio.sleep(2)
-        telemetry = self.response["telemetry"]
-        # TODO: Properly support multiple sensors (DM-30070)
-        config = self.configuration["devices"][0]
-        for i in range(3, config["channels"] + 3):
-            assert (
-                MockTemperatureSensor.MIN_TEMP
-                <= telemetry[i]
-                <= MockTemperatureSensor.MAX_TEMP
-            )
+        while len(self.responses) < len(self.device_configs):
+            await asyncio.sleep(0.5)
 
-        await self.command_handler.handle_command(command="stop")
-        self.assertEqual(self.response["response"], ResponseCode.OK)
+        devices_names_checked = set()
+        while len(devices_names_checked) != len(self.device_configs):
+            response = self.responses.pop()
+            telemetry = response[KEY_TELEMETRY]
+            device_name = telemetry[0]
+            devices_names_checked.add(device_name)
+            config = self.device_configs[device_name]
+            for i in range(3, config.channels + 3):
+                assert (
+                    MockTemperatureSensor.MIN_TEMP
+                    <= telemetry[i]
+                    <= MockTemperatureSensor.MAX_TEMP
+                )
+
+        await self.command_handler.handle_command(command=CMD_STOP)
+        self.validate_response(ResponseCode.OK)
         # Give time to the telemetry_task to get cancelled.
         await asyncio.sleep(0.5)
         self.assertFalse(self.command_handler._started)

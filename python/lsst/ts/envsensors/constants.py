@@ -19,17 +19,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+__all__ = [
+    "CMD_CONFIGURE",
+    "CMD_START",
+    "CMD_STOP",
+    "KEY_CHANNELS",
+    "KEY_DEVICES",
+    "KEY_FTDI_ID",
+    "KEY_NAME",
+    "KEY_RESPONSE",
+    "KEY_SERIAL_PORT",
+    "KEY_TELEMETRY",
+    "KEY_TYPE",
+    "VAL_FTDI",
+    "VAL_SERIAL",
+]
 
-try:
-    from .version import *  # type: ignore
-except ModuleNotFoundError:
-    __version__ = "?"
-
-from .command_error import *
-from .command_handler import *
-from .constants import *
-from .ess_instrument_object import *
-from .response_code import *
-from .sel_temperature_reader import *
-from .socket_server import *
-from .serial_reader import *
+# Command and configuration key and value constants.
+CMD_CONFIGURE = "configure"
+CMD_START = "start"
+CMD_STOP = "stop"
+KEY_CHANNELS = "channels"
+KEY_DEVICES = "devices"
+KEY_FTDI_ID = "ftdi_id"
+KEY_NAME = "name"
+KEY_RESPONSE = "response"
+KEY_SERIAL_PORT = "serial_port"
+KEY_TELEMETRY = "telemetry"
+KEY_TYPE = "type"
+VAL_FTDI = "FTDI"
+VAL_SERIAL = "Serial"

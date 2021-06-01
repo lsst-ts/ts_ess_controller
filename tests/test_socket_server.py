@@ -102,7 +102,11 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_full_command_sequence(self):
         name = "Test1"
         channels = 1
-        configuration = {"devices": [{"name": name, "channels": channels}]}
+        configuration = {
+            "devices": [
+                {"name": name, "channels": channels, "type": "FTDI", "ftdi_id": "ABC"}
+            ]
+        }
         await self.write(
             command="configure", parameters={"configuration": configuration}
         )

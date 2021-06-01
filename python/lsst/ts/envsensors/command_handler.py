@@ -28,6 +28,21 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from .command_error import CommandError
+from .constants import (
+    CMD_CONFIGURE,
+    CMD_START,
+    CMD_STOP,
+    KEY_CHANNELS,
+    KEY_DEVICES,
+    KEY_FTDI_ID,
+    KEY_NAME,
+    KEY_RESPONSE,
+    KEY_SERIAL_PORT,
+    KEY_TELEMETRY,
+    KEY_TYPE,
+    VAL_FTDI,
+    VAL_SERIAL,
+)
 from .ess_instrument_object import EssInstrument
 from .mock.mock_temperature_sensor import MockTemperatureSensor
 from .response_code import ResponseCode
@@ -81,9 +96,9 @@ class CommandHandler:
         self._ess_instruments: List[EssInstrument] = []
 
         self.dispatch_dict = {
-            "configure": self.configure,
-            "start": self.start_sending_telemetry,
-            "stop": self.stop_sending_telemetry,
+            CMD_CONFIGURE: self.configure,
+            CMD_START: self.start_sending_telemetry,
+            CMD_STOP: self.stop_sending_telemetry,
         }
 
         # Unit tests may set this to an integer value to simulate a
@@ -104,12 +119,81 @@ class CommandHandler:
         func = self.dispatch_dict[command]
         try:
             await func(**kwargs)  # type: ignore
-            response = {"response": ResponseCode.OK}
+            response = {KEY_RESPONSE: ResponseCode.OK}
         except CommandError as e:
-            response = {"response": e.response_code}
+            response = {KEY_RESPONSE: e.response_code}
         await self._callback(response)
 
-    async def configure(self, configuration: dict) -> None:
+    def _validate_configuration(self, configuration: Dict[str, Any]) -> bool:
+        """Validate the configuration.
+
+        Parameters
+        ----------
+        configuration: `dict`
+            A dict representing the configuration. The format of the dict
+            follows the configuration of the ts_ess project.
+
+        Returns
+        -------
+        valid: `bool`
+            True when the configuration is valid, False otherwise.
+
+        """
+        # KEY_DEVICES is mandatory.
+        if KEY_DEVICES not in configuration:
+            return False
+        # Only one key allowed.
+        if len(configuration.keys()) != 1:
+            return False
+        # Validate the device configurations.
+        device_configurations = configuration[KEY_DEVICES]  # type: ignore
+        if not device_configurations:
+            return False
+        for device_configuration in device_configurations:
+            if not self._validate_device_configuration(
+                device_configuration=device_configuration
+            ):
+                return False
+        return True
+
+    def _validate_device_configuration(
+        self, device_configuration: Dict[str, Any]
+    ) -> bool:
+        """Validate the device configuration.
+
+        Parameters
+        ----------
+        device_configuration: `dict`
+            A dict representing the device configuration. The format of the
+            dict follows the configuration of the ts_ess project.
+
+        Returns
+        -------
+        valid: `bool`
+            True when the device configuration is valid, False otherwise.
+
+        """
+        # KEY_NAME, KEY_CHANNELS and KEY_TYPE are mandatory.
+        if (
+            KEY_NAME not in device_configuration
+            or KEY_CHANNELS not in device_configuration
+            or KEY_TYPE not in device_configuration
+        ):
+            return False
+        # Make sure that KEY_TYPE has the correct value.
+        if device_configuration[KEY_TYPE] not in [VAL_FTDI, VAL_SERIAL]:
+            return False
+        # Make sure that KEY_FTDI_ID is present for VAL_FTDI devices.
+        if device_configuration[KEY_TYPE] == VAL_FTDI:
+            if KEY_FTDI_ID not in device_configuration:
+                return False
+        # Make sure that KEY_SERIAL_PORT is present for VAL_SERIAL devices.
+        if device_configuration[KEY_TYPE] == VAL_SERIAL:
+            if KEY_SERIAL_PORT not in device_configuration:
+                return False
+        return True
+
+    async def configure(self, configuration: Dict[str, Any]) -> None:
         """Apply the configuration.
 
         Parameters
@@ -125,13 +209,18 @@ class CommandHandler:
             ALREADY_STARTED if the command handler was started.
 
         """
-        # TODO: Implement misconfiguration handling (DM-30069)
         self.log.info(f"configure with configuration data {configuration}")
         if self._started:
             raise CommandError(
                 msg="Ignoring the configuration because telemetry loop already running. Send a stop first.",
                 response_code=ResponseCode.ALREADY_STARTED,
             )
+        if not self._validate_configuration(configuration=configuration):
+            raise CommandError(
+                msg=f"Invalid configuration {configuration} received.",
+                response_code=ResponseCode.INVALID_CONFIGURATION,
+            )
+
         self._configuration = configuration
 
     async def start_sending_telemetry(self) -> None:
@@ -155,19 +244,18 @@ class CommandHandler:
 
     async def connect_devices(self) -> None:
         """Loop over the configuration and start all devices."""
-        # TODO: Implement misconfiguration handling (DM-30069)
         self.log.info("connect_devices")
-        configured_devices = self._configuration["devices"]  # type: ignore
-        for configured_device in configured_devices:
-            device = self._get_device(configured_device)
+        device_configurations = self._configuration[KEY_DEVICES]  # type: ignore
+        for device_configuration in device_configurations:
+            device = self._get_device(device_configuration)
             sel_temperature = SelTemperature(
-                name=configured_device["name"],
+                name=device_configuration[KEY_NAME],
                 uart_device=device,
-                channels=configured_device["channels"],
+                channels=device_configuration[KEY_CHANNELS],
                 log=self.log,
             )
             ess_instrument = EssInstrument(
-                name=configured_device["name"],
+                name=device_configuration[KEY_NAME],
                 reader=sel_temperature,
                 callback_func=self._process_sensor_telemetry,
                 log=self.log,
@@ -212,7 +300,7 @@ class CommandHandler:
             The telemetry data to send.
         """
         self.log.debug(f"Processing sensor data {telemetry}")
-        data = {"telemetry": telemetry}
+        data = {KEY_TELEMETRY: telemetry}
         await self._callback(data)
 
     def _get_device(self, configured_device: dict) -> Optional[Any]:
@@ -241,23 +329,25 @@ class CommandHandler:
         if self.simulation_mode == 1:
             self.log.info("Connecting to the mock sensor.")
             device = MockTemperatureSensor(
-                configured_device["name"],
-                configured_device["channels"],
+                configured_device[KEY_NAME],
+                configured_device[KEY_CHANNELS],
                 disconnected_channel=self.disconnected_channel,
             )
-        elif configured_device["type"] == "FTDI":
+        elif configured_device[KEY_TYPE] == VAL_FTDI:
             from .vcp_ftdi import VcpFtdi
 
             device = VcpFtdi(
-                configured_device["name"], configured_device["ftdi_id"], self.log
+                configured_device[KEY_NAME], configured_device[KEY_FTDI_ID], self.log
             )
-        elif configured_device["type"] == "Serial":
+        elif configured_device[KEY_TYPE] == VAL_SERIAL:
             # make sure we are on a Raspberry Pi4
             if "aarch64" in platform.platform():
                 from .rpi_serial_hat import RpiSerialHat
 
                 device = RpiSerialHat(
-                    configured_device["name"], configured_device["port"], self.log
+                    configured_device[KEY_NAME],
+                    configured_device[KEY_SERIAL_PORT],
+                    self.log,
                 )
 
         if device is None:
