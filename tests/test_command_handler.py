@@ -40,42 +40,12 @@ from lsst.ts.envsensors import (
     VAL_FTDI,
     VAL_SERIAL,
 )
+from lsst.ts.envsensors.device_config import DeviceConfig
 from lsst.ts.envsensors.mock.mock_temperature_sensor import MockTemperatureSensor
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
 )
-
-
-class DeviceConfig:
-    """Container for device configurations.
-
-    Parameters
-    ----------
-    name: `str`
-        The name of the device.
-    channels: `int`
-        The number of channels the output data.
-    dev_type: `str`
-        The type of device.
-    dev_id: `str`
-        The ID of the device.
-
-    """
-
-    def __init__(self, name: str, channels: int, dev_type: str, dev_id: str):
-        self.name = name
-        self.channels = channels
-        self.dev_type = dev_type
-        self.dev_id = dev_id
-
-    def as_dict(self):
-        return {
-            KEY_NAME: self.name,
-            KEY_CHANNELS: self.channels,
-            KEY_TYPE: self.dev_type,
-            KEY_FTDI_ID: self.dev_id,
-        }
 
 
 class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):

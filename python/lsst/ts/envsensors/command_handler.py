@@ -303,14 +303,14 @@ class CommandHandler:
         data = {KEY_TELEMETRY: telemetry}
         await self._callback(data)
 
-    def _get_device(self, configured_device: dict) -> Optional[Any]:
+    def _get_device(self, device_configuration: dict) -> Optional[Any]:
         """Get the device to connect to by using the configuration of the CSC
         and by detecting whether the code is running on an aarch64 architecture
         or not.
 
         Parameters
         ----------
-        configured_device: `dict`
+        device_configuration: `dict`
             A dict representing the device to connect to. The format of the
             dict follows the configuration of the ts_ess project.
 
@@ -329,30 +329,32 @@ class CommandHandler:
         if self.simulation_mode == 1:
             self.log.info("Connecting to the mock sensor.")
             device = MockTemperatureSensor(
-                configured_device[KEY_NAME],
-                configured_device[KEY_CHANNELS],
+                device_configuration[KEY_NAME],
+                device_configuration[KEY_CHANNELS],
                 disconnected_channel=self.disconnected_channel,
             )
-        elif configured_device[KEY_TYPE] == VAL_FTDI:
+        elif device_configuration[KEY_TYPE] == VAL_FTDI:
             from .vcp_ftdi import VcpFtdi
 
             device = VcpFtdi(
-                configured_device[KEY_NAME], configured_device[KEY_FTDI_ID], self.log
+                device_configuration[KEY_NAME],
+                device_configuration[KEY_FTDI_ID],
+                self.log,
             )
-        elif configured_device[KEY_TYPE] == VAL_SERIAL:
+        elif device_configuration[KEY_TYPE] == VAL_SERIAL:
             # make sure we are on a Raspberry Pi4
             if "aarch64" in platform.platform():
                 from .rpi_serial_hat import RpiSerialHat
 
                 device = RpiSerialHat(
-                    configured_device[KEY_NAME],
-                    configured_device[KEY_SERIAL_PORT],
+                    device_configuration[KEY_NAME],
+                    device_configuration[KEY_SERIAL_PORT],
                     self.log,
                 )
 
         if device is None:
             raise RuntimeError(
-                f"Could not get a {configured_device['type']!r} device on "
+                f"Could not get a {device_configuration['type']!r} device on "
                 f"architecture {platform.platform()}. Please check the "
                 f"configuration."
             )
