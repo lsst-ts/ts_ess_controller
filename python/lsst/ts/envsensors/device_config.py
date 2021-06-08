@@ -23,12 +23,7 @@ __all__ = ["DeviceConfig"]
 
 from typing import Dict, Union
 
-from .constants import (
-    KEY_CHANNELS,
-    KEY_FTDI_ID,
-    KEY_NAME,
-    KEY_TYPE,
-)
+from .constants import Key
 
 
 class DeviceConfig:
@@ -64,8 +59,8 @@ class DeviceConfig:
             attributes and their values.
         """
         return {
-            KEY_NAME: self.name,
-            KEY_CHANNELS: self.channels,
-            KEY_TYPE: self.dev_type,
-            KEY_FTDI_ID: self.dev_id,
+            Key.NAME: self.name,
+            Key.CHANNELS: self.channels,
+            Key.TYPE: self.dev_type,
+            Key.FTDI_ID: self.dev_id,
         }

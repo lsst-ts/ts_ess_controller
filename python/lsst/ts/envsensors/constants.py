@@ -19,33 +19,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = [
-    "CMD_CONFIGURE",
-    "CMD_START",
-    "CMD_STOP",
-    "KEY_CHANNELS",
-    "KEY_DEVICES",
-    "KEY_FTDI_ID",
-    "KEY_NAME",
-    "KEY_RESPONSE",
-    "KEY_SERIAL_PORT",
-    "KEY_TELEMETRY",
-    "KEY_TYPE",
-    "VAL_FTDI",
-    "VAL_SERIAL",
-]
+__all__ = ["Command", "DeviceType", "Key"]
 
-# Command and configuration key and value constants.
-CMD_CONFIGURE = "configure"
-CMD_START = "start"
-CMD_STOP = "stop"
-KEY_CHANNELS = "channels"
-KEY_DEVICES = "devices"
-KEY_FTDI_ID = "ftdi_id"
-KEY_NAME = "name"
-KEY_RESPONSE = "response"
-KEY_SERIAL_PORT = "serial_port"
-KEY_TELEMETRY = "telemetry"
-KEY_TYPE = "type"
-VAL_FTDI = "FTDI"
-VAL_SERIAL = "Serial"
+import enum
+
+
+class Command(str, enum.Enum):
+    """Commands accepted by the Socket Server and Command Handler."""
+
+    CONFIGURE = "configure"
+    DISCONNECT = "disconnect"
+    EXIT = "exit"
+    START = "start"
+    STOP = "stop"
+
+
+class DeviceType(str, enum.Enum):
+    """Supported device types."""
+
+    FTDI = "FTDI"
+    SERIAL = "Serial"
+
+
+class Key(str, enum.Enum):
+    """Keys that may be present in the device configuration or as command
+    parameters."""
+
+    CHANNELS = "channels"
+    CONFIGURATION = "configuration"
+    DEVICES = "devices"
+    FTDI_ID = "ftdi_id"
+    NAME = "name"
+    RESPONSE = "response"
+    SERIAL_PORT = "serial_port"
+    TELEMETRY = "telemetry"
+    TYPE = "type"

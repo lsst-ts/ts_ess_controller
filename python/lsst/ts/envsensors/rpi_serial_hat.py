@@ -24,13 +24,12 @@
 
 __all__ = ["RpiSerialHat"]
 
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 import logging
 import RPi.GPIO as gpio  # type: ignore
 import serial  # type: ignore
 import time
 from threading import RLock
-from typing import Tuple
 
 from .sel_temperature_reader import DELIMITER, TERMINATOR
 
