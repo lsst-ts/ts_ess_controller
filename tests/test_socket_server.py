@@ -24,7 +24,7 @@ import json
 import logging
 import unittest
 
-from lsst.ts.envsensors import SocketServer, ResponseCode
+from lsst.ts.envsensors import SocketServer, ResponseCode, Command, DeviceType, Key
 from lsst.ts.envsensors.mock.mock_temperature_sensor import MockTemperatureSensor
 from lsst.ts import tcpip
 
@@ -87,14 +87,14 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_disconnect(self):
         self.assertTrue(self.srv.connected)
-        await self.write(command="disconnect", parameters={})
+        await self.write(command=Command.DISCONNECT, parameters={})
         # Give time to the socket server to clean up internal state and exit.
         await asyncio.sleep(0.5)
         self.assertFalse(self.srv.connected)
 
     async def test_exit(self):
         self.assertTrue(self.srv.connected)
-        await self.write(command="exit", parameters={})
+        await self.write(command=Command.EXIT, parameters={})
         # Give time to the socket server to clean up internal state and exit.
         await asyncio.sleep(0.5)
         self.assertFalse(self.srv.connected)
@@ -102,27 +102,36 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_full_command_sequence(self):
         name = "Test1"
         channels = 1
-        configuration = {"devices": [{"name": name, "channels": channels}]}
+        configuration = {
+            Key.DEVICES: [
+                {
+                    Key.NAME: name,
+                    Key.CHANNELS: channels,
+                    Key.TYPE: DeviceType.FTDI,
+                    Key.FTDI_ID: "ABC",
+                }
+            ]
+        }
         await self.write(
-            command="configure", parameters={"configuration": configuration}
+            command=Command.CONFIGURE, parameters={Key.CONFIGURATION: configuration}
         )
         self.data = await self.read()
-        self.assertEqual(ResponseCode.OK, self.data["response"])
-        await self.write(command="start", parameters={})
+        self.assertEqual(ResponseCode.OK, self.data[Key.RESPONSE])
+        await self.write(command=Command.START, parameters={})
         self.data = await self.read()
-        self.assertEqual(ResponseCode.OK, self.data["response"])
+        self.assertEqual(ResponseCode.OK, self.data[Key.RESPONSE])
         self.data = await self.read()
-        telemetry = self.data["telemetry"]
+        telemetry = self.data[Key.TELEMETRY]
         self.assertEqual(telemetry[0], name)
-        self.assertEqual(telemetry[2], "OK")
+        self.assertEqual(telemetry[2], ResponseCode.OK.name)
         assert (
             MockTemperatureSensor.MIN_TEMP
             <= telemetry[3]
             <= MockTemperatureSensor.MAX_TEMP
         )
 
-        await self.write(command="stop", parameters={})
+        await self.write(command=Command.STOP, parameters={})
         self.data = await self.read()
-        self.assertEqual(ResponseCode.OK, self.data["response"])
-        await self.write(command="disconnect", parameters={})
-        await self.write(command="exit", parameters={})
+        self.assertEqual(ResponseCode.OK, self.data[Key.RESPONSE])
+        await self.write(command=Command.DISCONNECT, parameters={})
+        await self.write(command=Command.EXIT, parameters={})

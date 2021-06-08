@@ -24,10 +24,10 @@
 
 __all__ = ["RpiSerialHat"]
 
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 import logging
-import RPi.GPIO as gpio
-import serial
+import RPi.GPIO as gpio  # type: ignore
+import serial  # type: ignore
 import time
 from threading import RLock
 
@@ -135,15 +135,15 @@ class RpiSerialHat:
             else:
                 # Setup GPIO
                 self._rpi_pin_setup(self._pin_on, gpio.OUT)
-                self._rpi_pin_setup(self._pin_dout, gpio.OUT)
-                self._rpi_pin_setup(self._pin_din, gpio.IN)
-                self._rpi_pin_setup(self._pin_dirn, gpio.OUT)
+                self._rpi_pin_setup(self._pin_dout, gpio.OUT)  # type: ignore
+                self._rpi_pin_setup(self._pin_din, gpio.IN)  # type: ignore
+                self._rpi_pin_setup(self._pin_dirn, gpio.OUT)  # type: ignore
 
                 # Turn on transceiver module and default other pin
                 # states
                 self._rpi_pin_state(self._pin_on, RpiSerialHat.STATE_TRX_ON)
-                self._rpi_pin_state(self._pin_dout, RpiSerialHat.STATE_DOUT_LO)
-                self._rpi_pin_state(self._pin_dirn, RpiSerialHat.STATE_DIRN_RX)
+                self._rpi_pin_state(self._pin_dout, RpiSerialHat.STATE_DOUT_LO)  # type: ignore
+                self._rpi_pin_state(self._pin_dirn, RpiSerialHat.STATE_DIRN_RX)  # type: ignore
 
                 self.log.debug(
                     "RpiSerialHat:{}: First instantiation "
@@ -209,7 +209,7 @@ class RpiSerialHat:
     def terminator(self) -> str:
         """Serial data line terminator string ('str')."""
         self._message(
-            "Serial data line terminator string read: {}.".format(self._read_timeout)
+            "Serial data line terminator string read: {}.".format(self.read_timeout)
         )
         return self._terminator
 
@@ -300,7 +300,7 @@ class RpiSerialHat:
                 else:
                     self._message("Serial port already closed.")
 
-    def readline(self) -> str:
+    def readline(self) -> Tuple[str, str, str]:  # type: ignore
         r"""Read a line of ASCII string data from the serial port.
 
         Returns
@@ -334,7 +334,7 @@ class RpiSerialHat:
 
         resp: str = ""
         err: str = "OK"
-        self._rpi_pin_state(self._pin_dirn, RpiSerialHat.STATE_DIRN_RX)
+        self._rpi_pin_state(self._pin_dirn, RpiSerialHat.STATE_DIRN_RX)  # type: ignore
         with self._lock:
             while not resp.endswith(TERMINATOR):
                 try:

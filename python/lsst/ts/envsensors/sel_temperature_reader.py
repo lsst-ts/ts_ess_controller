@@ -47,8 +47,9 @@ __all__ = ["SelTemperature", "DELIMITER", "TERMINATOR"]
 
 import asyncio
 import logging
+import math
 import time
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 
 from .serial_reader import SerialReader
 
@@ -83,7 +84,7 @@ TERMINATOR: str = "\r\n"
 """Serial data line terminator.
 """
 
-DEFAULT_VAL: float = "NaN"
+DEFAULT_VAL: float = math.nan
 """Default value for unread or errored temperature channels.
 """
 
@@ -117,12 +118,12 @@ class SelTemperature(SerialReader):
         self._channels: int = channels
         self.comport = uart_device
 
-        self.temperature: float = []
-        self.output = []
+        self.temperature: List[float] = []
+        self.output: List[Union[str, float]] = []
 
-        self._preamble_str: str = []
-        self._old_preamble_str: str = []
-        self._tmp_temperature: float = []
+        self._preamble_str: List[str] = []
+        self._old_preamble_str: List[str] = []
+        self._tmp_temperature: List[float] = []
         for i in range(self._channels):
             self._tmp_temperature.append(DEFAULT_VAL)
             self.temperature.append(DEFAULT_VAL)
@@ -184,7 +185,7 @@ class SelTemperature(SerialReader):
                 return False
                 pass
 
-    async def read(self) -> []:
+    async def read(self) -> None:
         """Read temperature instrument.
 
         Read SEL instrument, test data and populate temperature channel data.

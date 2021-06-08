@@ -19,18 +19,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+__all__ = ["Command", "DeviceType", "Key"]
 
-try:
-    from .version import *  # type: ignore
-except ModuleNotFoundError:
-    __version__ = "?"
+import enum
 
-from .command_error import *
-from .command_handler import *
-from .constants import *
-from .device_config import *
-from .ess_instrument_object import *
-from .response_code import *
-from .sel_temperature_reader import *
-from .socket_server import *
-from .serial_reader import *
+
+class Command(str, enum.Enum):
+    """Commands accepted by the Socket Server and Command Handler."""
+
+    CONFIGURE = "configure"
+    DISCONNECT = "disconnect"
+    EXIT = "exit"
+    START = "start"
+    STOP = "stop"
+
+
+class DeviceType(str, enum.Enum):
+    """Supported device types."""
+
+    FTDI = "FTDI"
+    SERIAL = "Serial"
+
+
+class Key(str, enum.Enum):
+    """Keys that may be present in the device configuration or as command
+    parameters."""
+
+    CHANNELS = "channels"
+    CONFIGURATION = "configuration"
+    DEVICES = "devices"
+    FTDI_ID = "ftdi_id"
+    NAME = "name"
+    RESPONSE = "response"
+    SERIAL_PORT = "serial_port"
+    TELEMETRY = "telemetry"
+    TYPE = "type"

@@ -29,3 +29,4 @@ class ResponseCode(enum.IntEnum):
     NOT_CONFIGURED = 1
     NOT_STARTED = 2
     ALREADY_STARTED = 3
+    INVALID_CONFIGURATION = 4
