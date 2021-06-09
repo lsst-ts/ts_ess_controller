@@ -15,19 +15,18 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Sphinx configuration file for an LSST stack package.
+__all__ = ["ResponseCode"]
 
-This configuration only affects single-package Sphinx documentation builds.
-"""
+import enum
 
-from documenteer.conf.pipelinespkg import *  # noqa
-import lsst.ts.envsensors  # noqa
 
-project = "ts_envsensors"
-html_theme_options["logotext"] = project  # noqa
-html_title = project
-html_short_title = project
-doxylink = {}  # Avoid warning: Could not find tag file _doxygen/doxygen.tag
-
-intersphinx_mapping["ts_tcpip"] = ("https://ts-tcpip.lsst.io", None)  # noqa
+class ResponseCode(enum.IntEnum):
+    OK = 0
+    NOT_CONFIGURED = 1
+    NOT_STARTED = 2
+    ALREADY_STARTED = 3
+    INVALID_CONFIGURATION = 4

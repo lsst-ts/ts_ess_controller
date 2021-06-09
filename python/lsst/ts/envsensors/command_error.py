@@ -15,19 +15,26 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Sphinx configuration file for an LSST stack package.
+__all__ = ["CommandError"]
 
-This configuration only affects single-package Sphinx documentation builds.
-"""
+from .response_code import ResponseCode
 
-from documenteer.conf.pipelinespkg import *  # noqa
-import lsst.ts.envsensors  # noqa
 
-project = "ts_envsensors"
-html_theme_options["logotext"] = project  # noqa
-html_title = project
-html_short_title = project
-doxylink = {}  # Avoid warning: Could not find tag file _doxygen/doxygen.tag
+class CommandError(Exception):
+    """Exception raised if a command fails.
 
-intersphinx_mapping["ts_tcpip"] = ("https://ts-tcpip.lsst.io", None)  # noqa
+    Parameters
+    ----------
+    msg : `str`
+        Error message
+    response_code : `ResponseCode`
+        Response code.
+    """
+
+    def __init__(self, msg: str, response_code: ResponseCode) -> None:
+        super().__init__(msg)
+        self.response_code = response_code
