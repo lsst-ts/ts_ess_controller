@@ -108,11 +108,7 @@ class SocketServerTestCase(BaseMockTestCase):
         await asyncio.sleep(0.5)
         self.assertFalse(self.srv.connected)
 
-    async def test_full_command_sequence(self):
-        self.name = "Test1"
-        self.num_channels = 1
-        self.count_offset = 0
-        self.disconnected_channel = None
+    async def socket_server_test(self):
         configuration = {
             Key.DEVICES: [
                 {
@@ -132,6 +128,22 @@ class SocketServerTestCase(BaseMockTestCase):
         await self.write(command=Command.START, parameters={})
         self.data = await self.read()
         self.assertEqual(ResponseCode.OK, self.data[Key.RESPONSE])
+
+        if self.missed_channels > 0:
+            # Make sure that the mock sensor outputs truncated data.
+            self.srv.command_handler._devices[
+                0
+            ]._sensor._missed_channels = self.missed_channels
+
+        self.reply = await self.read()
+        reply_to_check = self.reply[Key.TELEMETRY]
+        self.check_reply(reply_to_check)
+
+        if self.missed_channels > 0:
+            # Reset self.missed_channels and read again. The data should not be
+            # truncated anymore.
+            self.missed_channels = 0
+
         self.reply = await self.read()
         reply_to_check = self.reply[Key.TELEMETRY]
         self.check_reply(reply_to_check)
@@ -141,3 +153,17 @@ class SocketServerTestCase(BaseMockTestCase):
         self.assertEqual(ResponseCode.OK, self.data[Key.RESPONSE])
         await self.write(command=Command.DISCONNECT, parameters={})
         await self.write(command=Command.EXIT, parameters={})
+
+    async def test_full_command_sequence(self):
+        self.name = "Test1"
+        self.num_channels = 1
+        self.disconnected_channel = None
+        self.missed_channels = 0
+        await self.socket_server_test()
+
+    async def test_full_command_sequence_with_truncated_output(self):
+        self.name = "Test1"
+        self.num_channels = 4
+        self.disconnected_channel = None
+        self.missed_channels = 2
+        await self.socket_server_test()

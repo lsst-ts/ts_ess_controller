@@ -262,8 +262,8 @@ class CommandHandlerTestCase(BaseMockTestCase):
             devices_names_checked.add(self.name)
             device_config = self.device_configs[self.name]
             self.num_channels = device_config.channels
-            self.count_offset = 0
             self.disconnected_channel = None
+            self.missed_channels = 0
             reply_to_check = reply[Key.TELEMETRY]
             self.check_reply(reply_to_check)
 

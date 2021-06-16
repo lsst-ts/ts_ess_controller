@@ -35,37 +35,39 @@ logging.basicConfig(
 class MockSensorTestCase(BaseMockTestCase):
     async def test_read_instrument(self):
         self.num_channels = 4
-        self.count_offset = 0
         self.disconnected_channel = None
+        self.missed_channels = 0
         self.name = "MockSensor"
         self.log = logging.getLogger(type(self).__name__)
         mock_sensor = MockTemperatureSensor(self.name, self.num_channels, self.log)
         reply = await mock_sensor.readline()
         self.check_reply(reply=reply)
 
-    async def test_read_old_instrument(self):
+    async def test_read_partial_output(self):
         self.num_channels = 4
-        self.count_offset = 1
+        self.missed_channels = 2
         self.disconnected_channel = None
-        self.name = "MockSensor"
-        self.log = logging.getLogger(type(self).__name__)
-        mock_sensor = MockTemperatureSensor(
-            self.name, self.num_channels, self.log, self.count_offset
-        )
-        reply = await mock_sensor.readline()
-        self.check_reply(reply=reply)
-
-    async def test_read_nan(self):
-        self.num_channels = 4
-        self.count_offset = 1
-        self.disconnected_channel = 2
         self.name = "MockSensor"
         self.log = logging.getLogger(type(self).__name__)
         mock_sensor = MockTemperatureSensor(
             self.name,
             self.num_channels,
             self.log,
-            self.count_offset,
+            missed_channels=self.missed_channels,
+        )
+        reply = await mock_sensor.readline()
+        self.check_reply(reply=reply)
+
+    async def test_read_with_disconnected_channel(self):
+        self.num_channels = 4
+        self.disconnected_channel = 2
+        self.missed_channels = 0
+        self.name = "MockSensor"
+        self.log = logging.getLogger(type(self).__name__)
+        mock_sensor = MockTemperatureSensor(
+            self.name,
+            self.num_channels,
+            self.log,
             self.disconnected_channel,
         )
         reply = await mock_sensor.readline()

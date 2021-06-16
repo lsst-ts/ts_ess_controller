@@ -23,9 +23,10 @@ __all__ = ["MockTemperatureSensor"]
 
 import asyncio
 import logging
+import math
 import random
 import time
-from typing import List, Union
+from typing import List, Optional, Union
 
 from ..constants import Temperature, DISCONNECTED_VALUE
 from ..response_code import ResponseCode
@@ -41,15 +42,14 @@ class MockTemperatureSensor(BaseSensor):
         The name of the sensor.
     channels: `int`
         The number of temperature channels.
-    count_offset: `int`
-        The offset from where to start counting the channels. Old-style sensors
-        start counting at 1 and new style sensors at 0, but this mock class is
-        more generic and will accept any number.
-    disconnected_channel: `int`, optional
-        The channels number for which this class will mock a disconnection.
     log: `logger`' optional
         The logger for which to create a child logger, or None in which case a
         new logger gets requested.
+    disconnected_channel: `int`, optional
+        The channels number for which this class will mock a disconnection.
+    missed_channels: `int`, optional
+        The number of channels to not output to mock connecting to the sensor
+        in the middle of receiving data from it.
     """
 
     def __init__(
@@ -57,12 +57,12 @@ class MockTemperatureSensor(BaseSensor):
         name: str,
         channels: int,
         log: logging.Logger,
-        count_offset: int = 0,
         disconnected_channel: int = None,
+        missed_channels: int = 0,
     ) -> None:
         super().__init__(name=name, channels=channels, log=log)
-        self._count_offset = count_offset
-        self._disconnected_channel = disconnected_channel
+        self._disconnected_channel: Optional[int] = disconnected_channel
+        self._missed_channels: int = missed_channels
 
     async def open(self) -> None:
         """Open a connection to the Sesnor and set parameters."""
@@ -88,8 +88,15 @@ class MockTemperatureSensor(BaseSensor):
 
         """
         temp = random.uniform(Temperature.MIN, Temperature.MAX)
+        # Mock a disconnected sensor. A real sensor would output 9999.999 and
+        # the real sensor code replaces that with math.nan
         if i == self._disconnected_channel:
-            return DISCONNECTED_VALUE
+            return math.nan
+        # Mock connecting to the sensor in the middle of its output. For a real
+        # sensor the value would be missing and the real sensor code adds
+        # math.nan values for those.
+        if i < self._missed_channels:
+            return math.nan
         return temp
 
     async def readline(self) -> List[Union[str, float]]:
@@ -110,5 +117,9 @@ class MockTemperatureSensor(BaseSensor):
         tm: float = time.time()
         response: str = ResponseCode.OK
         channel_strs = [self._format_temperature(i) for i in range(0, self._channels)]
+        if self._missed_channels > 0:
+            # reset self._missed_channels since only the first read will be
+            # truncated
+            self._missed_channels = 0
         self._log.debug(f"Returning {self.name}, {tm}, {response}, {channel_strs}")
         return [self.name, tm, response] + channel_strs

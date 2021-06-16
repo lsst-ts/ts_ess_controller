@@ -41,8 +41,8 @@ class MockDeviceTestCase(BaseMockTestCase):
     async def test_mock_device(self):
         self.name = "MockSensor"
         self.num_channels = 4
-        self.count_offset = 0
         self.disconnected_channel = None
+        self.missed_channels = 0
         self.data = None
         self.log = logging.getLogger(type(self).__name__)
         mock_sensor = MockTemperatureSensor(
