@@ -19,16 +19,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-try:
-    from .version import *  # type: ignore
-except ModuleNotFoundError:
-    __version__ = "?"
+import asyncio
 
-from .command_error import *
-from .command_handler import *
-from .constants import *
-from .device import BaseDevice, MockDevice, RpiSerialHat, VcpFtdi
-from .device_config import *
-from .response_code import *
-from .sensor import BaseSensor, MockTemperatureSensor, TERMINATOR
-from .socket_server import *
+
+def create_done_future() -> asyncio.Future:
+    """Create a Future that is done.
+
+    Returns
+    -------
+    future: `asyncio.Future`
+        The done Future.
+    """
+    future: asyncio.Future = asyncio.Future()
+    future.set_result(None)
+    return future

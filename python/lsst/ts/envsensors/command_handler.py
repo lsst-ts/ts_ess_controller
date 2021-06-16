@@ -28,11 +28,9 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from .command_error import CommandError
-from .constants import Command, Key, DeviceType
-from .ess_instrument_object import EssInstrument
-from .mock.mock_temperature_sensor import MockTemperatureSensor
+from .constants import Command, Key, DeviceType, SensorType
+from .device import BaseDevice
 from .response_code import ResponseCode
-from .sel_temperature_reader import SelTemperature
 
 
 class CommandHandler:
@@ -79,7 +77,7 @@ class CommandHandler:
         self._callback = callback
         self._configuration: Optional[Dict[str, Any]] = None
         self._started = False
-        self._ess_instruments: List[EssInstrument] = []
+        self._devices: List[BaseDevice] = []
 
         self.dispatch_dict: Dict[str, Callable] = {
             Command.CONFIGURE: self.configure,
@@ -107,6 +105,7 @@ class CommandHandler:
             await func(**kwargs)
             response = {Key.RESPONSE: ResponseCode.OK}
         except CommandError as e:
+            self.log.exception("Encountered a CommandError.")
             response = {Key.RESPONSE: e.response_code}
         await self._callback(response)
 
@@ -164,26 +163,45 @@ class CommandHandler:
             In case the provided configuration is incorrect.
 
         """
-        # Key.NAME, Key.CHANNELS and Key.TYPE are mandatory.
+        # Key.NAME, Key.CHANNELS, Key.DEVICE_TYPE and Key.SENSOR_TYPE are
+        # mandatory.
         if (
             Key.NAME not in device_configuration
             or Key.CHANNELS not in device_configuration
-            or Key.TYPE not in device_configuration
+            or Key.DEVICE_TYPE not in device_configuration
+            or Key.SENSOR_TYPE not in device_configuration
         ):
             raise CommandError(
-                msg=f"The configuration keys {Key.NAME}, {Key.CHANNELS} and {Key.TYPE} are mandatory.",
+                msg=f"The configuration keys {Key.NAME}, {Key.CHANNELS}, {Key.DEVICE_TYPE} "
+                f"and {Key.SENSOR_TYPE} are mandatory.",
                 response_code=ResponseCode.INVALID_CONFIGURATION,
             )
 
-        # Make sure that Key.TYPE has the correct value.
-        if device_configuration[Key.TYPE] not in [DeviceType.FTDI, DeviceType.SERIAL]:
+        # Make sure that Key.DEVICE_TYPE has the correct value.
+        if device_configuration[Key.DEVICE_TYPE] not in [
+            DeviceType.FTDI,
+            DeviceType.SERIAL,
+        ]:
             raise CommandError(
-                msg=f"The value for key {Key.TYPE} must be either {DeviceType.FTDI} or {DeviceType.SERIAL}",
+                msg=f"The value for key {Key.DEVICE_TYPE} must be either {DeviceType.FTDI}"
+                f" or {DeviceType.SERIAL}",
+                response_code=ResponseCode.INVALID_CONFIGURATION,
+            )
+
+        # Make sure that Key.SENSOR_TYPE has the correct value.
+        if device_configuration[Key.SENSOR_TYPE] not in [
+            SensorType.HUMIDITY,
+            SensorType.TEMPERATURE,
+            SensorType.WIND,
+        ]:
+            raise CommandError(
+                msg=f"The value for key {Key.DEVICE_TYPE} must be {SensorType.HUMIDITY}, "
+                f"{SensorType.TEMPERATURE} or {SensorType.WIND}",
                 response_code=ResponseCode.INVALID_CONFIGURATION,
             )
 
         # Make sure that Key.FTDI_ID is present for DeviceType.FTDI devices.
-        if device_configuration[Key.TYPE] == DeviceType.FTDI:
+        if device_configuration[Key.DEVICE_TYPE] == DeviceType.FTDI:
             if Key.FTDI_ID not in device_configuration:
                 raise CommandError(
                     msg=f"Missing configuration key {Key.FTDI_ID} for device of type {DeviceType.FTDI}",
@@ -191,7 +209,7 @@ class CommandHandler:
                 )
         # Make sure that Key.SERIAL_PORT is present for DeviceType.SERIAL
         # devices.
-        if device_configuration[Key.TYPE] == DeviceType.SERIAL:
+        if device_configuration[Key.DEVICE_TYPE] == DeviceType.SERIAL:
             if Key.SERIAL_PORT not in device_configuration:
                 raise CommandError(
                     msg=f"Missing configuration key {Key.SERIAL_PORT} for device of type {DeviceType.SERIAL}",
@@ -249,21 +267,8 @@ class CommandHandler:
         device_configurations = self._configuration[Key.DEVICES]  # type: ignore
         for device_configuration in device_configurations:
             device = self._get_device(device_configuration)
-            sel_temperature = SelTemperature(
-                name=device_configuration[Key.NAME],
-                uart_device=device,
-                channels=device_configuration[Key.CHANNELS],
-                log=self.log,
-            )
-            ess_instrument = EssInstrument(
-                name=device_configuration[Key.NAME],
-                reader=sel_temperature,
-                callback_func=self._process_sensor_telemetry,
-                log=self.log,
-            )
-
-            self._ess_instruments.append(ess_instrument)
-            await ess_instrument.start()
+            self._devices.append(device)
+            await device.start()
 
     async def stop_sending_telemetry(self) -> ResponseCode:
         """Stop reading the sensor data.
@@ -282,9 +287,9 @@ class CommandHandler:
                 response_code=ResponseCode.NOT_STARTED,
             )
         self._started = False
-        for ess_instrument in self._ess_instruments:
-            await ess_instrument.stop()
-            self._ess_instruments.remove(ess_instrument)
+        for device in self._devices:
+            await device.stop()
+            self._devices.remove(device)
         return ResponseCode.OK
 
     async def _process_sensor_telemetry(self, telemetry: list) -> None:
@@ -304,7 +309,7 @@ class CommandHandler:
         data = {Key.TELEMETRY: telemetry}
         await self._callback(data)
 
-    def _get_device(self, device_configuration: dict) -> Optional[Any]:
+    def _get_device(self, device_configuration: dict) -> BaseDevice:
         """Get the device to connect to by using the configuration of the CSC
         and by detecting whether the code is running on an aarch64 architecture
         or not.
@@ -329,20 +334,31 @@ class CommandHandler:
         device: Any = None
         if self.simulation_mode == 1:
             self.log.info("Connecting to the mock sensor.")
-            device = MockTemperatureSensor(
-                device_configuration[Key.NAME],
-                device_configuration[Key.CHANNELS],
+            from .sensor import MockTemperatureSensor
+            from .device import MockDevice
+
+            sensor = MockTemperatureSensor(
+                name=device_configuration[Key.NAME],
+                channels=device_configuration[Key.CHANNELS],
+                log=self.log,
                 disconnected_channel=self.disconnected_channel,
             )
-        elif device_configuration[Key.TYPE] == DeviceType.FTDI:
-            from .vcp_ftdi import VcpFtdi
+            device = MockDevice(
+                device_id=device_configuration[Key.FTDI_ID],
+                sensor=sensor,
+                callback_func=self._callback,
+                log=self.log,
+            )
+            return device
+        elif device_configuration[Key.DEVICE_TYPE] == DeviceType.FTDI:
+            from .sensor import VcpFtdi
 
             device = VcpFtdi(
                 device_configuration[Key.NAME],
                 device_configuration[Key.FTDI_ID],
                 self.log,
             )
-        elif device_configuration[Key.TYPE] == DeviceType.SERIAL:
+        elif device_configuration[Key.DEVICE_TYPE] == DeviceType.SERIAL:
             # make sure we are on a Raspberry Pi4
             if "aarch64" in platform.platform():
                 from .rpi_serial_hat import RpiSerialHat

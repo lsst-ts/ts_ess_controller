@@ -30,27 +30,41 @@ from lsst.ts.envsensors import (
     Command,
     DeviceType,
     Key,
+    SensorType,
+    Temperature,
 )
 from lsst.ts.envsensors.device_config import DeviceConfig
-from lsst.ts.envsensors.mock.mock_temperature_sensor import MockTemperatureSensor
+from base_mock_test_case import BaseMockTestCase
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
 )
 
 
-class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
+class CommandHandlerTestCase(BaseMockTestCase):
     async def asyncSetUp(self):
         self.command_handler = CommandHandler(callback=self.callback, simulation_mode=1)
         self.assertIsNone(self.command_handler._configuration)
         device_config_01 = DeviceConfig(
-            name="Test01", channels=4, dev_type=DeviceType.FTDI, dev_id="ABC"
+            name="Test01",
+            channels=4,
+            dev_type=DeviceType.FTDI,
+            dev_id="ABC",
+            sens_type=SensorType.TEMPERATURE,
         )
         device_config_02 = DeviceConfig(
-            name="Test02", channels=6, dev_type=DeviceType.FTDI, dev_id="ABC"
+            name="Test02",
+            channels=6,
+            dev_type=DeviceType.FTDI,
+            dev_id="ABC",
+            sens_type=SensorType.TEMPERATURE,
         )
         device_config_03 = DeviceConfig(
-            name="Test03", channels=2, dev_type=DeviceType.FTDI, dev_id="ABC"
+            name="Test03",
+            channels=2,
+            dev_type=DeviceType.FTDI,
+            dev_id="ABC",
+            sens_type=SensorType.TEMPERATURE,
         )
         self.configuration = {
             Key.DEVICES: [
@@ -92,13 +106,13 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
                 {
                     Key.NAME: "Test1",
                     Key.CHANNELS: 4,
-                    Key.TYPE: DeviceType.FTDI,
+                    Key.DEVICE_TYPE: DeviceType.FTDI,
                     "id": "ABC",
                 },
                 {
                     Key.NAME: "Test1",
                     Key.CHANNELS: 4,
-                    Key.TYPE: DeviceType.SERIAL,
+                    Key.DEVICE_TYPE: DeviceType.SERIAL,
                     "port": "ABC",
                 },
             ]
@@ -114,14 +128,16 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
                 {
                     Key.NAME: "Test1",
                     Key.CHANNELS: 4,
-                    Key.TYPE: DeviceType.FTDI,
+                    Key.DEVICE_TYPE: DeviceType.FTDI,
                     Key.FTDI_ID: "ABC",
+                    Key.SENSOR_TYPE: SensorType.TEMPERATURE,
                 },
                 {
                     Key.NAME: "Test2",
                     Key.CHANNELS: 6,
-                    Key.TYPE: DeviceType.SERIAL,
+                    Key.DEVICE_TYPE: DeviceType.SERIAL,
                     Key.SERIAL_PORT: "DEF",
+                    Key.SENSOR_TYPE: SensorType.TEMPERATURE,
                 },
             ]
         }
@@ -140,27 +156,45 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         # A configuration with several errors that will get tested one by one.
         bad_items = [
             {
-                # The mandatory keys Key.CHANNELS and Key.TYPE are missing.
+                # The mandatory keys Key.CHANNELS, Key.DEVICE_TYPE and
+                # KEY.SENSOR_TYPE are missing.
                 Key.NAME: "Test1",
             },
             {
-                # The mandatory key Key.TYPE is missing.
+                # The mandatory keys Key.DEVICE_TYPE and Key.SENSOR_TYPE are
+                # missing.
                 Key.NAME: "Test1",
                 Key.CHANNELS: 4,
+            },
+            {
+                # The mandatory key Key.SENSOR_TYPE is missing.
+                Key.NAME: "Test1",
+                Key.CHANNELS: 4,
+                Key.DEVICE_TYPE: DeviceType.FTDI,
             },
             {
                 # For DeviceType.FTDI the key Key.FTDI_ID is mandatory.
                 Key.NAME: "Test1",
                 Key.CHANNELS: 4,
-                Key.TYPE: DeviceType.FTDI,
+                Key.DEVICE_TYPE: DeviceType.FTDI,
                 "id": "ABC",
+                Key.SENSOR_TYPE: SensorType.TEMPERATURE,
             },
             {
                 # For DeviceType.SERIAL the key Key.SERIAL_PORT is mandatory.
                 Key.NAME: "Test1",
                 Key.CHANNELS: 4,
-                Key.TYPE: DeviceType.SERIAL,
+                Key.DEVICE_TYPE: DeviceType.SERIAL,
                 "port": "ABC",
+                Key.SENSOR_TYPE: SensorType.TEMPERATURE,
+            },
+            {
+                # Wrong value for Key.SENSOR_TYPE.
+                Key.NAME: "Test1",
+                Key.CHANNELS: 4,
+                Key.DEVICE_TYPE: DeviceType.SERIAL,
+                Key.SERIAL_PORT: "ABC",
+                Key.SENSOR_TYPE: "Temp",
             },
         ]
         for bad_item in bad_items:
@@ -207,7 +241,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.5)
         self.assertFalse(self.command_handler._started)
 
-    async def test_get_telemetrey(self):
+    async def test_get_telemetry(self):
         await self.command_handler.handle_command(
             command=Command.CONFIGURE, configuration=self.configuration
         )
@@ -223,17 +257,15 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
 
         devices_names_checked = set()
         while len(devices_names_checked) != len(self.device_configs):
-            response = self.responses.pop()
-            telemetry = response[Key.TELEMETRY]
-            device_name = telemetry[0]
-            devices_names_checked.add(device_name)
-            config = self.device_configs[device_name]
-            for i in range(3, config.channels + 3):
-                assert (
-                    MockTemperatureSensor.MIN_TEMP
-                    <= telemetry[i]
-                    <= MockTemperatureSensor.MAX_TEMP
-                )
+            reply = self.responses.pop()
+            self.name = reply[Key.TELEMETRY][0]
+            devices_names_checked.add(self.name)
+            device_config = self.device_configs[self.name]
+            self.num_channels = device_config.channels
+            self.count_offset = 0
+            self.disconnected_channel = None
+            reply_to_check = reply[Key.TELEMETRY]
+            self.check_reply(reply_to_check)
 
         await self.command_handler.handle_command(command=Command.STOP)
         self.assert_response(ResponseCode.OK)

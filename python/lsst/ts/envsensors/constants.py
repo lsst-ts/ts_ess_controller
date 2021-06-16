@@ -19,9 +19,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["Command", "DeviceType", "Key"]
+__all__ = [
+    "Command",
+    "DeviceType",
+    "DISCONNECTED_VALUE",
+    "Key",
+    "SensorType",
+    "Temperature",
+]
 
 import enum
+
+# Minimum and maximum temperatures (deg_C) for creating random sensor data.
+
+# The value emitted by a disconnected channel
+DISCONNECTED_VALUE = 9999.9990
 
 
 class Command(str, enum.Enum):
@@ -47,10 +59,27 @@ class Key(str, enum.Enum):
 
     CHANNELS = "channels"
     CONFIGURATION = "configuration"
+    DEVICE_TYPE = "device_type"
     DEVICES = "devices"
     FTDI_ID = "ftdi_id"
     NAME = "name"
     RESPONSE = "response"
+    SENSOR_TYPE = "sensor_type"
     SERIAL_PORT = "serial_port"
     TELEMETRY = "telemetry"
-    TYPE = "type"
+    TIME = "time"
+
+
+class Temperature(enum.IntEnum):
+    """Temperature values used by the mock temperature sensor."""
+
+    MIN = 18.0
+    MAX = 30.0
+
+
+class SensorType(str, enum.Enum):
+    """Supported sensor types."""
+
+    HUMIDITY = "Humidity"
+    TEMPERATURE = "Temperature"
+    WIND = "Wind"

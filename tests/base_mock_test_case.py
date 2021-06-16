@@ -19,16 +19,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-try:
-    from .version import *  # type: ignore
-except ModuleNotFoundError:
-    __version__ = "?"
+__all__ = ["BaseMockTestCase"]
 
-from .command_error import *
-from .command_handler import *
-from .constants import *
-from .device import BaseDevice, MockDevice, RpiSerialHat, VcpFtdi
-from .device_config import *
-from .response_code import *
-from .sensor import BaseSensor, MockTemperatureSensor, TERMINATOR
-from .socket_server import *
+import unittest
+
+from lsst.ts.envsensors import Temperature, DISCONNECTED_VALUE, ResponseCode
+
+
+class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
+    def check_reply(self, reply):
+        device_name = reply[0]
+        time = reply[1]
+        response_code = reply[2]
+        resp = reply[3:]
+
+        self.assertEqual(self.name, device_name)
+        self.assertGreater(time, 0)
+        self.assertEqual(ResponseCode.OK, response_code)
+        self.assertEqual(len(resp), self.num_channels)
+        for i in range(0, self.num_channels):
+            if i == self.disconnected_channel:
+                self.assertAlmostEqual(
+                    DISCONNECTED_VALUE,
+                    resp[i],
+                    3,
+                )
+            else:
+                self.assertLessEqual(Temperature.MIN, resp[i])
+                self.assertLessEqual(resp[i], Temperature.MAX)

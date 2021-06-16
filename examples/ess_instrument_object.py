@@ -72,7 +72,7 @@ class EssInstrument:
         msg = f"Starting read loop for {self._reader.name!r} instrument."
         await self._message(msg)
         self._enabled = True
-        self.telemetry_loop = asyncio.ensure_future(self._run())
+        self.telemetry_loop = asyncio.create_task(self._run())
 
     async def stop(self):
         """Terminate the instrument read loop."""

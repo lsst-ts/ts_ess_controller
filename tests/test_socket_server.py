@@ -24,9 +24,18 @@ import json
 import logging
 import unittest
 
-from lsst.ts.envsensors import SocketServer, ResponseCode, Command, DeviceType, Key
-from lsst.ts.envsensors.mock.mock_temperature_sensor import MockTemperatureSensor
+from lsst.ts.envsensors import (
+    SocketServer,
+    ResponseCode,
+    Command,
+    DeviceType,
+    Key,
+    SensorType,
+    Temperature,
+)
+from lsst.ts.envsensors.sensor.mock_temperature_sensor import MockTemperatureSensor
 from lsst.ts import tcpip
+from base_mock_test_case import BaseMockTestCase
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -36,7 +45,7 @@ TIMEOUT = 5
 """Standard timeout in seconds."""
 
 
-class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
+class SocketServerTestCase(BaseMockTestCase):
     async def asyncSetUp(self):
         self.ctrl = None
         self.writer = None
@@ -60,7 +69,7 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
         await self.srv.exit()
 
     async def read(self):
-        """Utility function to read a string from the reader and unmarshal it
+        """Read a string from the reader and unmarshal it
 
         Returns
         -------
@@ -100,15 +109,18 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.srv.connected)
 
     async def test_full_command_sequence(self):
-        name = "Test1"
-        channels = 1
+        self.name = "Test1"
+        self.num_channels = 1
+        self.count_offset = 0
+        self.disconnected_channel = None
         configuration = {
             Key.DEVICES: [
                 {
-                    Key.NAME: name,
-                    Key.CHANNELS: channels,
-                    Key.TYPE: DeviceType.FTDI,
+                    Key.NAME: self.name,
+                    Key.CHANNELS: self.num_channels,
+                    Key.DEVICE_TYPE: DeviceType.FTDI,
                     Key.FTDI_ID: "ABC",
+                    Key.SENSOR_TYPE: SensorType.TEMPERATURE,
                 }
             ]
         }
@@ -120,15 +132,9 @@ class SocketServerTestCase(unittest.IsolatedAsyncioTestCase):
         await self.write(command=Command.START, parameters={})
         self.data = await self.read()
         self.assertEqual(ResponseCode.OK, self.data[Key.RESPONSE])
-        self.data = await self.read()
-        telemetry = self.data[Key.TELEMETRY]
-        self.assertEqual(telemetry[0], name)
-        self.assertEqual(telemetry[2], ResponseCode.OK.name)
-        assert (
-            MockTemperatureSensor.MIN_TEMP
-            <= telemetry[3]
-            <= MockTemperatureSensor.MAX_TEMP
-        )
+        self.reply = await self.read()
+        reply_to_check = self.reply[Key.TELEMETRY]
+        self.check_reply(reply_to_check)
 
         await self.write(command=Command.STOP, parameters={})
         self.data = await self.read()

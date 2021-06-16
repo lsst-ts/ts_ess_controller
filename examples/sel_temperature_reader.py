@@ -48,7 +48,6 @@ __all__ = ["SelTemperature", "DELIMITER", "TERMINATOR"]
 import asyncio
 import logging
 import math
-import time
 from typing import Any, Dict, List, Union
 
 from .serial_reader import SerialReader
@@ -209,12 +208,7 @@ class SelTemperature(SerialReader):
         line: str = ""
         await self._message("Reading line from comport.")
 
-        # Set up loop variable for async calls
-        loop = asyncio.get_event_loop()
-
-        device_name, err, ser_line = await loop.run_in_executor(
-            None, self.comport.readline
-        )
+        device_name, tm, err, ser_line = await self.comport.readline()
         await self._message("Done.")
         if err == "OK":
             if (
@@ -244,7 +238,7 @@ class SelTemperature(SerialReader):
 
         self.output = []
         self.output.append(device_name)
-        self.output.append(time.time())
+        self.output.append(tm)
         self.output.append(err)
         for i in range(self._channels):
             self.output.append(self.temperature[i])

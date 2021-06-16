@@ -21,14 +21,18 @@
 
 __all__ = ["MockTemperatureSensor"]
 
+import asyncio
 import logging
 import random
 import time
+from typing import List, Union
 
-from ..sel_temperature_reader import DELIMITER
+from ..constants import Temperature, DISCONNECTED_VALUE
+from ..response_code import ResponseCode
+from .base_sensor import BaseSensor, DELIMITER
 
 
-class MockTemperatureSensor:
+class MockTemperatureSensor(BaseSensor):
     """Mock Temperature Sensor.
 
     Parameters
@@ -48,40 +52,27 @@ class MockTemperatureSensor:
         new logger gets requested.
     """
 
-    # Minimum and maximum temperatures (deg_C) for creating random sensor data.
-    MIN_TEMP = 18.0
-    MAX_TEMP = 30.0
-
-    # The value emitted by a disconnected channel
-    DISCONNECTED_VALUE = "9999.9990"
-
     def __init__(
         self,
         name: str,
         channels: int,
+        log: logging.Logger,
         count_offset: int = 0,
         disconnected_channel: int = None,
-        log: logging.Logger = None,
     ) -> None:
-        self.name = name
-        self.channels = channels
-        self.count_offset = count_offset
-        self.disconnected_channel = disconnected_channel
-
-        if log is None:
-            self.log = logging.getLogger(type(self).__name__)
-        else:
-            self.log = log.getChild(type(self).__name__)
-
-        self.log.info("__init__")
+        super().__init__(name=name, channels=channels, log=log)
+        self._count_offset = count_offset
+        self._disconnected_channel = disconnected_channel
 
     async def open(self) -> None:
+        """Open a connection to the Sesnor and set parameters."""
         pass
 
     async def close(self) -> None:
+        """Close the connection to the Sesnor."""
         pass
 
-    def format_temperature(self, i: int):
+    def _format_temperature(self, i: int) -> str:
         """Creates a formatted string representing a temperature for the given
         channel.
 
@@ -96,36 +87,28 @@ class MockTemperatureSensor:
             A string representing a temperature.
 
         """
-        temp = random.uniform(
-            MockTemperatureSensor.MIN_TEMP, MockTemperatureSensor.MAX_TEMP
-        )
-        if i == self.disconnected_channel:
-            return f"C{i + self.count_offset:02d}={MockTemperatureSensor.DISCONNECTED_VALUE}"
-        return f"C{i + self.count_offset:02d}={temp:09.4f}"
+        temp = random.uniform(Temperature.MIN, Temperature.MAX)
+        if i == self._disconnected_channel:
+            return DISCONNECTED_VALUE
+        return temp
 
-    def readline(self):
-        """Creates a temperature readout response. The name of this function
-        does not reflect what it does. But this is the name of the functions
-        in the code that reads the real sensor data so I need to stick with it.
+    async def readline(self) -> List[Union[str, float]]:
+        """Read a line of telemetry from the Sensor.
 
         Returns
         -------
-        name, error, resp : `tuple`
-        name : `str`
-            The name of the device.
-        error : `str`
-            Error string.
-            'OK' = No error
-            'Non-ASCII data in response.'
-            'Timed out with incomplete response.'
-        resp : `str`
-            Response read from the mock device.
-            Includes terminator string.
-
+        output: `list`
+            A list containing the timestamp, error and temperatures as
+            measured by the sensor. The order of the items in the list is:
+            - Sensor name: `str`
+            - Timestamp: `float`
+            - Response code: `int`
+            - One or more sensor data: `float`
         """
-        self.log.info("read")
-        time.sleep(1)
-        err: str = "OK"
-        channel_strs = [self.format_temperature(i) for i in range(0, self.channels)]
-        resp = DELIMITER.join(channel_strs) + self.terminator
-        return self.name, err, resp
+        self._log.debug("Readline")
+        await asyncio.sleep(1)
+        tm: float = time.time()
+        response: str = ResponseCode.OK
+        channel_strs = [self._format_temperature(i) for i in range(0, self._channels)]
+        self._log.debug(f"Returning {self.name}, {tm}, {response}, {channel_strs}")
+        return [self.name, tm, response] + channel_strs

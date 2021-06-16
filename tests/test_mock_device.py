@@ -23,6 +23,7 @@ import asyncio
 import logging
 import unittest
 
+from lsst.ts.envsensors.constants import Key, Temperature, DISCONNECTED_VALUE
 from lsst.ts.envsensors.device.mock_device import MockDevice
 from lsst.ts.envsensors.sensor.mock_temperature_sensor import MockTemperatureSensor
 from base_mock_test_case import BaseMockTestCase
@@ -32,41 +33,31 @@ logging.basicConfig(
 )
 
 
-class MockSensorTestCase(BaseMockTestCase):
-    async def test_read_instrument(self):
+class MockDeviceTestCase(BaseMockTestCase):
+    async def _callback(self, reply):
+        logging.info(f"Received reply {reply!r}")
+        self.reply = reply
+
+    async def test_mock_device(self):
+        self.name = "MockSensor"
         self.num_channels = 4
         self.count_offset = 0
         self.disconnected_channel = None
-        self.name = "MockSensor"
-        self.log = logging.getLogger(type(self).__name__)
-        mock_sensor = MockTemperatureSensor(self.name, self.num_channels, self.log)
-        reply = await mock_sensor.readline()
-        self.check_reply(reply=reply)
-
-    async def test_read_old_instrument(self):
-        self.num_channels = 4
-        self.count_offset = 1
-        self.disconnected_channel = None
-        self.name = "MockSensor"
+        self.data = None
         self.log = logging.getLogger(type(self).__name__)
         mock_sensor = MockTemperatureSensor(
-            self.name, self.num_channels, self.log, self.count_offset
+            name=self.name, channels=self.num_channels, log=self.log
         )
-        reply = await mock_sensor.readline()
-        self.check_reply(reply=reply)
-
-    async def test_read_nan(self):
-        self.num_channels = 4
-        self.count_offset = 1
-        self.disconnected_channel = 2
-        self.name = "MockSensor"
-        self.log = logging.getLogger(type(self).__name__)
-        mock_sensor = MockTemperatureSensor(
-            self.name,
-            self.num_channels,
-            self.log,
-            self.count_offset,
-            self.disconnected_channel,
+        mock_device = MockDevice(
+            device_id="MockDevice",
+            sensor=mock_sensor,
+            callback_func=self._callback,
+            log=self.log,
         )
-        reply = await mock_sensor.readline()
-        self.check_reply(reply=reply)
+        self.reply = None
+        await mock_device.start()
+        while not self.reply:
+            await asyncio.sleep(0.1)
+        await mock_device.stop()
+        reply_to_check = self.reply[Key.TELEMETRY]
+        self.check_reply(reply_to_check)

@@ -39,14 +39,19 @@ class DeviceConfig:
         The type of device.
     dev_id: `str`
         The ID of the device.
+    sens_type: `str`
+        The type of sensor.
 
     """
 
-    def __init__(self, name: str, channels: int, dev_type: str, dev_id: str) -> None:
+    def __init__(
+        self, name: str, channels: int, dev_type: str, dev_id: str, sens_type: str
+    ) -> None:
         self.name = name
         self.channels = channels
         self.dev_type = dev_type
         self.dev_id = dev_id
+        self.sens_type = sens_type
 
     def as_dict(self) -> Dict[str, Union[str, int]]:
         """Return a dict with the instance attributes and their values as
@@ -61,6 +66,7 @@ class DeviceConfig:
         return {
             Key.NAME: self.name,
             Key.CHANNELS: self.channels,
-            Key.TYPE: self.dev_type,
+            Key.DEVICE_TYPE: self.dev_type,
             Key.FTDI_ID: self.dev_id,
+            Key.SENSOR_TYPE: self.sens_type,
         }
