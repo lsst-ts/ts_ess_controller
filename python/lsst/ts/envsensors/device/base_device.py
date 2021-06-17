@@ -25,7 +25,7 @@ from abc import ABC, abstractmethod
 import asyncio
 import logging
 import time
-from typing import Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 from ..constants import Key
 from ..response_code import ResponseCode
@@ -109,11 +109,11 @@ class BaseDevice(ABC):
             sensor_telemetry: List[float] = await self._sensor.extract_telemetry(
                 line=line
             )
-            output: List[Union[str, int, float]] = [
+            output: List[Any] = [
                 self.name,
                 tm,
                 response,
-            ] + sensor_telemetry
+            ] + sensor_telemetry  # type: ignore
             reply = {
                 Key.TELEMETRY: output,
             }

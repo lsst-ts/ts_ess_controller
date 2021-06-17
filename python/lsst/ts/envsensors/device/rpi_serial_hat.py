@@ -45,13 +45,18 @@ class RpiSerialHat(BaseDevice):
 
     def __init__(
         self,
+        name: str,
         device_id: str,
         sensor: BaseSensor,
-        callback_func: Callable.__init__,
+        callback_func: Callable,
         log: logging.Logger,
     ) -> None:
         super().__init__(
-            device_id=device_id, sensor=sensor, callback_func=callback_func, log=log
+            name=name,
+            device_id=device_id,
+            sensor=sensor,
+            callback_func=callback_func,
+            log=log,
         )
 
     def init(self) -> None:

@@ -24,7 +24,7 @@ __all__ = ["VcpFtdi"]
 import logging
 from typing import Callable
 
-from pylibftdi import Device
+from pylibftdi import Device  # type: ignore
 
 from .base_device import BaseDevice
 from ..sensor import BaseSensor
@@ -47,13 +47,18 @@ class VcpFtdi(BaseDevice):
 
     def __init__(
         self,
+        name: str,
         device_id: str,
         sensor: BaseSensor,
-        callback_func: Callable.__init__,
+        callback_func: Callable,
         log: logging.Logger,
     ) -> None:
         super().__init__(
-            device_id=device_id, sensor=sensor, callback_func=callback_func, log=log
+            name=name,
+            device_id=device_id,
+            sensor=sensor,
+            callback_func=callback_func,
+            log=log,
         )
         self._vcp: Device = Device(
             self._device_id,

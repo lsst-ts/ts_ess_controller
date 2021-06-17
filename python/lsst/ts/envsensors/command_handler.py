@@ -331,7 +331,7 @@ class CommandHandler:
         if self.simulation_mode == 1:
             from .device import MockDevice
 
-            device = MockDevice(
+            device: BaseDevice = MockDevice(
                 name=device_configuration[Key.NAME],
                 device_id=device_configuration[Key.FTDI_ID],
                 sensor=sensor,
@@ -341,7 +341,7 @@ class CommandHandler:
             )
             return device
         elif device_configuration[Key.DEVICE_TYPE] == DeviceType.FTDI:
-            from .sensor import VcpFtdi
+            from .device import VcpFtdi
 
             device = VcpFtdi(
                 name=device_configuration[Key.NAME],
@@ -354,7 +354,7 @@ class CommandHandler:
         elif device_configuration[Key.DEVICE_TYPE] == DeviceType.SERIAL:
             # make sure we are on a Raspberry Pi4
             if "aarch64" in platform.platform():
-                from .rpi_serial_hat import RpiSerialHat
+                from .device import RpiSerialHat
 
                 device = RpiSerialHat(
                     name=device_configuration[Key.NAME],
@@ -375,7 +375,7 @@ class CommandHandler:
             self.log.info("Connecting to the mock sensor.")
             from .sensor import TemperatureSensor
 
-            sensor = TemperatureSensor(
+            sensor: BaseSensor = TemperatureSensor(
                 channels=device_configuration[Key.CHANNELS],
                 log=self.log,
             )
