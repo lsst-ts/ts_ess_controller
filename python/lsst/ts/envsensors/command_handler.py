@@ -31,6 +31,7 @@ from .command_error import CommandError
 from .constants import Command, Key, DeviceType, SensorType
 from .device import BaseDevice
 from .response_code import ResponseCode
+from .sensor import BaseSensor
 
 
 class CommandHandler:
@@ -326,16 +327,10 @@ class CommandHandler:
         RuntimeError
             In case an incorrect configuration has been loaded.
         """
-        device: Any = None
+        sensor: BaseSensor = self._get_sensor(device_configuration=device_configuration)
         if self.simulation_mode == 1:
-            self.log.info("Connecting to the mock sensor.")
-            from .sensor import TemperatureSensor
             from .device import MockDevice
 
-            sensor = TemperatureSensor(
-                channels=device_configuration[Key.CHANNELS],
-                log=self.log,
-            )
             device = MockDevice(
                 name=device_configuration[Key.NAME],
                 device_id=device_configuration[Key.FTDI_ID],
@@ -349,25 +344,60 @@ class CommandHandler:
             from .sensor import VcpFtdi
 
             device = VcpFtdi(
-                device_configuration[Key.NAME],
-                device_configuration[Key.FTDI_ID],
-                self.log,
+                name=device_configuration[Key.NAME],
+                device_id=device_configuration[Key.FTDI_ID],
+                sensor=sensor,
+                callback_func=self._callback,
+                log=self.log,
             )
+            return device
         elif device_configuration[Key.DEVICE_TYPE] == DeviceType.SERIAL:
             # make sure we are on a Raspberry Pi4
             if "aarch64" in platform.platform():
                 from .rpi_serial_hat import RpiSerialHat
 
                 device = RpiSerialHat(
-                    device_configuration[Key.NAME],
-                    device_configuration[Key.SERIAL_PORT],
-                    self.log,
+                    name=device_configuration[Key.NAME],
+                    device_id=device_configuration[Key.SERIAL_PORT],
+                    sensor=sensor,
+                    callback_func=self._callback,
+                    log=self.log,
                 )
+                return device
+        raise RuntimeError(
+            f"Could not get a {device_configuration[Key.DEVICE_TYPE]!r} device"
+            f"on architecture {platform.platform()}. Please check the "
+            f"configuration."
+        )
 
-        if device is None:
-            raise RuntimeError(
-                f"Could not get a {device_configuration['type']!r} device on "
-                f"architecture {platform.platform()}. Please check the "
-                f"configuration."
+    def _get_sensor(self, device_configuration: dict) -> BaseSensor:
+        if device_configuration[Key.SENSOR_TYPE] == SensorType.TEMPERATURE:
+            self.log.info("Connecting to the mock sensor.")
+            from .sensor import TemperatureSensor
+
+            sensor = TemperatureSensor(
+                channels=device_configuration[Key.CHANNELS],
+                log=self.log,
             )
-        return device
+            return sensor
+        elif device_configuration[Key.SENSOR_TYPE] == SensorType.HUMIDITY:
+            from .sensor import HumiditySensor
+
+            sensor = HumiditySensor(
+                channels=device_configuration[Key.CHANNELS],
+                log=self.log,
+            )
+            return sensor
+        elif device_configuration[Key.SENSOR_TYPE] == SensorType.WIND:
+            from .sensor import WindSensor
+
+            sensor = WindSensor(
+                channels=device_configuration[Key.CHANNELS],
+                log=self.log,
+            )
+            return sensor
+        raise RuntimeError(
+            f"Could not get a {device_configuration[Key.SENSOR_TYPE]!r} sensor"
+            f"on architecture {platform.platform()}. Please check the "
+            f"configuration."
+        )

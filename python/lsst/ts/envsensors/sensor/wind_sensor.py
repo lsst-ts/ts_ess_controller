@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["TemperatureSensor"]
+__all__ = ["WindSensor"]
 
 import asyncio
 import logging
@@ -31,8 +31,8 @@ from ..response_code import ResponseCode
 from .base_sensor import BaseSensor, DELIMITER, TERMINATOR
 
 
-class TemperatureSensor(BaseSensor):
-    """Temperature Sensor.
+class WindSensor(BaseSensor):
+    """Wind Sensor.
 
     Parameters
     ----------
@@ -54,47 +54,15 @@ class TemperatureSensor(BaseSensor):
 
     async def open(self) -> None:
         """Open a connection to the Sensor and set parameters."""
+        # TODO: implementation will follow.
         pass
 
     async def extract_telemetry(self, line: str) -> List[float]:
-        """Extract the temperature telemetry from a line of Sensor data.
-
-        Parameters
-        ----------
-        line: `str`
-            A line of comma separated telemetry, each of the format
-            CXX=XXXX.XXX
-
-        Returns
-        -------
-        output: `list`
-            A list containing the temperature telemetry as measured by the
-            specific type of sensor. The length of the output list is the same
-            as the number of channels.
-            If a channel is disconnected (its value will be DISCONNECTED_VALUE)
-            or if a channel is missing then the value gets replaced by math.nan
-        """
-        self._log.debug("extract_telemetry")
-        stripped_line: str = line.strip(TERMINATOR)
-        line_items = stripped_line.split(DELIMITER)
-        output = []
-        for line_item in line_items:
-            temperature_items = line_item.split("=")
-            if len(temperature_items) == 1:
-                output.append(math.nan)
-            elif len(temperature_items) == 2:
-                if temperature_items[1] == DISCONNECTED_VALUE:
-                    output.append(math.nan)
-                else:
-                    output.append(float(temperature_items[1]))
-            else:
-                raise ValueError(
-                    f"At most one '=' symbol expected in temperature item {line_item}"
-                )
-        while len(output) < self.channels:
-            output.insert(0, math.nan)
-        return output
+        """Extract the wind telemetry from a line of Sensor data."""
+        # TODO: implementation will follow.
+        return []
 
     async def close(self) -> None:
         """Close the connection to the Sensor."""
+        # TODO: implementation will follow.
         pass
