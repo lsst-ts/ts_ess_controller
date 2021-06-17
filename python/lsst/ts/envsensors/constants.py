@@ -33,7 +33,7 @@ import enum
 # Minimum and maximum temperatures (deg_C) for creating random sensor data.
 
 # The value emitted by a disconnected channel
-DISCONNECTED_VALUE = 9999.9990
+DISCONNECTED_VALUE = "9999.9990"
 
 
 class Command(str, enum.Enum):

@@ -82,6 +82,16 @@ class VcpFtdi(BaseDevice):
             self._log.debug("Failed to open VCP.")
             raise IOError(f"{self.name}: Failed to open VCP.")
 
+    async def readline(self) -> str:
+        """Read a line of telemetry from the Device.
+
+        Returns
+        -------
+        output: `str`
+            A line of telemetry.
+        """
+        pass
+
     async def close(self) -> None:
         """Close the Sensor Device.
 

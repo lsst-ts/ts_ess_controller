@@ -67,6 +67,16 @@ class RpiSerialHat(BaseDevice):
         """
         pass
 
+    async def readline(self) -> str:
+        """Read a line of telemetry from the Device.
+
+        Returns
+        -------
+        output: `str`
+            A line of telemetry.
+        """
+        pass
+
     async def close(self) -> None:
         """Close the Sensor Device.
 

@@ -39,9 +39,9 @@ class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(ResponseCode.OK, response_code)
         self.assertEqual(len(resp), self.num_channels)
         for i in range(0, self.num_channels):
-            if i == self.disconnected_channel:
+            if i < self.missed_channels:
                 self.assertTrue(math.isnan(resp[i]))
-            elif i < self.missed_channels:
+            elif i == self.disconnected_channel:
                 self.assertTrue(math.isnan(resp[i]))
             else:
                 self.assertLessEqual(Temperature.MIN, resp[i])

@@ -21,11 +21,14 @@
 
 __all__ = ["MockDevice"]
 
+import asyncio
 import logging
+import random
 from typing import Callable
 
+from .base_device import BaseDevice, DELIMITER, TERMINATOR
+from ..constants import DISCONNECTED_VALUE, Temperature
 from ..sensor import BaseSensor
-from .base_device import BaseDevice
 
 
 class MockDevice(BaseDevice):
@@ -33,24 +36,40 @@ class MockDevice(BaseDevice):
 
     Parameters:
     -----------
+    name: `str`
+        The name of the device.
     device_id: `str`
         The hardware device ID to connect to.
     sensor: `BaseSensor`
         The sensor that produces the telemetry.
     callback_func : `Callable`
         Callback function to receive the telemetry.
+    _disconnected_channel: `int`, optional
+        The channels number for which this class will mock a disconnection.
+    missed_channels: `int`, optional
+        The number of channels to not output to mock connecting to the sensor
+        in the middle of receiving data from it.
     """
 
     def __init__(
         self,
+        name: str,
         device_id: str,
         sensor: BaseSensor,
         callback_func: Callable,
         log: logging.Logger,
+        disconnected_channel: int = None,
+        missed_channels: int = 0,
     ) -> None:
         super().__init__(
-            device_id=device_id, sensor=sensor, callback_func=callback_func, log=log
+            name=name,
+            device_id=device_id,
+            sensor=sensor,
+            callback_func=callback_func,
+            log=log,
         )
+        self._disconnected_channel = disconnected_channel
+        self._missed_channels = missed_channels
 
     def init(self) -> None:
         """Initialize the Sensor Device."""
@@ -59,6 +78,44 @@ class MockDevice(BaseDevice):
     async def open(self) -> None:
         """Open the Sensor Device."""
         pass
+
+    def _format_temperature(self, i: int):
+        """Creates a formatted string representing a temperature for the given
+        channel.
+        Parameters
+        ----------
+        i: `int`
+            The temperature channel.
+        Returns
+        -------
+        s: `str`
+            A string representing a temperature.
+        """
+        temp = random.uniform(Temperature.MIN, Temperature.MAX)
+        if i < self._missed_channels:
+            return ""
+        if i == self._disconnected_channel:
+            return f"C{i:02d}={DISCONNECTED_VALUE}"
+        return f"C{i:02d}={temp:09.4f}"
+
+    async def readline(self) -> str:
+        """Read a line of telemetry from the Device.
+
+        Returns
+        -------
+        output: `str`
+            A line of comma separated telemetry, each of the format
+            CXX=XXXX.XXX
+        """
+        # Mock the time needed to output telemetry.
+        await asyncio.sleep(1)
+        channel_strs = [
+            self._format_temperature(i) for i in range(0, self._sensor.channels)
+        ]
+        # Reset self._missed_channels because truncated data only happens when
+        # data is being output while connecting.
+        self._missed_channels = 0
+        return DELIMITER.join(channel_strs) + TERMINATOR
 
     async def close(self) -> None:
         """Close the Sensor Device."""

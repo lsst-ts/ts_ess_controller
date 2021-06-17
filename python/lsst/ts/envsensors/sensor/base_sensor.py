@@ -41,32 +41,28 @@ class BaseSensor(ABC):
 
     Parameters:
     -----------
-    name: `str`
-        The name of the sensor.
     channels: `int`
         The number of channels that the sensor will produce telemetry for.
+    log: `logging.Logger`
+        The logger to create a child logger for.
     """
 
     @abstractmethod
-    def __init__(self, name: str, channels: int, log: logging.Logger) -> None:
-        self.name: str = name
-        self._channels: int = channels
+    def __init__(self, channels: int, log: logging.Logger) -> None:
+        self.channels: int = channels
         self._log = log.getChild(type(self).__name__)
         self.terminator: str = TERMINATOR
 
     @abstractmethod
-    async def readline(self) -> List[Union[str, int, float]]:
-        """Read a line of telemetry from the Sensor.
+    async def extract_telemetry(self, line: str) -> List[float]:
+        """Extract the telemetry from a line of Sensor data.
 
         Returns
         -------
         output: `list`
-            A list containing the timestamp, error and temperatures as
-            measured by the sensor. The order of the items in the list is:
-            - Sensor name: `str`
-            - Timestamp: `float`
-            - Response code: `int`
-            - One or more sensor data: `float`
+            A list containing the telemetry as measured by the specific type of
+            sensor. The length of the output list is the same as the number of
+            channels.
         """
         pass
 

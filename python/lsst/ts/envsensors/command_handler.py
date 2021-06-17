@@ -85,10 +85,6 @@ class CommandHandler:
             Command.STOP: self.stop_sending_telemetry,
         }
 
-        # Unit tests may set this to an integer value to simulate a
-        # disconnected or missing sensor.
-        self.disconnected_channel = None
-
     async def handle_command(self, command: str, **kwargs: Any) -> None:
         """Handle incomming commands and parameters.
 
@@ -322,8 +318,7 @@ class CommandHandler:
 
         Returns
         -------
-        device: `MockTemperatureSensor` or `VcpFtdi` or `RpiSerialHat` or
-            `None`
+        device: `TemperatureSensor` or `VcpFtdi` or `RpiSerialHat` or `None`
             The device to connect to.
 
         Raises
@@ -334,20 +329,20 @@ class CommandHandler:
         device: Any = None
         if self.simulation_mode == 1:
             self.log.info("Connecting to the mock sensor.")
-            from .sensor import MockTemperatureSensor
+            from .sensor import TemperatureSensor
             from .device import MockDevice
 
-            sensor = MockTemperatureSensor(
-                name=device_configuration[Key.NAME],
+            sensor = TemperatureSensor(
                 channels=device_configuration[Key.CHANNELS],
                 log=self.log,
-                disconnected_channel=self.disconnected_channel,
             )
             device = MockDevice(
+                name=device_configuration[Key.NAME],
                 device_id=device_configuration[Key.FTDI_ID],
                 sensor=sensor,
                 callback_func=self._callback,
                 log=self.log,
+                disconnected_channel=None,
             )
             return device
         elif device_configuration[Key.DEVICE_TYPE] == DeviceType.FTDI:

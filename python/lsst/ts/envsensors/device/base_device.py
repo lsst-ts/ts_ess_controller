@@ -19,16 +19,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["BaseDevice"]
+__all__ = ["BaseDevice", "DELIMITER", "TERMINATOR"]
 
 from abc import ABC, abstractmethod
 import asyncio
 import logging
+import time
 from typing import Callable, List, Optional, Union
 
 from ..constants import Key
+from ..response_code import ResponseCode
 from ..sensor import BaseSensor
 from ..utils import create_done_future
+
+
+"""Serial data channel delimiter."""
+DELIMITER = ","
+
+"""Serial data line terminator."""
+TERMINATOR = "\r\n"
 
 
 class BaseDevice(ABC):
@@ -40,6 +49,8 @@ class BaseDevice(ABC):
 
     Parameters:
     -----------
+    name: `str`
+        The name of the device.
     device_id: `str`
         The hardware device ID to connect to. This can be a physical ID (e.g.
         /dev/ttyUSB0), a serial port (e.g. serial_ch_1) or any other ID used by
@@ -48,16 +59,20 @@ class BaseDevice(ABC):
         The sensor that produces the telemetry.
     callback_func : `Callable`
         Callback function to receive the telemetry.
+    log: `logging.Logger`
+        The logger to create a child logger for.
     """
 
     @abstractmethod
     def __init__(
         self,
+        name: str,
         device_id: str,
         sensor: BaseSensor,
         callback_func: Callable,
         log: logging.Logger,
     ) -> None:
+        self.name: str = name
         self._device_id: str = device_id
         self._sensor: BaseSensor = sensor
         self._callback_func: Callable = callback_func
@@ -76,7 +91,7 @@ class BaseDevice(ABC):
 
     async def start(self) -> None:
         """Start the sensor read loop."""
-        self._log.debug(f"Starting read loop for {self._sensor.name!r} sensor.")
+        self._log.debug(f"Starting read loop for {self.name!r} sensor.")
         self._telemetry_loop = asyncio.create_task(self._run())
 
     async def _run(self) -> None:
@@ -88,16 +103,37 @@ class BaseDevice(ABC):
         await self._sensor.open()
         while not self._telemetry_loop.done():
             self._log.debug("Reading data.")
-            output: List[Union[str, int, float]] = await self._sensor.readline()
+            tm: float = time.time()
+            response: int = ResponseCode.OK
+            line: str = await self.readline()
+            sensor_telemetry: List[float] = await self._sensor.extract_telemetry(
+                line=line
+            )
+            output: List[Union[str, int, float]] = [
+                self.name,
+                tm,
+                response,
+            ] + sensor_telemetry
             reply = {
                 Key.TELEMETRY: output,
             }
             self._log.info(f"Returning {reply}")
             await self._callback_func(reply)
 
+    @abstractmethod
+    async def readline(self) -> str:
+        """Read a line of telemetry from the Device.
+
+        Returns
+        -------
+        output: `str`
+            A line of telemetry.
+        """
+        pass
+
     async def stop(self) -> None:
         """Terminate the sensor read loop."""
-        self._log.debug(f"Stopping read loop for {self._sensor.name!r} sensor.")
+        self._log.debug(f"Stopping read loop for {self.name!r} sensor.")
         self._telemetry_loop.cancel()
         self._telemetry_loop = create_done_future()
         await self._sensor.close()
