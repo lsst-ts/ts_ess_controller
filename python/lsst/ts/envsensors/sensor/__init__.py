@@ -20,6 +20,5 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .base_sensor import BaseSensor, TERMINATOR
-from .humidity_sensor import HumiditySensor
 from .temperature_sensor import TemperatureSensor
 from .wind_sensor import WindSensor

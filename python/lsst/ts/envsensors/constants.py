@@ -80,6 +80,5 @@ class Temperature(enum.IntEnum):
 class SensorType(str, enum.Enum):
     """Supported sensor types."""
 
-    HUMIDITY = "Humidity"
     TEMPERATURE = "Temperature"
     WIND = "Wind"

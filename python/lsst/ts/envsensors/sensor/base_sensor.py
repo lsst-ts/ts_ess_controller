@@ -36,8 +36,8 @@ class BaseSensor(ABC):
     """Base class for the different types of Sensors.
 
     This class holds all common code for the sensors. Sensor specific code
-    (for instance temperature, humidity or wind sensor) needs to be implemented
-    in a sub-class.
+    (for instance temperature or wind sensor) needs to be implemented in a
+    sub-class.
 
     Parameters:
     -----------
@@ -64,14 +64,4 @@ class BaseSensor(ABC):
             sensor. The length of the output list is the same as the number of
             channels.
         """
-        pass
-
-    @abstractmethod
-    async def open(self) -> None:
-        """Open a connection to the Sensor and set parameters."""
-        pass
-
-    @abstractmethod
-    async def close(self) -> None:
-        """Close the connection to the Sensor."""
         pass

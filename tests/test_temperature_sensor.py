@@ -32,12 +32,12 @@ logging.basicConfig(
 )
 
 
-class MockSensorTestCase(unittest.IsolatedAsyncioTestCase):
+class TemperatureSensorTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_extract_telemetry(self):
         self.num_channels = 4
         self.disconnected_channel = None
         self.missed_channels = 0
-        self.name = "MockSensor"
+        self.name = "TemperatureSensor"
         self.log = logging.getLogger(type(self).__name__)
         temp_sensor = TemperatureSensor(self.num_channels, self.log)
         line = "C00=0021.1234,C01=0021.1220,C02=0021.1249,C03=0020.9990\r\n"

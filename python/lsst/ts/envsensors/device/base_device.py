@@ -100,7 +100,6 @@ class BaseDevice(ABC):
         If enabled, loop and read the sensor and pass result to callback_func.
         """
         self._log.debug("Starting sensor.")
-        await self._sensor.open()
         while not self._telemetry_loop.done():
             self._log.debug("Reading data.")
             tm: float = time.time()
@@ -136,7 +135,6 @@ class BaseDevice(ABC):
         self._log.debug(f"Stopping read loop for {self.name!r} sensor.")
         self._telemetry_loop.cancel()
         self._telemetry_loop = create_done_future()
-        await self._sensor.close()
 
     @abstractmethod
     async def close(self) -> None:

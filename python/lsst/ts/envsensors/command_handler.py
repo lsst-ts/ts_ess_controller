@@ -187,12 +187,11 @@ class CommandHandler:
 
         # Make sure that Key.SENSOR_TYPE has the correct value.
         if device_configuration[Key.SENSOR_TYPE] not in [
-            SensorType.HUMIDITY,
             SensorType.TEMPERATURE,
             SensorType.WIND,
         ]:
             raise CommandError(
-                msg=f"The value for key {Key.DEVICE_TYPE} must be {SensorType.HUMIDITY}, "
+                msg=f"The value for key {Key.DEVICE_TYPE} must be "
                 f"{SensorType.TEMPERATURE} or {SensorType.WIND}",
                 response_code=ResponseCode.INVALID_CONFIGURATION,
             )
@@ -376,14 +375,6 @@ class CommandHandler:
             from .sensor import TemperatureSensor
 
             sensor: BaseSensor = TemperatureSensor(
-                channels=device_configuration[Key.CHANNELS],
-                log=self.log,
-            )
-            return sensor
-        elif device_configuration[Key.SENSOR_TYPE] == SensorType.HUMIDITY:
-            from .sensor import HumiditySensor
-
-            sensor = HumiditySensor(
                 channels=device_configuration[Key.CHANNELS],
                 log=self.log,
             )
