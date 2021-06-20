@@ -72,7 +72,7 @@ class VcpFtdi(BaseDevice):
         """Initialize the Sensor Device."""
         pass
 
-    async def open(self) -> None:
+    async def basic_open(self) -> None:
         """Open the Sensor Device.
 
         Raises
@@ -94,10 +94,15 @@ class VcpFtdi(BaseDevice):
         -------
         output: `str`
             A line of telemetry.
-        """
-        pass
 
-    async def close(self) -> None:
+        Raises
+        ------
+        NotImplementedError
+            This method will be implemented later.
+        """
+        raise NotImplementedError("This function has not yet been implemented.")
+
+    async def basic_close(self) -> None:
         """Close the Sensor Device.
 
         Raises

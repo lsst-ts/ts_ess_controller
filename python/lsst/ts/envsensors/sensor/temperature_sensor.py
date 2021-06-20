@@ -38,7 +38,7 @@ class TemperatureSensor(BaseSensor):
     ----------
     name: `str`
         The name of the sensor.
-    channels: `int`
+    num_channels: `int`
         The number of temperature channels.
     log: `logger`' optional
         The logger for which to create a child logger, or None in which case a
@@ -47,14 +47,10 @@ class TemperatureSensor(BaseSensor):
 
     def __init__(
         self,
-        channels: int,
+        num_channels: int,
         log: logging.Logger,
     ) -> None:
-        super().__init__(channels=channels, log=log)
-
-    async def open(self) -> None:
-        """Open a connection to the Sensor and set parameters."""
-        pass
+        super().__init__(num_channels=num_channels, log=log)
 
     async def extract_telemetry(self, line: str) -> List[float]:
         """Extract the temperature telemetry from a line of Sensor data.
@@ -91,10 +87,11 @@ class TemperatureSensor(BaseSensor):
                 raise ValueError(
                     f"At most one '=' symbol expected in temperature item {line_item}"
                 )
-        while len(output) < self.channels:
+
+        # When the connection is first made, it may be done while the sensor is
+        # in the middle of outputting data. In that case, only a partial string
+        # witht he final channels will be received and the missing leading
+        # channels need to be filled with NaN.
+        while len(output) < self.num_channels:
             output.insert(0, math.nan)
         return output
-
-    async def close(self) -> None:
-        """Close the connection to the Sensor."""
-        pass

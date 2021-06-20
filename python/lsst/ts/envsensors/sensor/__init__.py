@@ -19,6 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .base_sensor import BaseSensor, TERMINATOR
+from .base_sensor import BaseSensor, DELIMITER, TERMINATOR
 from .temperature_sensor import TemperatureSensor
 from .wind_sensor import WindSensor

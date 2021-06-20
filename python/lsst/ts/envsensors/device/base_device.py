@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["BaseDevice", "DELIMITER", "TERMINATOR"]
+__all__ = ["BaseDevice"]
 
 from abc import ABC, abstractmethod
 import asyncio
@@ -31,13 +31,6 @@ from ..constants import Key
 from ..response_code import ResponseCode
 from ..sensor import BaseSensor
 from ..utils import create_done_future
-
-
-"""Serial data channel delimiter."""
-DELIMITER = ","
-
-"""Serial data line terminator."""
-TERMINATOR = "\r\n"
 
 
 class BaseDevice(ABC):
@@ -77,6 +70,7 @@ class BaseDevice(ABC):
         self._sensor: BaseSensor = sensor
         self._callback_func: Callable = callback_func
         self._telemetry_loop: asyncio.Future = create_done_future()
+        self.is_open = False
         self._log = log.getChild(type(self).__name__)
 
     @abstractmethod
@@ -84,8 +78,23 @@ class BaseDevice(ABC):
         """Initialize the Sensor Device."""
         pass
 
-    @abstractmethod
     async def open(self) -> None:
+        """Generic open function.
+
+        Check if the device is open and, if not, call basic_open.
+
+        Raises
+        ------
+        RuntimeError
+            In case the device already is open.
+        """
+        if self.is_open:
+            raise RuntimeError("Already open")
+        await self.basic_open()
+        self.is_open = True
+
+    @abstractmethod
+    async def basic_open(self) -> None:
         """Open the Sensor Device."""
         pass
 
@@ -136,7 +145,17 @@ class BaseDevice(ABC):
         self._telemetry_loop.cancel()
         self._telemetry_loop = create_done_future()
 
-    @abstractmethod
     async def close(self) -> None:
+        """Device specific close function.
+
+        Check if the device is open and, if yes, call basic_close.
+        """
+        if not self.is_open:
+            return
+        self.is_open = False
+        await self.basic_close()
+
+    @abstractmethod
+    async def basic_close(self) -> None:
         """Close the Sensor Device."""
         pass

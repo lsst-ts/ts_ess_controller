@@ -26,9 +26,9 @@ import logging
 import random
 from typing import Callable
 
-from .base_device import BaseDevice, DELIMITER, TERMINATOR
-from ..constants import DISCONNECTED_VALUE, Temperature
-from ..sensor import BaseSensor
+from .base_device import BaseDevice
+from ..constants import DISCONNECTED_VALUE, MockTemperatureConfig
+from ..sensor import BaseSensor, DELIMITER, TERMINATOR
 
 
 class MockDevice(BaseDevice):
@@ -44,8 +44,10 @@ class MockDevice(BaseDevice):
         The sensor that produces the telemetry.
     callback_func : `Callable`
         Callback function to receive the telemetry.
-    _disconnected_channel: `int`, optional
-        The channels number for which this class will mock a disconnection.
+    log: `logging.Logger`
+        The logger to create a child logger for.
+    disconnected_channel: `int`, optional
+        The channel number for which this class will mock a disconnection.
     missed_channels: `int`, optional
         The number of channels to not output to mock connecting to the sensor
         in the middle of receiving data from it.
@@ -68,30 +70,43 @@ class MockDevice(BaseDevice):
             callback_func=callback_func,
             log=log,
         )
-        self._disconnected_channel = disconnected_channel
-        self._missed_channels = missed_channels
+        if not disconnected_channel or 0 <= disconnected_channel < sensor.num_channels:
+            self._disconnected_channel = disconnected_channel
+        else:
+            raise ValueError(
+                f"The value {disconnected_channel} for disconnnected_channel"
+                f" should be between 0 and {sensor.num_channels}"
+            )
+        if 0 <= missed_channels <= sensor.num_channels:
+            self._missed_channels = missed_channels
+        else:
+            raise ValueError(
+                f"The value {missed_channels} for missed_channels"
+                f" should be between 0 and {sensor.num_channels}"
+            )
 
     def init(self) -> None:
         """Initialize the Sensor Device."""
         pass
 
-    async def open(self) -> None:
+    async def basic_open(self) -> None:
         """Open the Sensor Device."""
         pass
 
     def _format_temperature(self, i: int):
         """Creates a formatted string representing a temperature for the given
         channel.
+
         Parameters
         ----------
         i: `int`
-            The temperature channel.
+            The 0-based temperature channel.
         Returns
         -------
         s: `str`
             A string representing a temperature.
         """
-        temp = random.uniform(Temperature.MIN, Temperature.MAX)
+        temp = random.uniform(MockTemperatureConfig.min, MockTemperatureConfig.max)
         if i < self._missed_channels:
             return ""
         if i == self._disconnected_channel:
@@ -110,13 +125,13 @@ class MockDevice(BaseDevice):
         # Mock the time needed to output telemetry.
         await asyncio.sleep(1)
         channel_strs = [
-            self._format_temperature(i) for i in range(0, self._sensor.channels)
+            self._format_temperature(i) for i in range(0, self._sensor.num_channels)
         ]
         # Reset self._missed_channels because truncated data only happens when
         # data is being output while connecting.
         self._missed_channels = 0
         return DELIMITER.join(channel_strs) + TERMINATOR
 
-    async def close(self) -> None:
+    async def basic_close(self) -> None:
         """Close the Sensor Device."""
         pass

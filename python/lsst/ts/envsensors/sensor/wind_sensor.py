@@ -23,7 +23,7 @@ __all__ = [
     "WindSensor",
     "DEFAULT_DIRECTION_VAL",
     "DEFAULT_SPEED_VAL",
-    "DEFAULT_STATUS",
+    "GOOD_STATUS",
     "END_CHARACTER",
     "START_CHARACTER",
     "UNIT_IDENTIFIER",
@@ -33,6 +33,7 @@ __all__ = [
 import asyncio
 import logging
 import math
+import re
 from typing import List, Optional, Union
 
 from ..constants import DISCONNECTED_VALUE
@@ -49,16 +50,16 @@ UNIT_IDENTIFIER: str = "Q"
 WINDSPEED_UNIT: str = "M"
 
 """Default status."""
-DEFAULT_STATUS: str = "00"
+GOOD_STATUS: str = "00"
 
 """ASCII end charactor."""
 END_CHARACTER = "\x03"
 
 """Default value for the wind direction."""
-DEFAULT_DIRECTION_VAL: float = 999
+DEFAULT_DIRECTION_VAL: str = "999"
 
 """Default value for the wind speed."""
-DEFAULT_SPEED_VAL: float = 9999.9990
+DEFAULT_SPEED_VAL: str = "9999.9990"
 
 
 class WindSensor(BaseSensor):
@@ -93,7 +94,7 @@ class WindSensor(BaseSensor):
     ----------
     name: `str`
         The name of the sensor.
-    channels: `int`
+    num_channels: `int`
         The number of temperature channels.
     log: `logger`' optional
         The logger for which to create a child logger, or None in which case a
@@ -102,35 +103,52 @@ class WindSensor(BaseSensor):
 
     def __init__(
         self,
-        channels: int,
+        num_channels: int,
         log: logging.Logger,
     ) -> None:
-        super().__init__(channels=channels, log=log)
+        super().__init__(num_channels=num_channels, log=log)
+
+        # Regex pattern to process a line of telemetry.
+        self.telemetry_pattern = re.compile(
+            rf"^{START_CHARACTER}Q,(?P<direction>\d{{3}})?,(?P<speed>\d{{3}}\.\d{{2}}),M,"
+            rf"(?P<status>\d{{2}}),{END_CHARACTER}(?P<checksum>[0-9a-fA-F]{{2}}){TERMINATOR}$"
+        )
 
     async def extract_telemetry(self, line: str) -> List[float]:
         """Extract the wind telemetry from a line of Sensor data."""
-        resp = line.strip(TERMINATOR)
-        data = resp.split(DELIMITER)
-        speed = DEFAULT_SPEED_VAL
-        direction = DEFAULT_DIRECTION_VAL
-        if len(data) == 6:
-            if (
-                data[0] == START_CHARACTER + UNIT_IDENTIFIER
-                and data[3] == WINDSPEED_UNIT
-                and data[4] == DEFAULT_STATUS
-                and data[5][0] == END_CHARACTER
-            ):
-                csum_test_str = resp[1:-3]
-                csum_val = int(resp[-2:], 16)
-                checksum: int = 0
-                for i in csum_test_str:
-                    checksum ^= ord(i)
-                if checksum == csum_val:
-                    speed = float(data[2])
-                    if not data[1] == "":
-                        direction = float(data[1])
-        if speed == DEFAULT_SPEED_VAL:
-            speed = math.nan
-        if direction == DEFAULT_DIRECTION_VAL:
-            direction = math.nan
+        m = re.search(self.telemetry_pattern, line)
+        if m:
+            direction_str = m.group("direction") if m.group("direction") else ""
+            speed_str = m.group("speed")
+            status = m.group("status")
+            checksum_val = int(m.group("checksum"), 16)
+
+            if status != GOOD_STATUS:
+                self._log.error(
+                    f"Expected status {GOOD_STATUS} but received {status}. Continuing."
+                )
+
+            checksum_string = f"Q,{direction_str},{speed_str},M,{status},"
+            checksum: int = 0
+            for i in checksum_string:
+                checksum ^= ord(i)
+
+            if checksum != checksum_val:
+                self._log.error(
+                    f"Computed checksum {checksum} is not equal to telemetry checksum {checksum_val}."
+                )
+                speed = math.nan
+                direction = math.nan
+            else:
+                if speed_str == DEFAULT_SPEED_VAL:
+                    speed = math.nan
+                else:
+                    speed = float(speed_str)
+                if direction_str == DEFAULT_DIRECTION_VAL or direction_str == "":
+                    direction = math.nan
+                else:
+                    direction = int(direction_str)
+
+        else:
+            raise ValueError(f"Received an unparsable line {line}")
         return [speed, direction]

@@ -31,7 +31,6 @@ from lsst.ts.envsensors import (
     DeviceType,
     Key,
     SensorType,
-    Temperature,
 )
 from lsst.ts import tcpip
 from base_mock_test_case import BaseMockTestCase
@@ -49,7 +48,6 @@ class SocketServerTestCase(BaseMockTestCase):
         self.ctrl = None
         self.writer = None
         self.mock_ctrl = None
-        self.data = None
         self.srv = SocketServer(host="0.0.0.0", port=0, simulation_mode=1)
 
         self.log = logging.getLogger(type(self).__name__)
@@ -107,7 +105,17 @@ class SocketServerTestCase(BaseMockTestCase):
         await asyncio.sleep(0.5)
         self.assertFalse(self.srv.connected)
 
-    async def socket_server_test(self):
+    async def check_server_test(self):
+        """Test a full command sequence of the SocketServer.
+
+        The sequence is
+            - configure
+            - start
+            - read telemetry
+            - stop
+            - disconnect
+            - exit
+        """
         configuration = {
             Key.DEVICES: [
                 {
@@ -122,11 +130,11 @@ class SocketServerTestCase(BaseMockTestCase):
         await self.write(
             command=Command.CONFIGURE, parameters={Key.CONFIGURATION: configuration}
         )
-        self.data = await self.read()
-        self.assertEqual(ResponseCode.OK, self.data[Key.RESPONSE])
+        data = await self.read()
+        self.assertEqual(ResponseCode.OK, data[Key.RESPONSE])
         await self.write(command=Command.START, parameters={})
-        self.data = await self.read()
-        self.assertEqual(ResponseCode.OK, self.data[Key.RESPONSE])
+        data = await self.read()
+        self.assertEqual(ResponseCode.OK, data[Key.RESPONSE])
 
         # Make sure that the mock sensor outputs data for a disconnected
         # channel.
@@ -150,28 +158,37 @@ class SocketServerTestCase(BaseMockTestCase):
         self.check_reply(reply_to_check)
 
         await self.write(command=Command.STOP, parameters={})
-        self.data = await self.read()
-        self.assertEqual(ResponseCode.OK, self.data[Key.RESPONSE])
+        data = await self.read()
+        self.assertEqual(ResponseCode.OK, data[Key.RESPONSE])
         await self.write(command=Command.DISCONNECT, parameters={})
         await self.write(command=Command.EXIT, parameters={})
 
     async def test_full_command_sequence(self):
+        """Test the SocketServer with a nominal configuration, i.e. no
+        disconnected channels and no truncated data.
+        """
         self.name = "Test1"
         self.num_channels = 1
         self.disconnected_channel = None
         self.missed_channels = 0
-        await self.socket_server_test()
+        await self.check_server_test()
 
     async def test_full_command_sequence_with_disconnected_channel(self):
+        """Test the SocketServer with one disconnected channel and no truncated
+        data.
+        """
         self.name = "Test1"
         self.num_channels = 4
         self.disconnected_channel = 1
         self.missed_channels = 0
-        await self.socket_server_test()
+        await self.check_server_test()
 
     async def test_full_command_sequence_with_truncated_output(self):
+        """Test the SocketServer with no disconnected channels and truncated
+        data for two channels.
+        """
         self.name = "Test1"
         self.num_channels = 4
         self.disconnected_channel = None
         self.missed_channels = 2
-        await self.socket_server_test()
+        await self.check_server_test()

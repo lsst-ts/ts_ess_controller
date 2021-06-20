@@ -24,7 +24,7 @@ __all__ = ["BaseMockTestCase"]
 import math
 import unittest
 
-from lsst.ts.envsensors import Temperature, DISCONNECTED_VALUE, ResponseCode
+from lsst.ts.envsensors import DISCONNECTED_VALUE, MockTemperatureConfig, ResponseCode
 
 
 class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
@@ -44,5 +44,5 @@ class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
             elif i == self.disconnected_channel:
                 self.assertTrue(math.isnan(resp[i]))
             else:
-                self.assertLessEqual(Temperature.MIN, resp[i])
-                self.assertLessEqual(resp[i], Temperature.MAX)
+                self.assertLessEqual(MockTemperatureConfig.min, resp[i])
+                self.assertLessEqual(resp[i], MockTemperatureConfig.max)

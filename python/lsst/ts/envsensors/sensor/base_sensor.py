@@ -41,17 +41,16 @@ class BaseSensor(ABC):
 
     Parameters:
     -----------
-    channels: `int`
+    num_channels: `int`
         The number of channels that the sensor will produce telemetry for.
     log: `logging.Logger`
         The logger to create a child logger for.
     """
 
     @abstractmethod
-    def __init__(self, channels: int, log: logging.Logger) -> None:
-        self.channels: int = channels
+    def __init__(self, num_channels: int, log: logging.Logger) -> None:
+        self.num_channels: int = num_channels
         self._log = log.getChild(type(self).__name__)
-        self.terminator: str = TERMINATOR
 
     @abstractmethod
     async def extract_telemetry(self, line: str) -> List[float]:

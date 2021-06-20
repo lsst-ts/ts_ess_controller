@@ -25,15 +25,19 @@ __all__ = [
     "DISCONNECTED_VALUE",
     "Key",
     "SensorType",
-    "Temperature",
+    "MockTemperatureConfig",
 ]
 
 import enum
+from types import SimpleNamespace
 
 # Minimum and maximum temperatures (deg_C) for creating random sensor data.
 
 # The value emitted by a disconnected channel
 DISCONNECTED_VALUE = "9999.9990"
+
+"""The minimum and maximum temperatures used by the mock temperature device."""
+MockTemperatureConfig = SimpleNamespace(min=18.0, max=30.0)
 
 
 class Command(str, enum.Enum):
@@ -68,13 +72,6 @@ class Key(str, enum.Enum):
     SERIAL_PORT = "serial_port"
     TELEMETRY = "telemetry"
     TIME = "time"
-
-
-class Temperature(enum.IntEnum):
-    """Temperature values used by the mock temperature sensor."""
-
-    MIN = 18.0
-    MAX = 30.0
 
 
 class SensorType(str, enum.Enum):

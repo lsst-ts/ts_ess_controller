@@ -29,8 +29,8 @@ from lsst.ts.envsensors.sensor.wind_sensor import (
     WindSensor,
     DEFAULT_DIRECTION_VAL,
     DEFAULT_SPEED_VAL,
-    DEFAULT_STATUS,
     END_CHARACTER,
+    GOOD_STATUS,
     START_CHARACTER,
     UNIT_IDENTIFIER,
     WINDSPEED_UNIT,
@@ -42,7 +42,9 @@ logging.basicConfig(
 
 
 class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
-    def get_line(self, speed: str, direction: str) -> str:
+    def create_wind_sensor_line(
+        self, speed: str, direction: str, valid_checksum: bool = True
+    ) -> str:
         """Create a line of output as can be expected from a wind sensor."""
         checksum_string: str = (
             UNIT_IDENTIFIER
@@ -53,24 +55,20 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
             + DELIMITER
             + WINDSPEED_UNIT
             + DELIMITER
-            + DEFAULT_STATUS
+            + GOOD_STATUS
             + DELIMITER
         )
         checksum: int = 0
         for i in checksum_string:
             checksum ^= ord(i)
+
+        # Mock a bad checksum
+        if not valid_checksum:
+            checksum = 0
+
         line = (
             START_CHARACTER
-            + UNIT_IDENTIFIER
-            + DELIMITER
-            + direction
-            + DELIMITER
-            + speed
-            + DELIMITER
-            + WINDSPEED_UNIT
-            + DELIMITER
-            + DEFAULT_STATUS
-            + DELIMITER
+            + checksum_string
             + END_CHARACTER
             + f"{checksum:02x}"
             + TERMINATOR
@@ -86,13 +84,21 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
         wind_sensor = WindSensor(self.num_channels, self.log)
 
         wind_data = ("015.00", "010")
-        line = self.get_line(speed=wind_data[0], direction=wind_data[1])
+        line = self.create_wind_sensor_line(speed=wind_data[0], direction=wind_data[1])
         reply = await wind_sensor.extract_telemetry(line=line)
         self.assertAlmostEqual(float(wind_data[0]), reply[0])
         self.assertAlmostEqual(float(wind_data[1]), reply[1])
 
         wind_data = ("001.00", "")
-        line = self.get_line(speed=wind_data[0], direction=wind_data[1])
+        line = self.create_wind_sensor_line(speed=wind_data[0], direction=wind_data[1])
         reply = await wind_sensor.extract_telemetry(line=line)
         self.assertAlmostEqual(float(wind_data[0]), reply[0])
+        self.assertTrue(math.isnan(reply[1]))
+
+        wind_data = ("015.00", "010")
+        line = self.create_wind_sensor_line(
+            speed=wind_data[0], direction=wind_data[1], valid_checksum=False
+        )
+        reply = await wind_sensor.extract_telemetry(line=line)
+        self.assertTrue(math.isnan(reply[0]))
         self.assertTrue(math.isnan(reply[1]))

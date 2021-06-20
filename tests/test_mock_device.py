@@ -23,7 +23,7 @@ import asyncio
 import logging
 import unittest
 
-from lsst.ts.envsensors.constants import Key, Temperature, DISCONNECTED_VALUE
+from lsst.ts.envsensors.constants import Key, DISCONNECTED_VALUE
 from lsst.ts.envsensors.device.mock_device import MockDevice
 from lsst.ts.envsensors.sensor.temperature_sensor import TemperatureSensor
 from base_mock_test_case import BaseMockTestCase
@@ -38,10 +38,11 @@ class MockDeviceTestCase(BaseMockTestCase):
         logging.info(f"Received reply {reply!r}")
         self.reply = reply
 
-    async def mock_device_test(self):
+    async def _check_mock_device(self):
+        """Check the working of the MockDevice."""
         self.data = None
         self.log = logging.getLogger(type(self).__name__)
-        tempt_sensor = TemperatureSensor(channels=self.num_channels, log=self.log)
+        tempt_sensor = TemperatureSensor(num_channels=self.num_channels, log=self.log)
         mock_device = MockDevice(
             name=self.name,
             device_id="MockDevice",
@@ -54,6 +55,9 @@ class MockDeviceTestCase(BaseMockTestCase):
 
         await mock_device.start()
 
+        # First read of the telemetry to verify that handling of truncated data
+        # is performed correctly if the MockDevice is instructed to produce
+        # such data.
         self.reply = None
         while not self.reply:
             await asyncio.sleep(0.1)
@@ -65,6 +69,8 @@ class MockDeviceTestCase(BaseMockTestCase):
         if self.missed_channels > 0:
             self.missed_channels = 0
 
+        # First read of the telemetry to verify that no more truncated data is
+        # produced is the MockDevice was instructed to produce such data.
         self.reply = None
         while not self.reply:
             await asyncio.sleep(0.1)
@@ -74,22 +80,31 @@ class MockDeviceTestCase(BaseMockTestCase):
         await mock_device.stop()
 
     async def test_mock_device(self):
+        """Test the MockDevice with a nominal configuration, i.e. no
+        disconnected channels and no truncated data.
+        """
         self.name = "MockSensor"
         self.num_channels = 4
         self.disconnected_channel = None
         self.missed_channels = 0
-        await self.mock_device_test()
+        await self._check_mock_device()
 
     async def test_mock_device_with_disconnected_channel(self):
+        """Test the MockDevice with one disconnected channel and no truncated
+        data.
+        """
         self.name = "MockSensor"
         self.num_channels = 4
         self.disconnected_channel = 2
         self.missed_channels = 0
-        await self.mock_device_test()
+        await self._check_mock_device()
 
     async def test_mock_device_with_truncated_output(self):
+        """Test the MockDevice with no disconnected channels and truncated data
+        for two channels.
+        """
         self.name = "MockSensor"
         self.num_channels = 4
         self.disconnected_channel = None
         self.missed_channels = 2
-        await self.mock_device_test()
+        await self._check_mock_device()

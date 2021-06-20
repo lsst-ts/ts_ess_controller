@@ -41,6 +41,11 @@ class RpiSerialHat(BaseDevice):
         The sensor that produces the telemetry.
     callback_func : `Callable`
         Callback function to receive instrument output.
+
+    Notes
+    -----
+    This is a skeleton class that will be implemented further as soon as I get
+    my hands on a raspberry pi with a serial hat.
     """
 
     def __init__(
@@ -63,7 +68,7 @@ class RpiSerialHat(BaseDevice):
         """Initialize the Sensor Device."""
         pass
 
-    async def open(self) -> None:
+    async def basic_open(self) -> None:
         """Open the Sensor Device.
 
         Raises
@@ -79,10 +84,15 @@ class RpiSerialHat(BaseDevice):
         -------
         output: `str`
             A line of telemetry.
-        """
-        pass
 
-    async def close(self) -> None:
+        Raises
+        ------
+        NotImplementedError
+            This method will be implemented later.
+        """
+        raise NotImplementedError("This function has not yet been implemented.")
+
+    async def basic_close(self) -> None:
         """Close the Sensor Device.
 
         Raises

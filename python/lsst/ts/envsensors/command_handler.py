@@ -31,7 +31,7 @@ from .command_error import CommandError
 from .constants import Command, Key, DeviceType, SensorType
 from .device import BaseDevice
 from .response_code import ResponseCode
-from .sensor import BaseSensor
+from .sensor import BaseSensor, TemperatureSensor, WindSensor
 
 
 class CommandHandler:
@@ -85,6 +85,12 @@ class CommandHandler:
             Command.START: self.start_sending_telemetry,
             Command.STOP: self.stop_sending_telemetry,
         }
+
+        # A set of required keys which will be used in the configuration
+        # validation.
+        self.required_keys = frozenset(
+            (Key.NAME, Key.CHANNELS, Key.DEVICE_TYPE, Key.SENSOR_TYPE)
+        )
 
     async def handle_command(self, command: str, **kwargs: Any) -> None:
         """Handle incomming commands and parameters.
@@ -162,15 +168,10 @@ class CommandHandler:
         """
         # Key.NAME, Key.CHANNELS, Key.DEVICE_TYPE and Key.SENSOR_TYPE are
         # mandatory.
-        if (
-            Key.NAME not in device_configuration
-            or Key.CHANNELS not in device_configuration
-            or Key.DEVICE_TYPE not in device_configuration
-            or Key.SENSOR_TYPE not in device_configuration
-        ):
+        missing_keys = self.required_keys - device_configuration.keys()
+        if missing_keys:
             raise CommandError(
-                msg=f"The configuration keys {Key.NAME}, {Key.CHANNELS}, {Key.DEVICE_TYPE} "
-                f"and {Key.SENSOR_TYPE} are mandatory.",
+                msg=f"Missing required configuration keys {sorted(missing_keys)}",
                 response_code=ResponseCode.INVALID_CONFIGURATION,
             )
 
@@ -180,7 +181,8 @@ class CommandHandler:
             DeviceType.SERIAL,
         ]:
             raise CommandError(
-                msg=f"The value for key {Key.DEVICE_TYPE} must be either {DeviceType.FTDI}"
+                msg=f"The value {device_configuration[Key.DEVICE_TYPE]} for key"
+                f" {Key.DEVICE_TYPE} must be either {DeviceType.FTDI}"
                 f" or {DeviceType.SERIAL}",
                 response_code=ResponseCode.INVALID_CONFIGURATION,
             )
@@ -191,7 +193,8 @@ class CommandHandler:
             SensorType.WIND,
         ]:
             raise CommandError(
-                msg=f"The value for key {Key.DEVICE_TYPE} must be "
+                msg=f"The value {device_configuration[Key.SENSOR_TYPE]} for key"
+                f" {Key.DEVICE_TYPE} must be "
                 f"{SensorType.TEMPERATURE} or {SensorType.WIND}",
                 response_code=ResponseCode.INVALID_CONFIGURATION,
             )
@@ -261,6 +264,7 @@ class CommandHandler:
         """Loop over the configuration and start all devices."""
         self.log.info("connect_devices")
         device_configurations = self._configuration[Key.DEVICES]  # type: ignore
+        self._devices = []
         for device_configuration in device_configurations:
             device = self._get_device(device_configuration)
             self._devices.append(device)
@@ -283,9 +287,9 @@ class CommandHandler:
                 response_code=ResponseCode.NOT_STARTED,
             )
         self._started = False
-        for device in self._devices:
+        while self._devices:
+            device = self._devices.pop(-1)
             await device.stop()
-            self._devices.remove(device)
         return ResponseCode.OK
 
     async def _process_sensor_telemetry(self, telemetry: list) -> None:
@@ -326,7 +330,7 @@ class CommandHandler:
         RuntimeError
             In case an incorrect configuration has been loaded.
         """
-        sensor: BaseSensor = self._get_sensor(device_configuration=device_configuration)
+        sensor = self._get_sensor(device_configuration=device_configuration)
         if self.simulation_mode == 1:
             from .device import MockDevice
 
@@ -371,19 +375,14 @@ class CommandHandler:
 
     def _get_sensor(self, device_configuration: dict) -> BaseSensor:
         if device_configuration[Key.SENSOR_TYPE] == SensorType.TEMPERATURE:
-            self.log.info("Connecting to the mock sensor.")
-            from .sensor import TemperatureSensor
-
             sensor: BaseSensor = TemperatureSensor(
-                channels=device_configuration[Key.CHANNELS],
+                num_channels=device_configuration[Key.CHANNELS],
                 log=self.log,
             )
             return sensor
         elif device_configuration[Key.SENSOR_TYPE] == SensorType.WIND:
-            from .sensor import WindSensor
-
             sensor = WindSensor(
-                channels=device_configuration[Key.CHANNELS],
+                num_channels=device_configuration[Key.CHANNELS],
                 log=self.log,
             )
             return sensor
