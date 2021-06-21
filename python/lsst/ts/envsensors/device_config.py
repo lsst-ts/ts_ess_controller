@@ -27,26 +27,31 @@ from .constants import Key
 
 
 class DeviceConfig:
-    """Container for device configurations.
+    """Configuration for a device.
 
     Parameters
     ----------
     name: `str`
         The name of the device.
-    channels: `int`
+    num_channels: `int`
         The number of channels the output data.
     dev_type: `str`
         The type of device.
     dev_id: `str`
         The ID of the device.
+    sens_type: `str`
+        The type of sensor.
 
     """
 
-    def __init__(self, name: str, channels: int, dev_type: str, dev_id: str) -> None:
+    def __init__(
+        self, name: str, num_channels: int, dev_type: str, dev_id: str, sens_type: str
+    ) -> None:
         self.name = name
-        self.channels = channels
+        self.num_channels = num_channels
         self.dev_type = dev_type
         self.dev_id = dev_id
+        self.sens_type = sens_type
 
     def as_dict(self) -> Dict[str, Union[str, int]]:
         """Return a dict with the instance attributes and their values as
@@ -60,7 +65,8 @@ class DeviceConfig:
         """
         return {
             Key.NAME: self.name,
-            Key.CHANNELS: self.channels,
-            Key.TYPE: self.dev_type,
+            Key.CHANNELS: self.num_channels,
+            Key.DEVICE_TYPE: self.dev_type,
             Key.FTDI_ID: self.dev_id,
+            Key.SENSOR_TYPE: self.sens_type,
         }
