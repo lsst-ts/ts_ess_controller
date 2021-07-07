@@ -34,8 +34,8 @@ from ..sensor import BaseSensor, DELIMITER, TERMINATOR
 class MockDevice(BaseDevice):
     """Mock Sensor Device.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     name: `str`
         The name of the device.
     device_id: `str`

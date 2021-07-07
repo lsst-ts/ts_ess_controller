@@ -21,16 +21,7 @@ pipeline {
                 script {
                     sh """
                     chmod -R a+rw \${WORKSPACE}
-                    container=\$(docker run -v \${WORKSPACE}:/home/saluser/repo/ -td --rm --name \${container_name} -e LTD_USERNAME=\${user_ci_USR} -e LTD_PASSWORD=\${user_ci_PSW} lsstts/salobj:develop)
-                    """
-                }
-            }
-        }
-        stage("Checkout ts_tcpip") {
-            steps {
-                script {
-                    sh """
-                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd /home/saluser/repos && git clone https://github.com/lsst-ts/ts_tcpip.git && cd ts_tcpip && pip install --ignore-installed -e . && eups declare -r . -t saluser \"
+                    container=\$(docker run -v \${WORKSPACE}:/home/saluser/repo/ -td --rm --name \${container_name} -e LTD_USERNAME=\${user_ci_USR} -e LTD_PASSWORD=\${user_ci_PSW} lsstts/develop-env:develop)
                     """
                 }
             }
@@ -40,15 +31,6 @@ pipeline {
                 script {
                     sh """
                     docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd repo && pip install --ignore-installed -e . && eups declare -r . -t saluser && setup ts_envsensors -t saluser && pytest --junitxml=\${XML_REPORT}\"
-                    """
-                }
-            }
-        }
-        stage("Build and Upload documentation") {
-            steps {
-                script {
-                    sh """
-                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd repo && pip install --ignore-installed -e . && package-docs build && ltd upload --product ts-envsensors --git-ref \${GIT_BRANCH} --dir doc/_build/html\"
                     """
                 }
             }
@@ -65,6 +47,24 @@ pipeline {
                 reportFiles: 'index.html',
                 reportName: "Coverage Report"
               ])
+
+            sh "docker exec -u saluser \${container_name} sh -c \"" +
+                "source ~/.setup.sh && " +
+                "cd /home/saluser/repo/ && " +
+                "setup ts_envsensors -t saluser && " +
+                "package-docs build\""
+
+            script {
+                def RESULT = sh returnStatus: true, script: "docker exec -u saluser \${container_name} sh -c \"" +
+                    "source ~/.setup.sh && " +
+                    "cd /home/saluser/repo/ && " +
+                    "setup ts_envsensors -t saluser && " +
+                    "ltd upload --product ts-envsensors --git-ref \${GIT_BRANCH} --dir doc/_build/html\""
+
+                if ( RESULT != 0 ) {
+                    unstable("Failed to push documentation.")
+                }
+             }
         }
         cleanup {
             sh """

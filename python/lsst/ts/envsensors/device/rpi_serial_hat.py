@@ -31,8 +31,8 @@ from ..sensor import BaseSensor
 class RpiSerialHat(BaseDevice):
     """USB Virtual Communications Port (VCP) for FTDI device.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     device_id: `str`
         The hardware device ID to connect to. This can be a physical ID (e.g.
         /dev/ttyUSB0), a serial port (e.g. serial_ch_1) or any other ID used by

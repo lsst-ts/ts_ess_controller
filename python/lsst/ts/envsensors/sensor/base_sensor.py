@@ -39,8 +39,8 @@ class BaseSensor(ABC):
     (for instance temperature or wind sensor) needs to be implemented in a
     sub-class.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     num_channels: `int`
         The number of channels that the sensor will produce telemetry for.
     log: `logging.Logger`

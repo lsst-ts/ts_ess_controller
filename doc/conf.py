@@ -25,9 +25,8 @@ from documenteer.conf.pipelinespkg import *  # noqa
 import lsst.ts.envsensors  # noqa
 
 project = "ts_envsensors"
-html_theme_options["logotext"] = project  # noqa
+html_theme_options["logotext"] = project  # type: ignore # noqa
 html_title = project
 html_short_title = project
-doxylink = {}  # Avoid warning: Could not find tag file _doxygen/doxygen.tag
 
-intersphinx_mapping["ts_tcpip"] = ("https://ts-tcpip.lsst.io", None)  # noqa
+intersphinx_mapping["ts_tcpip"] = ("https://ts-tcpip.lsst.io", None)  # type: ignore # noqa

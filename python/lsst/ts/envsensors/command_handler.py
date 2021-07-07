@@ -292,23 +292,6 @@ class CommandHandler:
             await device.stop()
         return ResponseCode.OK
 
-    async def _process_sensor_telemetry(self, telemetry: list) -> None:
-        """wrap the telemetry in a dictionary and pass it on to the callback
-        coroutine.
-
-        It is up to the callback coroutine to handle the telemetry further
-        (e.g. in case of the SocketServer the telemetry gets sent to the
-        client).
-
-        Parameters
-        ----------
-        telemetry: `list`
-            The telemetry data to send.
-        """
-        self.log.debug(f"Processing sensor data {telemetry}")
-        data = {Key.TELEMETRY: telemetry}
-        await self._callback(data)
-
     def _get_device(self, device_configuration: dict) -> BaseDevice:
         """Get the device to connect to by using the configuration of the CSC
         and by detecting whether the code is running on an aarch64 architecture
