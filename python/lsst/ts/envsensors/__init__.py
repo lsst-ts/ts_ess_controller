@@ -19,7 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 try:
     from .version import *  # type: ignore
 except ModuleNotFoundError:
@@ -28,9 +27,8 @@ except ModuleNotFoundError:
 from .command_error import *
 from .command_handler import *
 from .constants import *
+from .device import BaseDevice, MockDevice, RpiSerialHat, VcpFtdi
 from .device_config import *
-from .ess_instrument_object import *
 from .response_code import *
-from .sel_temperature_reader import *
+from .sensor import BaseSensor, TemperatureSensor, TERMINATOR
 from .socket_server import *
-from .serial_reader import *

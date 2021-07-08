@@ -15,18 +15,10 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Sphinx configuration file for an LSST stack package.
-
-This configuration only affects single-package Sphinx documentation builds.
-"""
-
-from documenteer.conf.pipelinespkg import *  # noqa
-import lsst.ts.envsensors  # noqa
-
-project = "ts_envsensors"
-html_theme_options["logotext"] = project  # type: ignore # noqa
-html_title = project
-html_short_title = project
-
-intersphinx_mapping["ts_tcpip"] = ("https://ts-tcpip.lsst.io", None)  # type: ignore # noqa
+from .base_sensor import BaseSensor, DELIMITER, TERMINATOR
+from .temperature_sensor import TemperatureSensor
+from .wind_sensor import WindSensor
