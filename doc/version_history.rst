@@ -6,6 +6,16 @@
 Version History
 ###############
 
+v0.2.0
+======
+
+* Made the conda package `noarch`.
+
+Requires:
+
+* ts_tcpip 0.3.1
+
+
 v0.1.0
 ======
 

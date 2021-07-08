@@ -40,8 +40,8 @@ class BaseDevice(ABC):
     code (for instance for a serial or an FTDI device) needs to be implemented
     in a sub-class.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     name: `str`
         The name of the device.
     device_id: `str`
