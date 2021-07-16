@@ -31,7 +31,7 @@ from .command_error import CommandError
 from .constants import Command, Key, DeviceType, SensorType
 from .device import BaseDevice
 from .response_code import ResponseCode
-from .sensor import BaseSensor, TemperatureSensor, WindSensor
+from .sensor import BaseSensor, Hx85aSensor, Hx85baSensor, TemperatureSensor, WindSensor
 
 
 class CommandHandler:
@@ -88,9 +88,7 @@ class CommandHandler:
 
         # A set of required keys which will be used in the configuration
         # validation.
-        self.required_keys = frozenset(
-            (Key.NAME, Key.CHANNELS, Key.DEVICE_TYPE, Key.SENSOR_TYPE)
-        )
+        self.required_keys = frozenset((Key.NAME, Key.DEVICE_TYPE, Key.SENSOR_TYPE))
 
     async def handle_command(self, command: str, **kwargs: Any) -> None:
         """Handle incomming commands and parameters.
@@ -168,6 +166,8 @@ class CommandHandler:
         """
         # Key.NAME, Key.CHANNELS, Key.DEVICE_TYPE and Key.SENSOR_TYPE are
         # mandatory.
+        # TODO: DM-31130 introduce a JSON schema to validate against.
+
         missing_keys = self.required_keys - device_configuration.keys()
         if missing_keys:
             raise CommandError(
@@ -189,12 +189,15 @@ class CommandHandler:
 
         # Make sure that Key.SENSOR_TYPE has the correct value.
         if device_configuration[Key.SENSOR_TYPE] not in [
+            SensorType.HX85A,
+            SensorType.HX85BA,
             SensorType.TEMPERATURE,
             SensorType.WIND,
         ]:
             raise CommandError(
                 msg=f"The value {device_configuration[Key.SENSOR_TYPE]} for key"
-                f" {Key.DEVICE_TYPE} must be "
+                f" {Key.SENSOR_TYPE} must be "
+                f"{SensorType.HX85A}, {SensorType.HX85BA}, "
                 f"{SensorType.TEMPERATURE} or {SensorType.WIND}",
                 response_code=ResponseCode.INVALID_CONFIGURATION,
             )
@@ -212,6 +215,23 @@ class CommandHandler:
             if Key.SERIAL_PORT not in device_configuration:
                 raise CommandError(
                     msg=f"Missing configuration key {Key.SERIAL_PORT} for device of type {DeviceType.SERIAL}",
+                    response_code=ResponseCode.INVALID_CONFIGURATION,
+                )
+
+        # Make sure that Key.CHANNELS is present for SensorType.TEMPERATURE
+        # devices and not for others.
+        if device_configuration[Key.SENSOR_TYPE] == SensorType.TEMPERATURE:
+            if Key.CHANNELS not in device_configuration:
+                raise CommandError(
+                    msg=f"Missing configuration key {Key.CHANNELS} for sensor of "
+                    f"type {SensorType.TEMPERATURE}",
+                    response_code=ResponseCode.INVALID_CONFIGURATION,
+                )
+        else:
+            if Key.CHANNELS in device_configuration:
+                raise CommandError(
+                    msg=f"Configuration key {Key.CHANNELS} should not be present "
+                    f"for sensor of type {device_configuration[Key.SENSOR_TYPE]}",
                     response_code=ResponseCode.INVALID_CONFIGURATION,
                 )
 
@@ -266,9 +286,13 @@ class CommandHandler:
         device_configurations = self._configuration[Key.DEVICES]  # type: ignore
         self._devices = []
         for device_configuration in device_configurations:
-            device = self._get_device(device_configuration)
+            device: BaseDevice = self._get_device(device_configuration)
             self._devices.append(device)
-            await device.start()
+            self.log.debug(
+                f"Opening {device_configuration[Key.DEVICE_TYPE]} "
+                f"device with name {device_configuration[Key.NAME]}"
+            )
+            await device.open()
 
     async def stop_sending_telemetry(self) -> ResponseCode:
         """Stop reading the sensor data.
@@ -288,8 +312,9 @@ class CommandHandler:
             )
         self._started = False
         while self._devices:
-            device = self._devices.pop(-1)
-            await device.stop()
+            device: BaseDevice = self._devices.pop(-1)
+            self.log.debug(f"Closing {device} device with name {device.name}")
+            await device.close()
         return ResponseCode.OK
 
     def _get_device(self, device_configuration: dict) -> BaseDevice:
@@ -317,6 +342,9 @@ class CommandHandler:
         if self.simulation_mode == 1:
             from .device import MockDevice
 
+            self.log.debug(
+                f"Creating MockDevice with name {device_configuration[Key.NAME]} and sensor {sensor}"
+            )
             device: BaseDevice = MockDevice(
                 name=device_configuration[Key.NAME],
                 device_id=device_configuration[Key.FTDI_ID],
@@ -329,6 +357,9 @@ class CommandHandler:
         elif device_configuration[Key.DEVICE_TYPE] == DeviceType.FTDI:
             from .device import VcpFtdi
 
+            self.log.debug(
+                f"Creating VcpFtdi device with name {device_configuration[Key.NAME]} and sensor {sensor}"
+            )
             device = VcpFtdi(
                 name=device_configuration[Key.NAME],
                 device_id=device_configuration[Key.FTDI_ID],
@@ -342,6 +373,10 @@ class CommandHandler:
             if "aarch64" in platform.platform():
                 from .device import RpiSerialHat
 
+                self.log.debug(
+                    f"Creating RpiSerialHat device with name {device_configuration[Key.NAME]} "
+                    f"and sensor {sensor}"
+                )
                 device = RpiSerialHat(
                     name=device_configuration[Key.NAME],
                     device_id=device_configuration[Key.SERIAL_PORT],
@@ -357,15 +392,24 @@ class CommandHandler:
         )
 
     def _get_sensor(self, device_configuration: dict) -> BaseSensor:
-        if device_configuration[Key.SENSOR_TYPE] == SensorType.TEMPERATURE:
-            sensor: BaseSensor = TemperatureSensor(
-                num_channels=device_configuration[Key.CHANNELS],
+        if device_configuration[Key.SENSOR_TYPE] == SensorType.HX85A:
+            sensor: BaseSensor = Hx85aSensor(
                 log=self.log,
+            )
+            return sensor
+        elif device_configuration[Key.SENSOR_TYPE] == SensorType.HX85BA:
+            sensor = Hx85baSensor(
+                log=self.log,
+            )
+            return sensor
+        elif device_configuration[Key.SENSOR_TYPE] == SensorType.TEMPERATURE:
+            sensor = TemperatureSensor(
+                log=self.log,
+                num_channels=device_configuration[Key.CHANNELS],
             )
             return sensor
         elif device_configuration[Key.SENSOR_TYPE] == SensorType.WIND:
             sensor = WindSensor(
-                num_channels=device_configuration[Key.CHANNELS],
                 log=self.log,
             )
             return sensor

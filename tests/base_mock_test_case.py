@@ -24,11 +24,66 @@ __all__ = ["BaseMockTestCase"]
 import math
 import unittest
 
-from lsst.ts.envsensors import DISCONNECTED_VALUE, MockTemperatureConfig, ResponseCode
+from lsst.ts.envsensors import (
+    DISCONNECTED_VALUE,
+    MockDewPointConfig,
+    MockHumidityConfig,
+    MockPressureConfig,
+    MockTemperatureConfig,
+    ResponseCode,
+)
 
 
 class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
-    def check_reply(self, reply):
+    def check_hx85a_reply(self, reply):
+        device_name = reply[0]
+        time = reply[1]
+        response_code = reply[2]
+        resp = reply[3:]
+
+        self.assertEqual(self.name, device_name)
+        self.assertGreater(time, 0)
+        self.assertEqual(ResponseCode.OK, response_code)
+        self.assertEqual(len(resp), 3)
+        for i in range(0, 3):
+            if i < self.missed_channels:
+                self.assertTrue(math.isnan(resp[i]))
+            else:
+                if i == 0:
+                    self.assertLessEqual(MockHumidityConfig.min, resp[i])
+                    self.assertLessEqual(resp[i], MockHumidityConfig.max)
+                elif i == 1:
+                    self.assertLessEqual(MockTemperatureConfig.min, resp[i])
+                    self.assertLessEqual(resp[i], MockTemperatureConfig.max)
+                else:
+                    self.assertLessEqual(MockDewPointConfig.min, resp[i])
+                    self.assertLessEqual(resp[i], MockDewPointConfig.max)
+
+    def check_hx85ba_reply(self, reply):
+        device_name = reply[0]
+        time = reply[1]
+        response_code = reply[2]
+        resp = reply[3:]
+
+        self.assertEqual(self.name, device_name)
+        self.assertGreater(time, 0)
+        self.assertEqual(ResponseCode.OK, response_code)
+        self.assertEqual(len(resp), 3)
+        for i in range(0, 3):
+            if i < self.missed_channels:
+                self.assertTrue(math.isnan(resp[i]))
+            else:
+                if i == 0:
+                    self.assertLessEqual(MockHumidityConfig.min, resp[i])
+                    self.assertLessEqual(resp[i], MockHumidityConfig.max)
+                elif i == 1:
+                    self.assertLessEqual(MockTemperatureConfig.min, resp[i])
+                    self.assertLessEqual(resp[i], MockTemperatureConfig.max)
+                else:
+                    self.assertLessEqual(MockPressureConfig.min, resp[i])
+                    self.assertLessEqual(resp[i], MockPressureConfig.max)
+
+    def check_temperature_reply(self, reply):
         device_name = reply[0]
         time = reply[1]
         response_code = reply[2]

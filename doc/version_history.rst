@@ -6,6 +6,17 @@
 Version History
 ###############
 
+v0.3.0
+======
+
+* Added support for the Omega HX85A and HX85BA humidity sensors.
+* Made the FTDI and RpiSerialHat devices work.
+
+Requires:
+
+* ts_tcpip 0.3.1
+
+
 v0.2.0
 ======
 

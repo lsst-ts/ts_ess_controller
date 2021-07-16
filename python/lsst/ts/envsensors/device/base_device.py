@@ -24,13 +24,13 @@ __all__ = ["BaseDevice"]
 from abc import ABC, abstractmethod
 import asyncio
 import logging
-import time
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 from ..constants import Key
 from ..response_code import ResponseCode
 from ..sensor import BaseSensor
 from ..utils import create_done_future
+from lsst.ts import salobj
 
 
 class BaseDevice(ABC):
@@ -71,17 +71,13 @@ class BaseDevice(ABC):
         self._callback_func: Callable = callback_func
         self._telemetry_loop: asyncio.Future = create_done_future()
         self.is_open = False
-        self._log = log.getChild(type(self).__name__)
-
-    @abstractmethod
-    def init(self) -> None:
-        """Initialize the Sensor Device."""
-        pass
+        self.log = log.getChild(type(self).__name__)
 
     async def open(self) -> None:
         """Generic open function.
 
-        Check if the device is open and, if not, call basic_open.
+        Check if the device is open and, if not, call basic_open. Then start
+        the telemetry loop.
 
         Raises
         ------
@@ -89,67 +85,69 @@ class BaseDevice(ABC):
             In case the device already is open.
         """
         if self.is_open:
-            raise RuntimeError("Already open")
+            self.log.error("Already open, ignoring.")
         await self.basic_open()
         self.is_open = True
+
+        self.log.debug(f"Starting read loop for {self.name!r} sensor.")
+        self._telemetry_loop = asyncio.create_task(self._run())
 
     @abstractmethod
     async def basic_open(self) -> None:
         """Open the Sensor Device."""
         pass
 
-    async def start(self) -> None:
-        """Start the sensor read loop."""
-        self._log.debug(f"Starting read loop for {self.name!r} sensor.")
-        self._telemetry_loop = asyncio.create_task(self._run())
-
     async def _run(self) -> None:
         """Run sensor read loop.
 
         If enabled, loop and read the sensor and pass result to callback_func.
         """
-        self._log.debug("Starting sensor.")
+        self.log.debug("Starting sensor.")
         while not self._telemetry_loop.done():
-            self._log.debug("Reading data.")
-            tm: float = time.time()
+            self.log.debug("Reading data.")
+            curr_tai: float = salobj.current_tai()
+            # TODO: DM-31127 Catch the exceptions and assign the corresponding
+            #  ResponseCode.
             response: int = ResponseCode.OK
             line: str = await self.readline()
             sensor_telemetry: List[float] = await self._sensor.extract_telemetry(
                 line=line
             )
-            output: List[Any] = [
+            output: List[Union[str, float, int]] = [
                 self.name,
-                tm,
+                curr_tai,
                 response,
-            ] + sensor_telemetry  # type: ignore
+                *sensor_telemetry,
+            ]
             reply = {
                 Key.TELEMETRY: output,
             }
-            self._log.info(f"Returning {reply}")
+            self.log.info(f"Returning {reply}")
             await self._callback_func(reply)
 
     @abstractmethod
     async def readline(self) -> str:
-        """Read a line of telemetry from the Device.
+        """Read a line of telemetry from the device.
 
         Returns
         -------
-        output: `str`
-            A line of telemetry.
+        line : `str`
+            Line read from the device. Includes terminator string if there is
+            one. May be returned empty if nothing was received or partial if
+            the readline was started during device reception.
         """
         pass
 
-    async def stop(self) -> None:
-        """Terminate the sensor read loop."""
-        self._log.debug(f"Stopping read loop for {self.name!r} sensor.")
+    async def close(self) -> None:
+        """Generic close function.
+
+        Stop the telemetry loop. Then check if the device is open and, if yes,
+        call basic_close.
+        """
+        self.log.debug(f"Stopping read loop for {self.name!r} sensor.")
         self._telemetry_loop.cancel()
         self._telemetry_loop = create_done_future()
 
-    async def close(self) -> None:
-        """Device specific close function.
-
-        Check if the device is open and, if yes, call basic_close.
-        """
         if not self.is_open:
             return
         self.is_open = False

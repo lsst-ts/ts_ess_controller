@@ -27,8 +27,6 @@ except ModuleNotFoundError:
 from .command_error import *
 from .command_handler import *
 from .constants import *
-from .device import BaseDevice, MockDevice, RpiSerialHat, VcpFtdi
 from .device_config import *
 from .response_code import *
-from .sensor import BaseSensor, TemperatureSensor, TERMINATOR
 from .socket_server import *

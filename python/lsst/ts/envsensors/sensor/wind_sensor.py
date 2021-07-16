@@ -38,7 +38,7 @@ from typing import List, Optional, Union
 
 from ..constants import DISCONNECTED_VALUE
 from ..response_code import ResponseCode
-from .base_sensor import BaseSensor, DELIMITER, TERMINATOR
+from .base_sensor import BaseSensor
 
 """ASCII start character."""
 START_CHARACTER: str = "\x02"
@@ -66,13 +66,13 @@ class WindSensor(BaseSensor):
     """Wind Sensor.
 
     Perform protocol conversion for Gill Windsonic Ultrasonic Anemometer
-    instrument. The instrument is assumed to use its default message format -
+    instruments. The instrument is assumed to use its default message format -
     "Gill - Polar, Continuous" as documented in Gill Windsonic Doc No 1405 PS
     0019 Issue 28.
     Serial data is output by the anemometer once per second with the following
     format:
 
-        <STX>Q,ddd,sss.ss,M,00,<ETX>checksum<CR><LF>'
+        '<STX>Q,ddd,sss.ss,M,00,<ETX>checksum<CR><LF>'
 
     where:
 
@@ -92,26 +92,22 @@ class WindSensor(BaseSensor):
 
     Parameters
     ----------
-    name: `str`
-        The name of the sensor.
-    num_channels: `int`
-        The number of temperature channels.
-    log: `logger`' optional
-        The logger for which to create a child logger, or None in which case a
-        new logger gets requested.
+    log: `logger`
+        The logger for which to create a child logger.
     """
 
     def __init__(
         self,
-        num_channels: int,
         log: logging.Logger,
     ) -> None:
-        super().__init__(num_channels=num_channels, log=log)
+        super().__init__(log=log)
 
         # Regex pattern to process a line of telemetry.
         self.telemetry_pattern = re.compile(
-            rf"^{START_CHARACTER}Q,(?P<direction>\d{{3}})?,(?P<speed>\d{{3}}\.\d{{2}}),M,"
-            rf"(?P<status>\d{{2}}),{END_CHARACTER}(?P<checksum>[0-9a-fA-F]{{2}}){TERMINATOR}$"
+            rf"^{START_CHARACTER}{UNIT_IDENTIFIER}{self.delimiter}(?P<direction>\d{{3}})?{self.delimiter}"
+            rf"(?P<speed>\d{{3}}\.\d{{2}}){self.delimiter}{WINDSPEED_UNIT}{self.delimiter}"
+            rf"(?P<status>\d{{2}}){self.delimiter}"
+            rf"{END_CHARACTER}(?P<checksum>[0-9a-fA-F]{{2}}){self.terminator}$"
         )
 
     async def extract_telemetry(self, line: str) -> List[float]:
@@ -124,7 +120,7 @@ class WindSensor(BaseSensor):
             checksum_val = int(m.group("checksum"), 16)
 
             if status != GOOD_STATUS:
-                self._log.error(
+                self.log.error(
                     f"Expected status {GOOD_STATUS} but received {status}. Continuing."
                 )
 
@@ -134,7 +130,7 @@ class WindSensor(BaseSensor):
                 checksum ^= ord(i)
 
             if checksum != checksum_val:
-                self._log.error(
+                self.log.error(
                     f"Computed checksum {checksum} is not equal to telemetry checksum {checksum_val}."
                 )
                 speed = math.nan

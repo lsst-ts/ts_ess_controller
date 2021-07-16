@@ -80,7 +80,7 @@ class SocketServerTestCase(BaseMockTestCase):
         return data
 
     async def write(self, **data):
-        """Write the data appended with a TERMINATOR string.
+        """Write the data appended with a tcpip.TERMINATOR string.
 
         Parameters
         ----------
@@ -147,7 +147,7 @@ class SocketServerTestCase(BaseMockTestCase):
 
         self.reply = await self.read()
         reply_to_check = self.reply[Key.TELEMETRY]
-        self.check_reply(reply_to_check)
+        self.check_temperature_reply(reply_to_check)
 
         # Reset self.missed_channels and read again. The data should not be
         # truncated anymore.
@@ -155,7 +155,7 @@ class SocketServerTestCase(BaseMockTestCase):
 
         self.reply = await self.read()
         reply_to_check = self.reply[Key.TELEMETRY]
-        self.check_reply(reply_to_check)
+        self.check_temperature_reply(reply_to_check)
 
         await self.write(command=Command.STOP, parameters={})
         data = await self.read()

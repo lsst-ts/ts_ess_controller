@@ -19,17 +19,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["BaseSensor", "DELIMITER", "TERMINATOR"]
+__all__ = ["BaseSensor"]
 
 from abc import ABC, abstractmethod
 import logging
 from typing import List, Union
-
-"""Serial data line terminator."""
-TERMINATOR = "\r\n"
-
-"""Serial data channel delimiter."""
-DELIMITER = ","
 
 
 class BaseSensor(ABC):
@@ -41,16 +35,27 @@ class BaseSensor(ABC):
 
     Parameters
     ----------
-    num_channels: `int`
-        The number of channels that the sensor will produce telemetry for.
     log: `logging.Logger`
         The logger to create a child logger for.
+    num_channels: `int`, optional
+        The number of channels that the sensor will produce telemetry for. The
+        default value is 0 meaning that the number of channels is not variable.
     """
 
     @abstractmethod
-    def __init__(self, num_channels: int, log: logging.Logger) -> None:
+    def __init__(self, log: logging.Logger, num_channels: int = 0) -> None:
         self.num_channels: int = num_channels
-        self._log = log.getChild(type(self).__name__)
+        self.log = log.getChild(type(self).__name__)
+
+        # Data line terminator. In general this is the value used by all
+        # sensors but some sensors may need to override this value.
+        self.terminator = "\r\n"
+        # Data line terminator. In general this is the value used by all
+        # sensors but some sensors may need to override this value.
+        self.delimiter = ","
+        # Character set for the data line. In general this is the value used by
+        # all sensors but some sensors may need to override this value.
+        self.charset = "ASCII"
 
     @abstractmethod
     async def extract_telemetry(self, line: str) -> List[float]:
