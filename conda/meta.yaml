@@ -46,6 +46,7 @@ requirements:
     - python
     - setuptools
     - setuptools_scm
+    - ts-salobj
     - ts-tcpip
     - pyserial
     - pyftdi

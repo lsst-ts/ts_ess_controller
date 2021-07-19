@@ -58,17 +58,15 @@ class CommandHandlerTestCase(BaseMockTestCase):
         )
         device_config_02 = DeviceConfig(
             name="Test02",
-            num_channels=6,
             dev_type=DeviceType.FTDI,
             dev_id="ABC",
-            sens_type=SensorType.TEMPERATURE,
+            sens_type=SensorType.HX85A,
         )
         device_config_03 = DeviceConfig(
             name="Test03",
-            num_channels=2,
             dev_type=DeviceType.FTDI,
             dev_id="ABC",
-            sens_type=SensorType.TEMPERATURE,
+            sens_type=SensorType.HX85BA,
         )
         self.configuration = {
             Key.DEVICES: [
@@ -220,11 +218,16 @@ class CommandHandlerTestCase(BaseMockTestCase):
             self.name = reply[Key.TELEMETRY][0]
             devices_names_checked.add(self.name)
             device_config = self.device_configs[self.name]
-            self.num_channels = device_config.num_channels
             self.disconnected_channel = None
             self.missed_channels = 0
             reply_to_check = reply[Key.TELEMETRY]
-            self.check_reply(reply_to_check)
+            if device_config.sens_type == SensorType.TEMPERATURE:
+                self.num_channels = device_config.num_channels
+                self.check_temperature_reply(reply_to_check)
+            elif device_config.sens_type == SensorType.HX85A:
+                self.check_hx85a_reply(reply_to_check)
+            else:
+                self.check_hx85ba_reply(reply_to_check)
 
         await self.command_handler.handle_command(command=Command.STOP)
         self.assert_response(ResponseCode.OK)

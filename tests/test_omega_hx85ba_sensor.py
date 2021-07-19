@@ -24,31 +24,28 @@ import logging
 import math
 import unittest
 
-from lsst.ts.envsensors.device.mock_device import MockDevice
-from lsst.ts.envsensors.sensor.temperature_sensor import TemperatureSensor
+from lsst.ts.envsensors.device import MockDevice
+from lsst.ts.envsensors.sensor import Hx85baSensor
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
 )
 
 
-class TemperatureSensorTestCase(unittest.IsolatedAsyncioTestCase):
+class OmegaHx85baSensorTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_extract_telemetry(self):
         self.num_channels = 4
         self.disconnected_channel = None
         self.missed_channels = 0
-        self.name = "TemperatureSensor"
+        self.name = "Hx85baSensor"
         self.log = logging.getLogger(type(self).__name__)
-        temp_sensor = TemperatureSensor(self.log, self.num_channels)
-        line = "C00=0021.1234,C01=0021.1220,C02=0021.1249,C03=0020.9990\r\n"
-        reply = await temp_sensor.extract_telemetry(line=line)
-        self.assertListEqual(reply, [21.1234, 21.122, 21.1249, 20.999])
-        line = "C00=0021.1230,C01=0021.1220,C02=9999.9990,C03=0020.9999\r\n"
-        reply = await temp_sensor.extract_telemetry(line=line)
-        self.assertListEqual(reply, [21.123, 21.122, math.nan, 20.9999])
-        line = "0021.1224,C02=0021.1243,C03=0020.9992\r\n"
-        reply = await temp_sensor.extract_telemetry(line=line)
-        self.assertListEqual(reply, [math.nan, math.nan, 21.1243, 20.9992])
+        sensor = Hx85baSensor(self.log)
+        line = "%RH=38.86,AT°C=24.32,Pmb=911.40\n\r"
+        reply = await sensor.extract_telemetry(line=line)
+        self.assertListEqual(reply, [38.86, 24.32, 911.40])
+        line = "86,AT°C=24.32,Pmb=911.40\n\r"
+        reply = await sensor.extract_telemetry(line=line)
+        self.assertListEqual(reply, [math.nan, 24.32, 911.40])
         with self.assertRaises(ValueError):
-            line = "0021.1224,C02=0021.1243,C03==0020.9992\r\n"
-            reply = await temp_sensor.extract_telemetry(line=line)
+            line = "%RH=38.86,AT°C==24.32,Pmb=911.40\r\n"
+            reply = await sensor.extract_telemetry(line=line)

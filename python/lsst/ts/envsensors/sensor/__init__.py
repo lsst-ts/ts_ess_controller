@@ -19,6 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .base_sensor import BaseSensor, DELIMITER, TERMINATOR
+from .base_sensor import BaseSensor
+from .omega_hx85a import Hx85aSensor
+from .omega_hx85ba import Hx85baSensor
 from .temperature_sensor import TemperatureSensor
 from .wind_sensor import WindSensor

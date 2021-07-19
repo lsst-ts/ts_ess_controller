@@ -23,7 +23,7 @@ __all__ = ["DeviceConfig"]
 
 from typing import Dict, Union
 
-from .constants import Key
+from .constants import Key, SensorType
 
 
 class DeviceConfig:
@@ -33,19 +33,25 @@ class DeviceConfig:
     ----------
     name: `str`
         The name of the device.
-    num_channels: `int`
-        The number of channels the output data.
     dev_type: `str`
         The type of device.
     dev_id: `str`
         The ID of the device.
     sens_type: `str`
         The type of sensor.
+    num_channels: `int`, optional
+        The number of channels the output data, or 0 indicating that the number
+        of channels is not configurable for this type of device.
 
     """
 
     def __init__(
-        self, name: str, num_channels: int, dev_type: str, dev_id: str, sens_type: str
+        self,
+        name: str,
+        dev_type: str,
+        dev_id: str,
+        sens_type: str,
+        num_channels: int = 0,
     ) -> None:
         self.name = name
         self.num_channels = num_channels
@@ -59,14 +65,18 @@ class DeviceConfig:
 
         Returns
         -------
-        dict: `dict`
+        device_config_as_dict: `dict`
             A dictionary of key-value pairs representing the instance
             attributes and their values.
         """
-        return {
+        device_config_as_dict: Dict[str, Union[str, int]] = {
             Key.NAME: self.name,
-            Key.CHANNELS: self.num_channels,
             Key.DEVICE_TYPE: self.dev_type,
             Key.FTDI_ID: self.dev_id,
             Key.SENSOR_TYPE: self.sens_type,
         }
+
+        # Only temperature sensors have a configurable number of channels.
+        if self.sens_type == SensorType.TEMPERATURE:
+            device_config_as_dict[Key.CHANNELS] = self.num_channels
+        return device_config_as_dict

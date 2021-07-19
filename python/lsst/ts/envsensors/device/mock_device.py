@@ -24,11 +24,18 @@ __all__ = ["MockDevice"]
 import asyncio
 import logging
 import random
-from typing import Callable
+from typing import Callable, Tuple
 
 from .base_device import BaseDevice
-from ..constants import DISCONNECTED_VALUE, MockTemperatureConfig
-from ..sensor import BaseSensor, DELIMITER, TERMINATOR
+from ..constants import (
+    DISCONNECTED_VALUE,
+    MockDewPointConfig,
+    MockHumidityConfig,
+    MockPressureConfig,
+    MockTemperatureConfig,
+)
+from ..response_code import ResponseCode
+from ..sensor import BaseSensor, Hx85aSensor, Hx85baSensor, TemperatureSensor
 
 
 class MockDevice(BaseDevice):
@@ -70,24 +77,8 @@ class MockDevice(BaseDevice):
             callback_func=callback_func,
             log=log,
         )
-        if not disconnected_channel or 0 <= disconnected_channel < sensor.num_channels:
-            self._disconnected_channel = disconnected_channel
-        else:
-            raise ValueError(
-                f"The value {disconnected_channel} for disconnnected_channel"
-                f" should be between 0 and {sensor.num_channels}"
-            )
-        if 0 <= missed_channels <= sensor.num_channels:
-            self._missed_channels = missed_channels
-        else:
-            raise ValueError(
-                f"The value {missed_channels} for missed_channels"
-                f" should be between 0 and {sensor.num_channels}"
-            )
-
-    def init(self) -> None:
-        """Initialize the Sensor Device."""
-        pass
+        self._disconnected_channel = disconnected_channel
+        self._missed_channels = missed_channels
 
     async def basic_open(self) -> None:
         """Open the Sensor Device."""
@@ -106,31 +97,83 @@ class MockDevice(BaseDevice):
         s: `str`
             A string representing a temperature.
         """
-        temp = random.uniform(MockTemperatureConfig.min, MockTemperatureConfig.max)
         if i < self._missed_channels:
             return ""
+
+        prefix = f"C{i:02d}="
+        value = random.uniform(MockTemperatureConfig.min, MockTemperatureConfig.max)
         if i == self._disconnected_channel:
-            return f"C{i:02d}={DISCONNECTED_VALUE}"
-        return f"C{i:02d}={temp:09.4f}"
+            value = float(DISCONNECTED_VALUE)
+        return f"{prefix}{value:09.4f}"
+
+    def _format_hbx85_humidity(self, index: int):
+        if index < self._missed_channels:
+            return ""
+        else:
+            prefix = "%RH="
+            value = random.uniform(MockHumidityConfig.min, MockHumidityConfig.max)
+            return f"{prefix}{value:5.2f}"
+
+    def _format_hbx85_temperature(self, index: int):
+        if index < self._missed_channels:
+            return ""
+        else:
+            prefix = "AT°C="
+            value = random.uniform(MockTemperatureConfig.min, MockTemperatureConfig.max)
+            return f"{prefix}{value:6.2f}"
+
+    def _format_hbx85_dew_point(self, index: int):
+        if index < self._missed_channels:
+            return ""
+        else:
+            prefix = "DP°C="
+            value = random.uniform(MockDewPointConfig.min, MockDewPointConfig.max)
+            return f"{prefix}{value:5.2f}"
+
+    def _format_hbx85_air_pressure(self, index: int):
+        if index < self._missed_channels:
+            return ""
+        else:
+            prefix = "Pmb="
+            value = random.uniform(MockPressureConfig.min, MockPressureConfig.max)
+            return f"{prefix}{value:7.2f}"
 
     async def readline(self) -> str:
-        """Read a line of telemetry from the Device.
+        """Read a line of telemetry from the device.
 
         Returns
         -------
-        output: `str`
-            A line of comma separated telemetry, each of the format
-            CXX=XXXX.XXX
+        line : `str`
+            Line read from the device. Includes terminator string if there is
+            one. May be returned empty if nothing was received or partial if
+            the readline was started during device reception.
         """
         # Mock the time needed to output telemetry.
         await asyncio.sleep(1)
-        channel_strs = [
-            self._format_temperature(i) for i in range(0, self._sensor.num_channels)
-        ]
+        channel_strs = []
+        if isinstance(self._sensor, TemperatureSensor):
+            channel_strs = [
+                self._format_temperature(i) for i in range(0, self._sensor.num_channels)
+            ]
+        elif isinstance(self._sensor, Hx85aSensor):
+            channel_strs = [
+                self._format_hbx85_humidity(index=0),
+                self._format_hbx85_temperature(index=1),
+                self._format_hbx85_dew_point(index=2),
+            ]
+        elif isinstance(self._sensor, Hx85baSensor):
+            channel_strs = [
+                self._format_hbx85_humidity(index=0),
+                self._format_hbx85_temperature(index=1),
+                self._format_hbx85_air_pressure(index=2),
+            ]
+
+        self.log.debug(f"channel_strs = {channel_strs}")
+
         # Reset self._missed_channels because truncated data only happens when
         # data is being output while connecting.
         self._missed_channels = 0
-        return DELIMITER.join(channel_strs) + TERMINATOR
+        return self._sensor.delimiter.join(channel_strs) + self._sensor.terminator
 
     async def basic_close(self) -> None:
         """Close the Sensor Device."""

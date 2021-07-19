@@ -38,7 +38,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         logging.info(f"Received reply {reply!r}")
         self.reply = reply
 
-    async def _check_mock_device(self):
+    async def _check_mock_temperature_device(self):
         """Check the working of the MockDevice."""
         self.data = None
         self.log = logging.getLogger(type(self).__name__)
@@ -53,7 +53,7 @@ class MockDeviceTestCase(BaseMockTestCase):
             missed_channels=self.missed_channels,
         )
 
-        await mock_device.start()
+        await mock_device.open()
 
         # First read of the telemetry to verify that handling of truncated data
         # is performed correctly if the MockDevice is instructed to produce
@@ -62,7 +62,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         while not self.reply:
             await asyncio.sleep(0.1)
         reply_to_check = self.reply[Key.TELEMETRY]
-        self.check_reply(reply_to_check)
+        self.check_temperature_reply(reply_to_check)
 
         # Reset self.missed_channels for the second read otherwise the check
         # will fail.
@@ -75,11 +75,11 @@ class MockDeviceTestCase(BaseMockTestCase):
         while not self.reply:
             await asyncio.sleep(0.1)
         reply_to_check = self.reply[Key.TELEMETRY]
-        self.check_reply(reply_to_check)
+        self.check_temperature_reply(reply_to_check)
 
-        await mock_device.stop()
+        await mock_device.close()
 
-    async def test_mock_device(self):
+    async def test_mock_temperature_device(self):
         """Test the MockDevice with a nominal configuration, i.e. no
         disconnected channels and no truncated data.
         """
@@ -87,9 +87,9 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.num_channels = 4
         self.disconnected_channel = None
         self.missed_channels = 0
-        await self._check_mock_device()
+        await self._check_mock_temperature_device()
 
-    async def test_mock_device_with_disconnected_channel(self):
+    async def test_mock_temperature_device_with_disconnected_channel(self):
         """Test the MockDevice with one disconnected channel and no truncated
         data.
         """
@@ -97,9 +97,9 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.num_channels = 4
         self.disconnected_channel = 2
         self.missed_channels = 0
-        await self._check_mock_device()
+        await self._check_mock_temperature_device()
 
-    async def test_mock_device_with_truncated_output(self):
+    async def test_mock_temperature_device_with_truncated_output(self):
         """Test the MockDevice with no disconnected channels and truncated data
         for two channels.
         """
@@ -107,4 +107,4 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.num_channels = 4
         self.disconnected_channel = None
         self.missed_channels = 2
-        await self._check_mock_device()
+        await self._check_mock_temperature_device()

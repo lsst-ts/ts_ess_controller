@@ -24,7 +24,6 @@ import logging
 import math
 import unittest
 
-from lsst.ts.envsensors.sensor.base_sensor import DELIMITER, TERMINATOR
 from lsst.ts.envsensors.sensor.wind_sensor import (
     WindSensor,
     DEFAULT_DIRECTION_VAL,
@@ -48,15 +47,15 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
         """Create a line of output as can be expected from a wind sensor."""
         checksum_string: str = (
             UNIT_IDENTIFIER
-            + DELIMITER
+            + self.wind_sensor.delimiter
             + direction
-            + DELIMITER
+            + self.wind_sensor.delimiter
             + speed
-            + DELIMITER
+            + self.wind_sensor.delimiter
             + WINDSPEED_UNIT
-            + DELIMITER
+            + self.wind_sensor.delimiter
             + GOOD_STATUS
-            + DELIMITER
+            + self.wind_sensor.delimiter
         )
         checksum: int = 0
         for i in checksum_string:
@@ -71,7 +70,7 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
             + checksum_string
             + END_CHARACTER
             + f"{checksum:02x}"
-            + TERMINATOR
+            + self.wind_sensor.terminator
         )
         return line
 
@@ -81,17 +80,17 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
         self.missed_channels = 0
         self.name = "WindSensor"
         self.log = logging.getLogger(type(self).__name__)
-        wind_sensor = WindSensor(self.num_channels, self.log)
+        self.wind_sensor = WindSensor(self.log)
 
         wind_data = ("015.00", "010")
         line = self.create_wind_sensor_line(speed=wind_data[0], direction=wind_data[1])
-        reply = await wind_sensor.extract_telemetry(line=line)
+        reply = await self.wind_sensor.extract_telemetry(line=line)
         self.assertAlmostEqual(float(wind_data[0]), reply[0])
         self.assertAlmostEqual(float(wind_data[1]), reply[1])
 
         wind_data = ("001.00", "")
         line = self.create_wind_sensor_line(speed=wind_data[0], direction=wind_data[1])
-        reply = await wind_sensor.extract_telemetry(line=line)
+        reply = await self.wind_sensor.extract_telemetry(line=line)
         self.assertAlmostEqual(float(wind_data[0]), reply[0])
         self.assertTrue(math.isnan(reply[1]))
 
@@ -99,6 +98,6 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
         line = self.create_wind_sensor_line(
             speed=wind_data[0], direction=wind_data[1], valid_checksum=False
         )
-        reply = await wind_sensor.extract_telemetry(line=line)
+        reply = await self.wind_sensor.extract_telemetry(line=line)
         self.assertTrue(math.isnan(reply[0]))
         self.assertTrue(math.isnan(reply[1]))

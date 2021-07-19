@@ -25,19 +25,26 @@ __all__ = [
     "DISCONNECTED_VALUE",
     "Key",
     "SensorType",
+    "MockDewPointConfig",
+    "MockHumidityConfig",
+    "MockPressureConfig",
     "MockTemperatureConfig",
 ]
 
 import enum
 from types import SimpleNamespace
 
-# Minimum and maximum temperatures (deg_C) for creating random sensor data.
-
 # The value emitted by a disconnected channel
 DISCONNECTED_VALUE = "9999.9990"
 
-"""The minimum and maximum temperatures used by the mock temperature device."""
+"""The minimum and maximum temperatures used by the mock device."""
 MockTemperatureConfig = SimpleNamespace(min=18.0, max=30.0)
+"""The minimum and maximum humidity values used by the mock device."""
+MockHumidityConfig = SimpleNamespace(min=5.0, max=95.0)
+"""The minimum and maximum dew point used by the mock device."""
+MockDewPointConfig = SimpleNamespace(min=18.0, max=30.0)
+"""The minimum and maximum air pressure values used by the mock device."""
+MockPressureConfig = SimpleNamespace(min=10.0, max=1100.0)
 
 
 class Command(str, enum.Enum):
@@ -77,5 +84,7 @@ class Key(str, enum.Enum):
 class SensorType(str, enum.Enum):
     """Supported sensor types."""
 
+    HX85A = "HX85A"
+    HX85BA = "HX85BA"
     TEMPERATURE = "Temperature"
     WIND = "Wind"

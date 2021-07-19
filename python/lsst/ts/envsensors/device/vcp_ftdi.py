@@ -21,12 +21,14 @@
 
 __all__ = ["VcpFtdi"]
 
+import asyncio
 import logging
-from typing import Callable
+from typing import Callable, Tuple
 
-from pylibftdi import Device  # type: ignore
+from pylibftdi import Device, FtdiError
 
 from .base_device import BaseDevice
+from ..response_code import ResponseCode
 from ..sensor import BaseSensor
 
 
@@ -68,39 +70,43 @@ class VcpFtdi(BaseDevice):
             auto_detach=False,
         )
 
-    def init(self) -> None:
-        """Initialize the Sensor Device."""
-        pass
-
     async def basic_open(self) -> None:
         """Open the Sensor Device.
+
+        Opens the virtual communications port and flushes the device input and
+        output buffers.
 
         Raises
         ------
         IOError if virtual communications port fails to open.
         """
         self._vcp.open()
+        self._vcp.baudrate = 19600
         if not self._vcp.closed:
-            self._log.debug("VCP open.")
+            self.log.debug("FTDI device open.")
             self._vcp.flush()
         else:
-            self._log.debug("Failed to open VCP.")
-            raise IOError(f"{self.name}: Failed to open VCP.")
+            self.log.error("Failed to open the FTDI device.")
+            raise IOError(f"{self.name}: Failed to open the FTDI device.")
 
     async def readline(self) -> str:
-        """Read a line of telemetry from the Device.
+        """Read a line of telemetry from the device.
 
         Returns
         -------
-        output: `str`
-            A line of telemetry.
-
-        Raises
-        ------
-        NotImplementedError
-            This method will be implemented later.
+        line : `str`
+            Line read from the device. Includes terminator string if there is
+            one. May be returned empty if nothing was received or partial if
+            the readline was started during device reception.
         """
-        raise NotImplementedError("This function has not yet been implemented.")
+        line: str = ""
+
+        # get event loop to run blocking tasks
+        loop = asyncio.get_event_loop()
+
+        while not line.endswith(self._sensor.terminator):
+            line += await loop.run_in_executor(None, self._vcp.read, 1)
+        return line
 
     async def basic_close(self) -> None:
         """Close the Sensor Device.
@@ -111,7 +117,7 @@ class VcpFtdi(BaseDevice):
         """
         self._vcp.close()
         if self._vcp.closed:
-            self._log.debug("VCP closed.")
+            self.log.debug("FTDI device closed.")
         else:
-            self._log.debug("VCP failed to close.")
-            raise IOError(f"VcpFtdi:{self.name}: Failed to close VCP.")
+            self.log.debug("FTDI device failed to close.")
+            raise IOError(f"VcpFtdi:{self.name}: Failed to close the FTDI device.")
