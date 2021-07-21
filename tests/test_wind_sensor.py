@@ -101,3 +101,8 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
         reply = await self.wind_sensor.extract_telemetry(line=line)
         self.assertTrue(math.isnan(reply[0]))
         self.assertTrue(math.isnan(reply[1]))
+
+        line = f"{self.wind_sensor.terminator}"
+        reply = await self.wind_sensor.extract_telemetry(line=line)
+        self.assertTrue(math.isnan(reply[0]))
+        self.assertTrue(math.isnan(reply[1]))

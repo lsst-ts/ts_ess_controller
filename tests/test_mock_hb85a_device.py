@@ -50,6 +50,7 @@ class MockDeviceTestCase(BaseMockTestCase):
             callback_func=self._callback,
             log=self.log,
             missed_channels=self.missed_channels,
+            in_error_state=self.in_error_state,
         )
 
         await mock_device.open()
@@ -85,6 +86,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.name = "MockSensor"
         self.disconnected_channel = None
         self.missed_channels = 0
+        self.in_error_state = False
         await self._check_mock_hx85a_device()
 
     async def test_mock_hx85a_device_with_truncated_output(self):
@@ -94,4 +96,15 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.name = "MockSensor"
         self.disconnected_channel = None
         self.missed_channels = 2
+        self.in_error_state = False
+        await self._check_mock_hx85a_device()
+
+    async def test_mock_hx85a_device_in_error_state(self):
+        """Test the MockDevice in error state meaning it will only return empty
+        strings.
+        """
+        self.name = "MockSensor"
+        self.disconnected_channel = None
+        self.missed_channels = 0
+        self.in_error_state = True
         await self._check_mock_hx85a_device()

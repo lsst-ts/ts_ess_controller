@@ -145,6 +145,9 @@ class SocketServerTestCase(BaseMockTestCase):
         # Make sure that the mock sensor outputs truncated data.
         self.srv.command_handler._devices[0]._missed_channels = self.missed_channels
 
+        # Make sure that the mock sensor is in error state.
+        self.srv.command_handler._devices[0]._in_error_state = self.in_error_state
+
         self.reply = await self.read()
         reply_to_check = self.reply[Key.TELEMETRY]
         self.check_temperature_reply(reply_to_check)
@@ -171,6 +174,7 @@ class SocketServerTestCase(BaseMockTestCase):
         self.num_channels = 1
         self.disconnected_channel = None
         self.missed_channels = 0
+        self.in_error_state = False
         await self.check_server_test()
 
     async def test_full_command_sequence_with_disconnected_channel(self):
@@ -181,6 +185,7 @@ class SocketServerTestCase(BaseMockTestCase):
         self.num_channels = 4
         self.disconnected_channel = 1
         self.missed_channels = 0
+        self.in_error_state = False
         await self.check_server_test()
 
     async def test_full_command_sequence_with_truncated_output(self):
@@ -191,4 +196,16 @@ class SocketServerTestCase(BaseMockTestCase):
         self.num_channels = 4
         self.disconnected_channel = None
         self.missed_channels = 2
+        self.in_error_state = False
+        await self.check_server_test()
+
+    async def test_full_command_sequence_in_error_state(self):
+        """Test the SocketServer with a sensor in error state, meaning it will
+        only output empty strings.
+        """
+        self.name = "Test1"
+        self.num_channels = 4
+        self.disconnected_channel = None
+        self.missed_channels = 0
+        self.in_error_state = True
         await self.check_server_test()

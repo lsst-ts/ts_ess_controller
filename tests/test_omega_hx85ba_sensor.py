@@ -40,12 +40,15 @@ class OmegaHx85baSensorTestCase(unittest.IsolatedAsyncioTestCase):
         self.name = "Hx85baSensor"
         self.log = logging.getLogger(type(self).__name__)
         sensor = Hx85baSensor(self.log)
-        line = "%RH=38.86,AT°C=24.32,Pmb=911.40\n\r"
+        line = f"%RH=38.86,AT°C=24.32,Pmb=911.40{sensor.terminator}"
         reply = await sensor.extract_telemetry(line=line)
         self.assertListEqual(reply, [38.86, 24.32, 911.40])
-        line = "86,AT°C=24.32,Pmb=911.40\n\r"
+        line = f"86,AT°C=24.32,Pmb=911.40{sensor.terminator}"
         reply = await sensor.extract_telemetry(line=line)
         self.assertListEqual(reply, [math.nan, 24.32, 911.40])
         with self.assertRaises(ValueError):
-            line = "%RH=38.86,AT°C==24.32,Pmb=911.40\r\n"
+            line = f"%RH=38.86,AT°C==24.32,Pmb=911.40{sensor.terminator}"
             reply = await sensor.extract_telemetry(line=line)
+        line = f"{sensor.terminator}"
+        reply = await sensor.extract_telemetry(line=line)
+        self.assertListEqual(reply, [math.nan, math.nan, math.nan])

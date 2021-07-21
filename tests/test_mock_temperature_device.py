@@ -51,6 +51,7 @@ class MockDeviceTestCase(BaseMockTestCase):
             log=self.log,
             disconnected_channel=self.disconnected_channel,
             missed_channels=self.missed_channels,
+            in_error_state=self.in_error_state,
         )
 
         await mock_device.open()
@@ -87,6 +88,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.num_channels = 4
         self.disconnected_channel = None
         self.missed_channels = 0
+        self.in_error_state = False
         await self._check_mock_temperature_device()
 
     async def test_mock_temperature_device_with_disconnected_channel(self):
@@ -97,6 +99,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.num_channels = 4
         self.disconnected_channel = 2
         self.missed_channels = 0
+        self.in_error_state = False
         await self._check_mock_temperature_device()
 
     async def test_mock_temperature_device_with_truncated_output(self):
@@ -107,4 +110,16 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.num_channels = 4
         self.disconnected_channel = None
         self.missed_channels = 2
+        self.in_error_state = False
+        await self._check_mock_temperature_device()
+
+    async def test_mock_temperature_device_in_error_state(self):
+        """Test the MockDevice in error state meaning it will only return empty
+        strings.
+        """
+        self.name = "MockSensor"
+        self.num_channels = 4
+        self.disconnected_channel = None
+        self.missed_channels = 0
+        self.in_error_state = True
         await self._check_mock_temperature_device()

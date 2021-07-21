@@ -58,6 +58,8 @@ class MockDevice(BaseDevice):
     missed_channels: `int`, optional
         The number of channels to not output to mock connecting to the sensor
         in the middle of receiving data from it.
+    in_error_state: `bool`, optional
+        The sensor produces an error (True) or not (False) when being read.
     """
 
     def __init__(
@@ -69,6 +71,7 @@ class MockDevice(BaseDevice):
         log: logging.Logger,
         disconnected_channel: int = None,
         missed_channels: int = 0,
+        in_error_state: bool = False,
     ) -> None:
         super().__init__(
             name=name,
@@ -79,6 +82,7 @@ class MockDevice(BaseDevice):
         )
         self._disconnected_channel = disconnected_channel
         self._missed_channels = missed_channels
+        self._in_error_state = in_error_state
 
     async def basic_open(self) -> None:
         """Open the Sensor Device."""
@@ -150,6 +154,11 @@ class MockDevice(BaseDevice):
         """
         # Mock the time needed to output telemetry.
         await asyncio.sleep(1)
+
+        # Mock a sensor that produces an error when being read.
+        if self._in_error_state:
+            return f"{self._sensor.terminator}"
+
         channel_strs = []
         if isinstance(self._sensor, TemperatureSensor):
             channel_strs = [
