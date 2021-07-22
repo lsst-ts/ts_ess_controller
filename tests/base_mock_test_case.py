@@ -43,10 +43,13 @@ class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(self.name, device_name)
         self.assertGreater(time, 0)
-        self.assertEqual(ResponseCode.OK, response_code)
+        if self.in_error_state:
+            self.assertEqual(ResponseCode.DEVICE_READ_ERROR, response_code)
+        else:
+            self.assertEqual(ResponseCode.OK, response_code)
         self.assertEqual(len(resp), 3)
         for i in range(0, 3):
-            if i < self.missed_channels:
+            if i < self.missed_channels or self.in_error_state:
                 self.assertTrue(math.isnan(resp[i]))
             else:
                 if i == 0:
@@ -67,10 +70,13 @@ class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(self.name, device_name)
         self.assertGreater(time, 0)
-        self.assertEqual(ResponseCode.OK, response_code)
+        if self.in_error_state:
+            self.assertEqual(ResponseCode.DEVICE_READ_ERROR, response_code)
+        else:
+            self.assertEqual(ResponseCode.OK, response_code)
         self.assertEqual(len(resp), 3)
         for i in range(0, 3):
-            if i < self.missed_channels:
+            if i < self.missed_channels or self.in_error_state:
                 self.assertTrue(math.isnan(resp[i]))
             else:
                 if i == 0:
@@ -91,10 +97,13 @@ class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(self.name, device_name)
         self.assertGreater(time, 0)
-        self.assertEqual(ResponseCode.OK, response_code)
+        if self.in_error_state:
+            self.assertEqual(ResponseCode.DEVICE_READ_ERROR, response_code)
+        else:
+            self.assertEqual(ResponseCode.OK, response_code)
         self.assertEqual(len(resp), self.num_channels)
         for i in range(0, self.num_channels):
-            if i < self.missed_channels:
+            if i < self.missed_channels or self.in_error_state:
                 self.assertTrue(math.isnan(resp[i]))
             elif i == self.disconnected_channel:
                 self.assertTrue(math.isnan(resp[i]))

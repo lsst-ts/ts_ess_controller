@@ -73,6 +73,9 @@ class BaseDevice(ABC):
         self.is_open = False
         self.log = log.getChild(type(self).__name__)
 
+        # Support MockDevice fault state. To be used in unit tests only.
+        self._in_error_state: bool = False
+
     async def open(self) -> None:
         """Generic open function.
 
@@ -106,10 +109,17 @@ class BaseDevice(ABC):
         while not self._telemetry_loop.done():
             self.log.debug("Reading data.")
             curr_tai: float = salobj.current_tai()
-            # TODO: DM-31127 Catch the exceptions and assign the corresponding
-            #  ResponseCode.
             response: int = ResponseCode.OK
-            line: str = await self.readline()
+            try:
+                line: str = await self.readline()
+            except Exception:
+                self.log.exception(f"Exception reading device {self.name}. Continuing.")
+                line = f"{self._sensor.terminator}"
+                response = ResponseCode.DEVICE_READ_ERROR
+
+            if self._in_error_state:
+                response = ResponseCode.DEVICE_READ_ERROR
+
             sensor_telemetry: List[float] = await self._sensor.extract_telemetry(
                 line=line
             )

@@ -220,6 +220,7 @@ class CommandHandlerTestCase(BaseMockTestCase):
             device_config = self.device_configs[self.name]
             self.disconnected_channel = None
             self.missed_channels = 0
+            self.in_error_state = False
             reply_to_check = reply[Key.TELEMETRY]
             if device_config.sens_type == SensorType.TEMPERATURE:
                 self.num_channels = device_config.num_channels

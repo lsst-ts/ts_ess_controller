@@ -144,7 +144,9 @@ class WindSensor(BaseSensor):
                     direction = math.nan
                 else:
                     direction = int(direction_str)
-
+        elif line == f"{self.terminator}":
+            speed = math.nan
+            direction = math.nan
         else:
             raise ValueError(f"Received an unparsable line {line}")
         return [speed, direction]

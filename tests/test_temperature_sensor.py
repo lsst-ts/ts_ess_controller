@@ -39,16 +39,19 @@ class TemperatureSensorTestCase(unittest.IsolatedAsyncioTestCase):
         self.missed_channels = 0
         self.name = "TemperatureSensor"
         self.log = logging.getLogger(type(self).__name__)
-        temp_sensor = TemperatureSensor(self.log, self.num_channels)
-        line = "C00=0021.1234,C01=0021.1220,C02=0021.1249,C03=0020.9990\r\n"
-        reply = await temp_sensor.extract_telemetry(line=line)
+        sensor = TemperatureSensor(self.log, self.num_channels)
+        line = f"C00=0021.1234,C01=0021.1220,C02=0021.1249,C03=0020.9990{sensor.terminator}"
+        reply = await sensor.extract_telemetry(line=line)
         self.assertListEqual(reply, [21.1234, 21.122, 21.1249, 20.999])
-        line = "C00=0021.1230,C01=0021.1220,C02=9999.9990,C03=0020.9999\r\n"
-        reply = await temp_sensor.extract_telemetry(line=line)
+        line = f"C00=0021.1230,C01=0021.1220,C02=9999.9990,C03=0020.9999{sensor.terminator}"
+        reply = await sensor.extract_telemetry(line=line)
         self.assertListEqual(reply, [21.123, 21.122, math.nan, 20.9999])
-        line = "0021.1224,C02=0021.1243,C03=0020.9992\r\n"
-        reply = await temp_sensor.extract_telemetry(line=line)
+        line = f"0021.1224,C02=0021.1243,C03=0020.9992{sensor.terminator}"
+        reply = await sensor.extract_telemetry(line=line)
         self.assertListEqual(reply, [math.nan, math.nan, 21.1243, 20.9992])
         with self.assertRaises(ValueError):
-            line = "0021.1224,C02=0021.1243,C03==0020.9992\r\n"
-            reply = await temp_sensor.extract_telemetry(line=line)
+            line = f"0021.1224,C02=0021.1243,C03==0020.9992{sensor.terminator}"
+            reply = await sensor.extract_telemetry(line=line)
+        line = f"{sensor.terminator}"
+        reply = await sensor.extract_telemetry(line=line)
+        self.assertListEqual(reply, [math.nan, math.nan, math.nan, math.nan])
