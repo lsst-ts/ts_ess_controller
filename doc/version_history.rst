@@ -12,6 +12,8 @@ v0.3.0
 * Added support for the Omega HX85A and HX85BA humidity sensors.
 * Made the FTDI and RpiSerialHat devices work.
 * Added exception handling in the sensors code.
+* Cleaned up the Python modules.
+* Added dcoumentation for the sensor protocols.
 
 Requires:
 
