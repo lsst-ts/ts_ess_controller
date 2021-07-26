@@ -24,16 +24,7 @@ import logging
 import math
 import unittest
 
-from lsst.ts.envsensors.sensor.wind_sensor import (
-    WindSensor,
-    DEFAULT_DIRECTION_VAL,
-    DEFAULT_SPEED_VAL,
-    END_CHARACTER,
-    GOOD_STATUS,
-    START_CHARACTER,
-    UNIT_IDENTIFIER,
-    WINDSPEED_UNIT,
-)
+from lsst.ts import envsensors
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -46,15 +37,15 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
     ) -> str:
         """Create a line of output as can be expected from a wind sensor."""
         checksum_string: str = (
-            UNIT_IDENTIFIER
+            envsensors.sensor.UNIT_IDENTIFIER
             + self.wind_sensor.delimiter
             + direction
             + self.wind_sensor.delimiter
             + speed
             + self.wind_sensor.delimiter
-            + WINDSPEED_UNIT
+            + envsensors.sensor.WINDSPEED_UNIT
             + self.wind_sensor.delimiter
-            + GOOD_STATUS
+            + envsensors.sensor.GOOD_STATUS
             + self.wind_sensor.delimiter
         )
         checksum: int = 0
@@ -66,9 +57,9 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
             checksum = 0
 
         line = (
-            START_CHARACTER
+            envsensors.sensor.START_CHARACTER
             + checksum_string
-            + END_CHARACTER
+            + envsensors.sensor.END_CHARACTER
             + f"{checksum:02x}"
             + self.wind_sensor.terminator
         )
@@ -80,7 +71,7 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
         self.missed_channels = 0
         self.name = "WindSensor"
         self.log = logging.getLogger(type(self).__name__)
-        self.wind_sensor = WindSensor(self.log)
+        self.wind_sensor = envsensors.sensor.WindSensor(self.log)
 
         wind_data = ("015.00", "010")
         line = self.create_wind_sensor_line(speed=wind_data[0], direction=wind_data[1])

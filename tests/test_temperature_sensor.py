@@ -24,8 +24,7 @@ import logging
 import math
 import unittest
 
-from lsst.ts.envsensors.device.mock_device import MockDevice
-from lsst.ts.envsensors.sensor.temperature_sensor import TemperatureSensor
+from lsst.ts import envsensors
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -39,7 +38,7 @@ class TemperatureSensorTestCase(unittest.IsolatedAsyncioTestCase):
         self.missed_channels = 0
         self.name = "TemperatureSensor"
         self.log = logging.getLogger(type(self).__name__)
-        sensor = TemperatureSensor(self.log, self.num_channels)
+        sensor = envsensors.sensor.TemperatureSensor(self.log, self.num_channels)
         line = f"C00=0021.1234,C01=0021.1220,C02=0021.1249,C03=0020.9990{sensor.terminator}"
         reply = await sensor.extract_telemetry(line=line)
         self.assertListEqual(reply, [21.1234, 21.122, 21.1249, 20.999])

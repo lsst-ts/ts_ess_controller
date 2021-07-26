@@ -30,3 +30,7 @@ from .constants import *
 from .device_config import *
 from .response_code import *
 from .socket_server import *
+
+# Import sub modules
+from . import device
+from . import sensor
