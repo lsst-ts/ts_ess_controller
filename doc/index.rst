@@ -13,13 +13,17 @@ The sensor reading code will then send the sensor telemetry data back via the So
 
 .. .. _lsst.ts.envsensors-using:
 
-.. Using lsst.ts.envsensors
-.. =========================
+Using lsst.ts.envsensors
+=========================
 
-.. toctree linking to topics related to using the module's APIs.
+The following sensors are supported:
 
-.. .. toctree::
-..    :maxdepth: 1
+.. toctree::
+   gil_windsonic_2-d_sonic_wind_sensor
+   omega_hx85a_sensor
+   omega_hx85ba_sensor
+   sel_temperature_sensor
+   :maxdepth: 1
 
 .. _lsst.ts.envsensors-contributing:
 

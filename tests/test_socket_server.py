@@ -24,15 +24,7 @@ import json
 import logging
 import unittest
 
-from lsst.ts.envsensors import (
-    SocketServer,
-    ResponseCode,
-    Command,
-    DeviceType,
-    Key,
-    SensorType,
-)
-from lsst.ts import tcpip
+from lsst.ts import envsensors, tcpip
 from base_mock_test_case import BaseMockTestCase
 
 logging.basicConfig(
@@ -48,7 +40,7 @@ class SocketServerTestCase(BaseMockTestCase):
         self.ctrl = None
         self.writer = None
         self.mock_ctrl = None
-        self.srv = SocketServer(host="0.0.0.0", port=0, simulation_mode=1)
+        self.srv = envsensors.SocketServer(host="0.0.0.0", port=0, simulation_mode=1)
 
         self.log = logging.getLogger(type(self).__name__)
 
@@ -93,14 +85,14 @@ class SocketServerTestCase(BaseMockTestCase):
 
     async def test_disconnect(self):
         self.assertTrue(self.srv.connected)
-        await self.write(command=Command.DISCONNECT, parameters={})
+        await self.write(command=envsensors.Command.DISCONNECT, parameters={})
         # Give time to the socket server to clean up internal state and exit.
         await asyncio.sleep(0.5)
         self.assertFalse(self.srv.connected)
 
     async def test_exit(self):
         self.assertTrue(self.srv.connected)
-        await self.write(command=Command.EXIT, parameters={})
+        await self.write(command=envsensors.Command.EXIT, parameters={})
         # Give time to the socket server to clean up internal state and exit.
         await asyncio.sleep(0.5)
         self.assertFalse(self.srv.connected)
@@ -117,24 +109,25 @@ class SocketServerTestCase(BaseMockTestCase):
             - exit
         """
         configuration = {
-            Key.DEVICES: [
+            envsensors.Key.DEVICES: [
                 {
-                    Key.NAME: self.name,
-                    Key.CHANNELS: self.num_channels,
-                    Key.DEVICE_TYPE: DeviceType.FTDI,
-                    Key.FTDI_ID: "ABC",
-                    Key.SENSOR_TYPE: SensorType.TEMPERATURE,
+                    envsensors.Key.NAME: self.name,
+                    envsensors.Key.CHANNELS: self.num_channels,
+                    envsensors.Key.DEVICE_TYPE: envsensors.DeviceType.FTDI,
+                    envsensors.Key.FTDI_ID: "ABC",
+                    envsensors.Key.SENSOR_TYPE: envsensors.SensorType.TEMPERATURE,
                 }
             ]
         }
         await self.write(
-            command=Command.CONFIGURE, parameters={Key.CONFIGURATION: configuration}
+            command=envsensors.Command.CONFIGURE,
+            parameters={envsensors.Key.CONFIGURATION: configuration},
         )
         data = await self.read()
-        self.assertEqual(ResponseCode.OK, data[Key.RESPONSE])
-        await self.write(command=Command.START, parameters={})
+        self.assertEqual(envsensors.ResponseCode.OK, data[envsensors.Key.RESPONSE])
+        await self.write(command=envsensors.Command.START, parameters={})
         data = await self.read()
-        self.assertEqual(ResponseCode.OK, data[Key.RESPONSE])
+        self.assertEqual(envsensors.ResponseCode.OK, data[envsensors.Key.RESPONSE])
 
         # Make sure that the mock sensor outputs data for a disconnected
         # channel.
@@ -149,7 +142,7 @@ class SocketServerTestCase(BaseMockTestCase):
         self.srv.command_handler._devices[0]._in_error_state = self.in_error_state
 
         self.reply = await self.read()
-        reply_to_check = self.reply[Key.TELEMETRY]
+        reply_to_check = self.reply[envsensors.Key.TELEMETRY]
         self.check_temperature_reply(reply_to_check)
 
         # Reset self.missed_channels and read again. The data should not be
@@ -157,14 +150,14 @@ class SocketServerTestCase(BaseMockTestCase):
         self.missed_channels = 0
 
         self.reply = await self.read()
-        reply_to_check = self.reply[Key.TELEMETRY]
+        reply_to_check = self.reply[envsensors.Key.TELEMETRY]
         self.check_temperature_reply(reply_to_check)
 
-        await self.write(command=Command.STOP, parameters={})
+        await self.write(command=envsensors.Command.STOP, parameters={})
         data = await self.read()
-        self.assertEqual(ResponseCode.OK, data[Key.RESPONSE])
-        await self.write(command=Command.DISCONNECT, parameters={})
-        await self.write(command=Command.EXIT, parameters={})
+        self.assertEqual(envsensors.ResponseCode.OK, data[envsensors.Key.RESPONSE])
+        await self.write(command=envsensors.Command.DISCONNECT, parameters={})
+        await self.write(command=envsensors.Command.EXIT, parameters={})
 
     async def test_full_command_sequence(self):
         """Test the SocketServer with a nominal configuration, i.e. no

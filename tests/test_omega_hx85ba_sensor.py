@@ -24,8 +24,7 @@ import logging
 import math
 import unittest
 
-from lsst.ts.envsensors.device import MockDevice
-from lsst.ts.envsensors.sensor import Hx85baSensor
+from lsst.ts import envsensors
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -39,7 +38,7 @@ class OmegaHx85baSensorTestCase(unittest.IsolatedAsyncioTestCase):
         self.missed_channels = 0
         self.name = "Hx85baSensor"
         self.log = logging.getLogger(type(self).__name__)
-        sensor = Hx85baSensor(self.log)
+        sensor = envsensors.sensor.Hx85baSensor(self.log)
         line = f"%RH=38.86,AT°C=24.32,Pmb=911.40{sensor.terminator}"
         reply = await sensor.extract_telemetry(line=line)
         self.assertListEqual(reply, [38.86, 24.32, 911.40])

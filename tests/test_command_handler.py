@@ -23,16 +23,7 @@ import asyncio
 import logging
 import unittest
 
-from lsst.ts.envsensors import (
-    CommandError,
-    CommandHandler,
-    ResponseCode,
-    Command,
-    DeviceType,
-    Key,
-    SensorType,
-)
-from lsst.ts.envsensors.device_config import DeviceConfig
+from lsst.ts import envsensors
 from base_mock_test_case import BaseMockTestCase
 
 logging.basicConfig(
@@ -42,34 +33,36 @@ logging.basicConfig(
 
 class CommandHandlerTestCase(BaseMockTestCase):
     async def asyncSetUp(self):
-        self.command_handler = CommandHandler(callback=self.callback, simulation_mode=1)
+        self.command_handler = envsensors.CommandHandler(
+            callback=self.callback, simulation_mode=1
+        )
         self.assertIsNone(self.command_handler._configuration)
 
         # Despite simulation_mode being set to 1, full fledged configuration is
         # needed because of the configuration validation. All device
         # configuration is ignored but the sensor type is not. The main
         # objective is to test multiple sensors at the same time.
-        device_config_01 = DeviceConfig(
+        device_config_01 = envsensors.DeviceConfig(
             name="Test01",
             num_channels=4,
-            dev_type=DeviceType.FTDI,
+            dev_type=envsensors.DeviceType.FTDI,
             dev_id="ABC",
-            sens_type=SensorType.TEMPERATURE,
+            sens_type=envsensors.SensorType.TEMPERATURE,
         )
-        device_config_02 = DeviceConfig(
+        device_config_02 = envsensors.DeviceConfig(
             name="Test02",
-            dev_type=DeviceType.FTDI,
+            dev_type=envsensors.DeviceType.FTDI,
             dev_id="ABC",
-            sens_type=SensorType.HX85A,
+            sens_type=envsensors.SensorType.HX85A,
         )
-        device_config_03 = DeviceConfig(
+        device_config_03 = envsensors.DeviceConfig(
             name="Test03",
-            dev_type=DeviceType.FTDI,
+            dev_type=envsensors.DeviceType.FTDI,
             dev_id="ABC",
-            sens_type=SensorType.HX85BA,
+            sens_type=envsensors.SensorType.HX85BA,
         )
         self.configuration = {
-            Key.DEVICES: [
+            envsensors.Key.DEVICES: [
                 device_config_01.as_dict(),
                 device_config_02.as_dict(),
                 device_config_03.as_dict(),
@@ -87,7 +80,7 @@ class CommandHandlerTestCase(BaseMockTestCase):
 
     def assert_response(self, response_code):
         response = self.responses.pop()
-        self.assertEqual(response[Key.RESPONSE], response_code)
+        self.assertEqual(response[envsensors.Key.RESPONSE], response_code)
 
     async def test_configure(self):
         """Test the configuration validation of the CommandHandler."""
@@ -95,104 +88,106 @@ class CommandHandlerTestCase(BaseMockTestCase):
         # Test with the configuration as set in asyncSetUp, which is a good
         # configuration.
         await self.command_handler.handle_command(
-            command=Command.CONFIGURE, configuration=self.configuration
+            command=envsensors.Command.CONFIGURE, configuration=self.configuration
         )
-        self.assert_response(ResponseCode.OK)
+        self.assert_response(envsensors.ResponseCode.OK)
         self.assertDictEqual(self.configuration, self.command_handler._configuration)
 
-        # The value for Key.DEVICES may not be empty.
-        bad_configuration = {Key.DEVICES: []}
+        # The value for envsensors.Key.DEVICES may not be empty.
+        bad_configuration = {envsensors.Key.DEVICES: []}
         await self.command_handler.handle_command(
-            command=Command.CONFIGURE, configuration=bad_configuration
+            command=envsensors.Command.CONFIGURE, configuration=bad_configuration
         )
-        self.assert_response(ResponseCode.INVALID_CONFIGURATION)
+        self.assert_response(envsensors.ResponseCode.INVALID_CONFIGURATION)
 
         # A configuration with several errors that will get tested one by one.
         bad_items = [
             {
-                # The mandatory keys Key.CHANNELS, Key.DEVICE_TYPE and
-                # KEY.SENSOR_TYPE are missing.
-                Key.NAME: "Test1",
+                # The mandatory keys envsensors.Key.CHANNELS,
+                # envsensors.Key.DEVICE_TYPE and KEY.SENSOR_TYPE are missing.
+                envsensors.Key.NAME: "Test1",
             },
             {
-                # The mandatory keys Key.DEVICE_TYPE and Key.SENSOR_TYPE are
-                # missing.
-                Key.NAME: "Test1",
-                Key.CHANNELS: 4,
+                # The mandatory keys envsensors.Key.DEVICE_TYPE and
+                # envsensors.Key.SENSOR_TYPE are missing.
+                envsensors.Key.NAME: "Test1",
+                envsensors.Key.CHANNELS: 4,
             },
             {
-                # The mandatory key Key.SENSOR_TYPE is missing.
-                Key.NAME: "Test1",
-                Key.CHANNELS: 4,
-                Key.DEVICE_TYPE: DeviceType.FTDI,
+                # The mandatory key envsensors.Key.SENSOR_TYPE is missing.
+                envsensors.Key.NAME: "Test1",
+                envsensors.Key.CHANNELS: 4,
+                envsensors.Key.DEVICE_TYPE: envsensors.DeviceType.FTDI,
             },
             {
-                # For DeviceType.FTDI the key Key.FTDI_ID is mandatory.
-                Key.NAME: "Test1",
-                Key.CHANNELS: 4,
-                Key.DEVICE_TYPE: DeviceType.FTDI,
+                # For envsensors.DeviceType.FTDI the key
+                # envsensors.Key.FTDI_ID is mandatory.
+                envsensors.Key.NAME: "Test1",
+                envsensors.Key.CHANNELS: 4,
+                envsensors.Key.DEVICE_TYPE: envsensors.DeviceType.FTDI,
                 "id": "ABC",
-                Key.SENSOR_TYPE: SensorType.TEMPERATURE,
+                envsensors.Key.SENSOR_TYPE: envsensors.SensorType.TEMPERATURE,
             },
             {
-                # For DeviceType.SERIAL the key Key.SERIAL_PORT is mandatory.
-                Key.NAME: "Test1",
-                Key.CHANNELS: 4,
-                Key.DEVICE_TYPE: DeviceType.SERIAL,
+                # For envsensors.DeviceType.SERIAL the key
+                # envsensors.Key.SERIAL_PORT is mandatory.
+                envsensors.Key.NAME: "Test1",
+                envsensors.Key.CHANNELS: 4,
+                envsensors.Key.DEVICE_TYPE: envsensors.DeviceType.SERIAL,
                 "port": "ABC",
-                Key.SENSOR_TYPE: SensorType.TEMPERATURE,
+                envsensors.Key.SENSOR_TYPE: envsensors.SensorType.TEMPERATURE,
             },
             {
-                # Wrong value for Key.SENSOR_TYPE.
-                Key.NAME: "Test1",
-                Key.CHANNELS: 4,
-                Key.DEVICE_TYPE: DeviceType.SERIAL,
-                Key.SERIAL_PORT: "ABC",
-                Key.SENSOR_TYPE: "Temp",
+                # Wrong value for envsensors.Key.SENSOR_TYPE.
+                envsensors.Key.NAME: "Test1",
+                envsensors.Key.CHANNELS: 4,
+                envsensors.Key.DEVICE_TYPE: envsensors.DeviceType.SERIAL,
+                envsensors.Key.SERIAL_PORT: "ABC",
+                envsensors.Key.SENSOR_TYPE: "Temp",
             },
         ]
         for bad_item in bad_items:
             bad_configuration = self.configuration.copy()
-            bad_configuration[Key.DEVICES].append(bad_item)
+            bad_configuration[envsensors.Key.DEVICES].append(bad_item)
             await self.command_handler.handle_command(
-                command=Command.CONFIGURE, configuration=bad_configuration
+                command=envsensors.Command.CONFIGURE, configuration=bad_configuration
             )
-            self.assert_response(ResponseCode.INVALID_CONFIGURATION)
+            self.assert_response(envsensors.ResponseCode.INVALID_CONFIGURATION)
 
     async def test_start(self):
         """Test handling of the start command."""
-        await self.command_handler.handle_command(command=Command.START)
-        self.assert_response(ResponseCode.NOT_CONFIGURED)
+        await self.command_handler.handle_command(command=envsensors.Command.START)
+        self.assert_response(envsensors.ResponseCode.NOT_CONFIGURED)
         self.assertIsNone(self.command_handler._configuration)
         self.assertFalse(self.command_handler._started)
 
         await self.command_handler.handle_command(
-            command=Command.CONFIGURE, configuration=self.configuration
+            command=envsensors.Command.CONFIGURE, configuration=self.configuration
         )
-        self.assert_response(ResponseCode.OK)
+        self.assert_response(envsensors.ResponseCode.OK)
         self.assertDictEqual(self.configuration, self.command_handler._configuration)
-        await self.command_handler.handle_command(command=Command.START)
-        self.assert_response(ResponseCode.OK)
+        await self.command_handler.handle_command(command=envsensors.Command.START)
+        self.assert_response(envsensors.ResponseCode.OK)
         self.assertTrue(self.command_handler._started)
 
     async def test_stop(self):
         """Test handling of the stop command."""
-        await self.command_handler.handle_command(command=Command.STOP)
-        self.assert_response(ResponseCode.NOT_STARTED)
+        await self.command_handler.handle_command(command=envsensors.Command.STOP)
+        self.assert_response(envsensors.ResponseCode.NOT_STARTED)
         self.assertIsNone(self.command_handler._configuration)
         self.assertFalse(self.command_handler._started)
 
         await self.command_handler.handle_command(
-            command=Command.CONFIGURE, configuration=self.configuration
+            command=envsensors.Command.CONFIGURE, configuration=self.configuration
         )
-        self.assert_response(ResponseCode.OK)
+        self.assert_response(envsensors.ResponseCode.OK)
         self.assertDictEqual(self.configuration, self.command_handler._configuration)
-        await self.command_handler.handle_command(command=Command.START)
-        self.assert_response(ResponseCode.OK)
+        await self.command_handler.handle_command(command=envsensors.Command.START)
+        self.assert_response(envsensors.ResponseCode.OK)
         self.assertTrue(self.command_handler._started)
 
-        await self.command_handler.handle_command(command=Command.STOP)
-        self.assert_response(ResponseCode.OK)
+        await self.command_handler.handle_command(command=envsensors.Command.STOP)
+        self.assert_response(envsensors.ResponseCode.OK)
         # Give time to the telemetry_task to get cancelled.
         await asyncio.sleep(0.5)
         self.assertFalse(self.command_handler._started)
@@ -200,12 +195,12 @@ class CommandHandlerTestCase(BaseMockTestCase):
     async def test_get_telemetry(self):
         """Test handling of telemetry."""
         await self.command_handler.handle_command(
-            command=Command.CONFIGURE, configuration=self.configuration
+            command=envsensors.Command.CONFIGURE, configuration=self.configuration
         )
-        self.assert_response(ResponseCode.OK)
+        self.assert_response(envsensors.ResponseCode.OK)
         self.assertDictEqual(self.configuration, self.command_handler._configuration)
-        await self.command_handler.handle_command(command=Command.START)
-        self.assert_response(ResponseCode.OK)
+        await self.command_handler.handle_command(command=envsensors.Command.START)
+        self.assert_response(envsensors.ResponseCode.OK)
         self.assertTrue(self.command_handler._started)
 
         # Give some time to the mock sensor to produce data
@@ -215,23 +210,23 @@ class CommandHandlerTestCase(BaseMockTestCase):
         devices_names_checked = set()
         while len(devices_names_checked) != len(self.device_configs):
             reply = self.responses.pop()
-            self.name = reply[Key.TELEMETRY][0]
+            self.name = reply[envsensors.Key.TELEMETRY][0]
             devices_names_checked.add(self.name)
             device_config = self.device_configs[self.name]
             self.disconnected_channel = None
             self.missed_channels = 0
             self.in_error_state = False
-            reply_to_check = reply[Key.TELEMETRY]
-            if device_config.sens_type == SensorType.TEMPERATURE:
+            reply_to_check = reply[envsensors.Key.TELEMETRY]
+            if device_config.sens_type == envsensors.SensorType.TEMPERATURE:
                 self.num_channels = device_config.num_channels
                 self.check_temperature_reply(reply_to_check)
-            elif device_config.sens_type == SensorType.HX85A:
+            elif device_config.sens_type == envsensors.SensorType.HX85A:
                 self.check_hx85a_reply(reply_to_check)
             else:
                 self.check_hx85ba_reply(reply_to_check)
 
-        await self.command_handler.handle_command(command=Command.STOP)
-        self.assert_response(ResponseCode.OK)
+        await self.command_handler.handle_command(command=envsensors.Command.STOP)
+        self.assert_response(envsensors.ResponseCode.OK)
         # Give time to the telemetry_task to get cancelled.
         await asyncio.sleep(0.5)
         self.assertFalse(self.command_handler._started)

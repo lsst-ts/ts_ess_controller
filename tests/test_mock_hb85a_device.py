@@ -23,9 +23,7 @@ import asyncio
 import logging
 import unittest
 
-from lsst.ts.envsensors.constants import Key, DISCONNECTED_VALUE
-from lsst.ts.envsensors.device.mock_device import MockDevice
-from lsst.ts.envsensors.sensor.omega_hx85a import Hx85aSensor
+from lsst.ts import envsensors
 from base_mock_test_case import BaseMockTestCase
 
 logging.basicConfig(
@@ -42,8 +40,8 @@ class MockDeviceTestCase(BaseMockTestCase):
         """Check the working of the MockDevice."""
         self.data = None
         self.log = logging.getLogger(type(self).__name__)
-        tempt_sensor = Hx85aSensor(log=self.log)
-        mock_device = MockDevice(
+        tempt_sensor = envsensors.sensor.Hx85aSensor(log=self.log)
+        mock_device = envsensors.device.MockDevice(
             name=self.name,
             device_id="MockDevice",
             sensor=tempt_sensor,
@@ -61,7 +59,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.reply = None
         while not self.reply:
             await asyncio.sleep(0.1)
-        reply_to_check = self.reply[Key.TELEMETRY]
+        reply_to_check = self.reply[envsensors.Key.TELEMETRY]
         self.check_hx85a_reply(reply_to_check)
 
         # Reset self.missed_channels for the second read otherwise the check
@@ -74,7 +72,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.reply = None
         while not self.reply:
             await asyncio.sleep(0.1)
-        reply_to_check = self.reply[Key.TELEMETRY]
+        reply_to_check = self.reply[envsensors.Key.TELEMETRY]
         self.check_hx85a_reply(reply_to_check)
 
         await mock_device.close()

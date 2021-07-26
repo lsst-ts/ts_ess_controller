@@ -21,11 +21,11 @@
 
 import platform
 
-from .base_device import BaseDevice
-from .mock_device import MockDevice
+from .base_device import *
+from .mock_device import *
 
 # Only import if on a Raspberry Pi4
 if "aarch64" in platform.platform():
-    from .rpi_serial_hat import RpiSerialHat
+    from .rpi_serial_hat import *
 
-from .vcp_ftdi import VcpFtdi
+from .vcp_ftdi import *
