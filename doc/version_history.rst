@@ -14,6 +14,7 @@ v0.3.0
 * Added exception handling in the sensors code.
 * Cleaned up the Python modules.
 * Added dcoumentation for the sensor protocols.
+* Validating incoming configurations against a JSON schema instead of using very complicated custom code.
 
 Requires:
 
