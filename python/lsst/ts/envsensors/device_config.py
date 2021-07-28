@@ -23,7 +23,7 @@ __all__ = ["DeviceConfig"]
 
 from typing import Dict, Union
 
-from .constants import Key, SensorType
+from .constants import DeviceType, Key, SensorType
 
 
 class DeviceConfig:
@@ -72,9 +72,16 @@ class DeviceConfig:
         device_config_as_dict: Dict[str, Union[str, int]] = {
             Key.NAME: self.name,
             Key.DEVICE_TYPE: self.dev_type,
-            Key.FTDI_ID: self.dev_id,
             Key.SENSOR_TYPE: self.sens_type,
         }
+
+        # FTDI devices have an FTDI ID and Serial devices have a serial port.
+        if self.dev_type == DeviceType.FTDI:
+            device_config_as_dict[Key.FTDI_ID] = self.dev_id
+        elif self.dev_type == DeviceType.SERIAL:
+            device_config_as_dict[Key.SERIAL_PORT] = self.dev_id
+        else:
+            raise ValueError(f"Received unknown DeviceType {self.dev_type}")
 
         # Only temperature sensors have a configurable number of channels.
         if self.sens_type == SensorType.TEMPERATURE:
