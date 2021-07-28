@@ -19,19 +19,4 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-try:
-    from .version import *  # type: ignore
-except ModuleNotFoundError:
-    __version__ = "?"
-
-from .command_error import *
-from .command_handler import *
-from .constants import *
-from .device_config import *
-from .response_code import *
-from .socket_server import *
-
-# Import sub modules
-from . import device
-from . import schema
-from . import sensor
+from .config_jschema import CONFIG_JSCHEMA

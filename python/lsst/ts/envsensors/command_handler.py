@@ -27,10 +27,13 @@ import platform
 import time
 from typing import Any, Callable, Dict, List, Optional, Union
 
+import jsonschema
+
 from .command_error import CommandError
 from .constants import Command, Key, DeviceType, SensorType
 from .device import BaseDevice
 from .response_code import ResponseCode
+from .schema import CONFIG_JSCHEMA
 from .sensor import BaseSensor, Hx85aSensor, Hx85baSensor, TemperatureSensor, WindSensor
 
 
@@ -125,115 +128,14 @@ class CommandHandler:
             In case the provided configuration is incorrect.
 
         """
-        # Key.DEVICES is mandatory.
-        if Key.DEVICES not in configuration:
+
+        try:
+            jsonschema.validate(configuration, CONFIG_JSCHEMA)
+        except jsonschema.exceptions.ValidationError as e:
             raise CommandError(
-                msg=f"Missing configuration key {Key.DEVICES}.",
+                msg=f"Invalid configuration {e.message}.",
                 response_code=ResponseCode.INVALID_CONFIGURATION,
             )
-        # Only one key allowed.
-        if len(configuration.keys()) != 1:
-            raise CommandError(
-                msg=f"Expected one configuration key but got {len(configuration.keys())}.",
-                response_code=ResponseCode.INVALID_CONFIGURATION,
-            )
-        # Validate the device configurations.
-        device_configurations = configuration[Key.DEVICES]
-        if not device_configurations:
-            raise CommandError(
-                msg=f"The configuration data for key {Key.DEVICES} is missing.",
-                response_code=ResponseCode.INVALID_CONFIGURATION,
-            )
-        for device_configuration in device_configurations:
-            self._validate_device_configuration(
-                device_configuration=device_configuration
-            )
-
-    def _validate_device_configuration(self, device_configuration: Dict[str, Any]):
-        """Validate the device configuration.
-
-        Parameters
-        ----------
-        device_configuration: `dict`
-            A dict representing the device configuration. The format of the
-            dict follows the configuration of the ts_ess project.
-
-        Raises
-        ------
-        `CommandError`:
-            In case the provided configuration is incorrect.
-
-        """
-        # Key.NAME, Key.CHANNELS, Key.DEVICE_TYPE and Key.SENSOR_TYPE are
-        # mandatory.
-        # TODO: DM-31130 introduce a JSON schema to validate against.
-
-        missing_keys = self.required_keys - device_configuration.keys()
-        if missing_keys:
-            raise CommandError(
-                msg=f"Missing required configuration keys {sorted(missing_keys)}",
-                response_code=ResponseCode.INVALID_CONFIGURATION,
-            )
-
-        # Make sure that Key.DEVICE_TYPE has the correct value.
-        if device_configuration[Key.DEVICE_TYPE] not in [
-            DeviceType.FTDI,
-            DeviceType.SERIAL,
-        ]:
-            raise CommandError(
-                msg=f"The value {device_configuration[Key.DEVICE_TYPE]} for key"
-                f" {Key.DEVICE_TYPE} must be either {DeviceType.FTDI}"
-                f" or {DeviceType.SERIAL}",
-                response_code=ResponseCode.INVALID_CONFIGURATION,
-            )
-
-        # Make sure that Key.SENSOR_TYPE has the correct value.
-        if device_configuration[Key.SENSOR_TYPE] not in [
-            SensorType.HX85A,
-            SensorType.HX85BA,
-            SensorType.TEMPERATURE,
-            SensorType.WIND,
-        ]:
-            raise CommandError(
-                msg=f"The value {device_configuration[Key.SENSOR_TYPE]} for key"
-                f" {Key.SENSOR_TYPE} must be "
-                f"{SensorType.HX85A}, {SensorType.HX85BA}, "
-                f"{SensorType.TEMPERATURE} or {SensorType.WIND}",
-                response_code=ResponseCode.INVALID_CONFIGURATION,
-            )
-
-        # Make sure that Key.FTDI_ID is present for DeviceType.FTDI devices.
-        if device_configuration[Key.DEVICE_TYPE] == DeviceType.FTDI:
-            if Key.FTDI_ID not in device_configuration:
-                raise CommandError(
-                    msg=f"Missing configuration key {Key.FTDI_ID} for device of type {DeviceType.FTDI}",
-                    response_code=ResponseCode.INVALID_CONFIGURATION,
-                )
-        # Make sure that Key.SERIAL_PORT is present for DeviceType.SERIAL
-        # devices.
-        if device_configuration[Key.DEVICE_TYPE] == DeviceType.SERIAL:
-            if Key.SERIAL_PORT not in device_configuration:
-                raise CommandError(
-                    msg=f"Missing configuration key {Key.SERIAL_PORT} for device of type {DeviceType.SERIAL}",
-                    response_code=ResponseCode.INVALID_CONFIGURATION,
-                )
-
-        # Make sure that Key.CHANNELS is present for SensorType.TEMPERATURE
-        # devices and not for others.
-        if device_configuration[Key.SENSOR_TYPE] == SensorType.TEMPERATURE:
-            if Key.CHANNELS not in device_configuration:
-                raise CommandError(
-                    msg=f"Missing configuration key {Key.CHANNELS} for sensor of "
-                    f"type {SensorType.TEMPERATURE}",
-                    response_code=ResponseCode.INVALID_CONFIGURATION,
-                )
-        else:
-            if Key.CHANNELS in device_configuration:
-                raise CommandError(
-                    msg=f"Configuration key {Key.CHANNELS} should not be present "
-                    f"for sensor of type {device_configuration[Key.SENSOR_TYPE]}",
-                    response_code=ResponseCode.INVALID_CONFIGURATION,
-                )
 
     async def configure(self, configuration: Dict[str, Any]) -> None:
         """Apply the configuration.

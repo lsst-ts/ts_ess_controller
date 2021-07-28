@@ -147,8 +147,7 @@ class CommandHandlerTestCase(BaseMockTestCase):
             },
         ]
         for bad_item in bad_items:
-            bad_configuration = self.configuration.copy()
-            bad_configuration[envsensors.Key.DEVICES].append(bad_item)
+            bad_configuration = {envsensors.Key.DEVICES: [bad_item]}
             await self.command_handler.handle_command(
                 command=envsensors.Command.CONFIGURE, configuration=bad_configuration
             )
