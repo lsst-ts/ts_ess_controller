@@ -1,4 +1,4 @@
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_sensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -24,7 +24,8 @@ import json
 import logging
 import unittest
 
-from lsst.ts import envsensors, tcpip
+from lsst.ts import tcpip
+from lsst.ts.ess import sensors
 from base_mock_test_case import BaseMockTestCase
 
 logging.basicConfig(
@@ -40,7 +41,7 @@ class SocketServerTestCase(BaseMockTestCase):
         self.ctrl = None
         self.writer = None
         self.mock_ctrl = None
-        self.srv = envsensors.SocketServer(host="0.0.0.0", port=0, simulation_mode=1)
+        self.srv = sensors.SocketServer(host="0.0.0.0", port=0, simulation_mode=1)
 
         self.log = logging.getLogger(type(self).__name__)
 
@@ -85,14 +86,14 @@ class SocketServerTestCase(BaseMockTestCase):
 
     async def test_disconnect(self):
         self.assertTrue(self.srv.connected)
-        await self.write(command=envsensors.Command.DISCONNECT, parameters={})
+        await self.write(command=sensors.Command.DISCONNECT, parameters={})
         # Give time to the socket server to clean up internal state and exit.
         await asyncio.sleep(0.5)
         self.assertFalse(self.srv.connected)
 
     async def test_exit(self):
         self.assertTrue(self.srv.connected)
-        await self.write(command=envsensors.Command.EXIT, parameters={})
+        await self.write(command=sensors.Command.EXIT, parameters={})
         # Give time to the socket server to clean up internal state and exit.
         await asyncio.sleep(0.5)
         self.assertFalse(self.srv.connected)
@@ -109,25 +110,25 @@ class SocketServerTestCase(BaseMockTestCase):
             - exit
         """
         configuration = {
-            envsensors.Key.DEVICES: [
+            sensors.Key.DEVICES: [
                 {
-                    envsensors.Key.NAME: self.name,
-                    envsensors.Key.CHANNELS: self.num_channels,
-                    envsensors.Key.DEVICE_TYPE: envsensors.DeviceType.FTDI,
-                    envsensors.Key.FTDI_ID: "ABC",
-                    envsensors.Key.SENSOR_TYPE: envsensors.SensorType.TEMPERATURE,
+                    sensors.Key.NAME: self.name,
+                    sensors.Key.CHANNELS: self.num_channels,
+                    sensors.Key.DEVICE_TYPE: sensors.DeviceType.FTDI,
+                    sensors.Key.FTDI_ID: "ABC",
+                    sensors.Key.SENSOR_TYPE: sensors.SensorType.TEMPERATURE,
                 }
             ]
         }
         await self.write(
-            command=envsensors.Command.CONFIGURE,
-            parameters={envsensors.Key.CONFIGURATION: configuration},
+            command=sensors.Command.CONFIGURE,
+            parameters={sensors.Key.CONFIGURATION: configuration},
         )
         data = await self.read()
-        self.assertEqual(envsensors.ResponseCode.OK, data[envsensors.Key.RESPONSE])
-        await self.write(command=envsensors.Command.START, parameters={})
+        self.assertEqual(sensors.ResponseCode.OK, data[sensors.Key.RESPONSE])
+        await self.write(command=sensors.Command.START, parameters={})
         data = await self.read()
-        self.assertEqual(envsensors.ResponseCode.OK, data[envsensors.Key.RESPONSE])
+        self.assertEqual(sensors.ResponseCode.OK, data[sensors.Key.RESPONSE])
 
         # Make sure that the mock sensor outputs data for a disconnected
         # channel.
@@ -142,7 +143,7 @@ class SocketServerTestCase(BaseMockTestCase):
         self.srv.command_handler._devices[0]._in_error_state = self.in_error_state
 
         self.reply = await self.read()
-        reply_to_check = self.reply[envsensors.Key.TELEMETRY]
+        reply_to_check = self.reply[sensors.Key.TELEMETRY]
         self.check_temperature_reply(reply_to_check)
 
         # Reset self.missed_channels and read again. The data should not be
@@ -150,14 +151,14 @@ class SocketServerTestCase(BaseMockTestCase):
         self.missed_channels = 0
 
         self.reply = await self.read()
-        reply_to_check = self.reply[envsensors.Key.TELEMETRY]
+        reply_to_check = self.reply[sensors.Key.TELEMETRY]
         self.check_temperature_reply(reply_to_check)
 
-        await self.write(command=envsensors.Command.STOP, parameters={})
+        await self.write(command=sensors.Command.STOP, parameters={})
         data = await self.read()
-        self.assertEqual(envsensors.ResponseCode.OK, data[envsensors.Key.RESPONSE])
-        await self.write(command=envsensors.Command.DISCONNECT, parameters={})
-        await self.write(command=envsensors.Command.EXIT, parameters={})
+        self.assertEqual(sensors.ResponseCode.OK, data[sensors.Key.RESPONSE])
+        await self.write(command=sensors.Command.DISCONNECT, parameters={})
+        await self.write(command=sensors.Command.EXIT, parameters={})
 
     async def test_full_command_sequence(self):
         """Test the SocketServer with a nominal configuration, i.e. no

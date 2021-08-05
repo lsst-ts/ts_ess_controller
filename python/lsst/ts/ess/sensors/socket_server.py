@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_sensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -30,7 +30,7 @@ import socket
 import typing
 
 from .command_handler import CommandHandler
-from lsst.ts import tcpip  # type: ignore
+from lsst.ts import tcpip
 
 
 class SocketServer(tcpip.OneClientServer):

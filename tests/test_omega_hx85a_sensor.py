@@ -1,4 +1,4 @@
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_sensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -24,7 +24,7 @@ import logging
 import math
 import unittest
 
-from lsst.ts import envsensors
+from lsst.ts.ess import sensors
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -38,7 +38,7 @@ class OmegaHx85aSensorTestCase(unittest.IsolatedAsyncioTestCase):
         self.missed_channels = 0
         self.name = "Hx85aSensor"
         self.log = logging.getLogger(type(self).__name__)
-        sensor = envsensors.sensor.Hx85aSensor(self.log)
+        sensor = sensors.sensor.Hx85aSensor(self.log)
         line = f"%RH=38.86,AT°C=24.32,DP°C=9.57{sensor.terminator}"
         reply = await sensor.extract_telemetry(line=line)
         self.assertListEqual(reply, [38.86, 24.32, 9.57])

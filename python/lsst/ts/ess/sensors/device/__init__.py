@@ -1,4 +1,4 @@
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_sensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -19,17 +19,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import asyncio
+import platform
 
+from .base_device import *
+from .mock_device import *
 
-def create_done_future() -> asyncio.Future:
-    """Create a Future that is done.
+# Only import if on a Raspberry Pi4
+if "aarch64" in platform.platform():
+    from .rpi_serial_hat import *
 
-    Returns
-    -------
-    future: `asyncio.Future`
-        The done Future.
-    """
-    future: asyncio.Future = asyncio.Future()
-    future.set_result(None)
-    return future
+from .vcp_ftdi import *

@@ -1,4 +1,4 @@
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_sensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -19,22 +19,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["CommandError"]
-
-from .response_code import ResponseCode
+import asyncio
 
 
-class CommandError(Exception):
-    """Exception raised if a command fails.
+def create_done_future() -> asyncio.Future:
+    """Create a Future that is done.
 
-    Parameters
-    ----------
-    msg : `str`
-        Error message
-    response_code : `ResponseCode`
-        Response code.
+    Returns
+    -------
+    future: `asyncio.Future`
+        The done Future.
     """
-
-    def __init__(self, msg: str, response_code: ResponseCode) -> None:
-        super().__init__(msg)
-        self.response_code = response_code
+    future: asyncio.Future = asyncio.Future()
+    future.set_result(None)
+    return future

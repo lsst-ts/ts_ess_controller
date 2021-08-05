@@ -1,4 +1,4 @@
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_sensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -24,14 +24,7 @@ __all__ = ["BaseMockTestCase"]
 import math
 import unittest
 
-from lsst.ts.envsensors import (
-    DISCONNECTED_VALUE,
-    MockDewPointConfig,
-    MockHumidityConfig,
-    MockPressureConfig,
-    MockTemperatureConfig,
-    ResponseCode,
-)
+from lsst.ts.ess import sensors
 
 
 class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
@@ -44,23 +37,23 @@ class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.name, device_name)
         self.assertGreater(time, 0)
         if self.in_error_state:
-            self.assertEqual(ResponseCode.DEVICE_READ_ERROR, response_code)
+            self.assertEqual(sensors.ResponseCode.DEVICE_READ_ERROR, response_code)
         else:
-            self.assertEqual(ResponseCode.OK, response_code)
+            self.assertEqual(sensors.ResponseCode.OK, response_code)
         self.assertEqual(len(resp), 3)
         for i in range(0, 3):
             if i < self.missed_channels or self.in_error_state:
                 self.assertTrue(math.isnan(resp[i]))
             else:
                 if i == 0:
-                    self.assertLessEqual(MockHumidityConfig.min, resp[i])
-                    self.assertLessEqual(resp[i], MockHumidityConfig.max)
+                    self.assertLessEqual(sensors.MockHumidityConfig.min, resp[i])
+                    self.assertLessEqual(resp[i], sensors.MockHumidityConfig.max)
                 elif i == 1:
-                    self.assertLessEqual(MockTemperatureConfig.min, resp[i])
-                    self.assertLessEqual(resp[i], MockTemperatureConfig.max)
+                    self.assertLessEqual(sensors.MockTemperatureConfig.min, resp[i])
+                    self.assertLessEqual(resp[i], sensors.MockTemperatureConfig.max)
                 else:
-                    self.assertLessEqual(MockDewPointConfig.min, resp[i])
-                    self.assertLessEqual(resp[i], MockDewPointConfig.max)
+                    self.assertLessEqual(sensors.MockDewPointConfig.min, resp[i])
+                    self.assertLessEqual(resp[i], sensors.MockDewPointConfig.max)
 
     def check_hx85ba_reply(self, reply):
         device_name = reply[0]
@@ -71,23 +64,23 @@ class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.name, device_name)
         self.assertGreater(time, 0)
         if self.in_error_state:
-            self.assertEqual(ResponseCode.DEVICE_READ_ERROR, response_code)
+            self.assertEqual(sensors.ResponseCode.DEVICE_READ_ERROR, response_code)
         else:
-            self.assertEqual(ResponseCode.OK, response_code)
+            self.assertEqual(sensors.ResponseCode.OK, response_code)
         self.assertEqual(len(resp), 3)
         for i in range(0, 3):
             if i < self.missed_channels or self.in_error_state:
                 self.assertTrue(math.isnan(resp[i]))
             else:
                 if i == 0:
-                    self.assertLessEqual(MockHumidityConfig.min, resp[i])
-                    self.assertLessEqual(resp[i], MockHumidityConfig.max)
+                    self.assertLessEqual(sensors.MockHumidityConfig.min, resp[i])
+                    self.assertLessEqual(resp[i], sensors.MockHumidityConfig.max)
                 elif i == 1:
-                    self.assertLessEqual(MockTemperatureConfig.min, resp[i])
-                    self.assertLessEqual(resp[i], MockTemperatureConfig.max)
+                    self.assertLessEqual(sensors.MockTemperatureConfig.min, resp[i])
+                    self.assertLessEqual(resp[i], sensors.MockTemperatureConfig.max)
                 else:
-                    self.assertLessEqual(MockPressureConfig.min, resp[i])
-                    self.assertLessEqual(resp[i], MockPressureConfig.max)
+                    self.assertLessEqual(sensors.MockPressureConfig.min, resp[i])
+                    self.assertLessEqual(resp[i], sensors.MockPressureConfig.max)
 
     def check_temperature_reply(self, reply):
         device_name = reply[0]
@@ -98,9 +91,9 @@ class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.name, device_name)
         self.assertGreater(time, 0)
         if self.in_error_state:
-            self.assertEqual(ResponseCode.DEVICE_READ_ERROR, response_code)
+            self.assertEqual(sensors.ResponseCode.DEVICE_READ_ERROR, response_code)
         else:
-            self.assertEqual(ResponseCode.OK, response_code)
+            self.assertEqual(sensors.ResponseCode.OK, response_code)
         self.assertEqual(len(resp), self.num_channels)
         for i in range(0, self.num_channels):
             if i < self.missed_channels or self.in_error_state:
@@ -108,5 +101,5 @@ class BaseMockTestCase(unittest.IsolatedAsyncioTestCase):
             elif i == self.disconnected_channel:
                 self.assertTrue(math.isnan(resp[i]))
             else:
-                self.assertLessEqual(MockTemperatureConfig.min, resp[i])
-                self.assertLessEqual(resp[i], MockTemperatureConfig.max)
+                self.assertLessEqual(sensors.MockTemperatureConfig.min, resp[i])
+                self.assertLessEqual(resp[i], sensors.MockTemperatureConfig.max)

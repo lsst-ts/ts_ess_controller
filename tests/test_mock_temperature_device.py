@@ -1,4 +1,4 @@
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_sensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -23,7 +23,7 @@ import asyncio
 import logging
 import unittest
 
-from lsst.ts import envsensors
+from lsst.ts.ess import sensors
 from base_mock_test_case import BaseMockTestCase
 
 logging.basicConfig(
@@ -40,10 +40,10 @@ class MockDeviceTestCase(BaseMockTestCase):
         """Check the working of the MockDevice."""
         self.data = None
         self.log = logging.getLogger(type(self).__name__)
-        tempt_sensor = envsensors.sensor.TemperatureSensor(
+        tempt_sensor = sensors.sensor.TemperatureSensor(
             num_channels=self.num_channels, log=self.log
         )
-        mock_device = envsensors.device.MockDevice(
+        mock_device = sensors.device.MockDevice(
             name=self.name,
             device_id="MockDevice",
             sensor=tempt_sensor,
@@ -62,7 +62,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.reply = None
         while not self.reply:
             await asyncio.sleep(0.1)
-        reply_to_check = self.reply[envsensors.Key.TELEMETRY]
+        reply_to_check = self.reply[sensors.Key.TELEMETRY]
         self.check_temperature_reply(reply_to_check)
 
         # Reset self.missed_channels for the second read otherwise the check
@@ -75,7 +75,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.reply = None
         while not self.reply:
             await asyncio.sleep(0.1)
-        reply_to_check = self.reply[envsensors.Key.TELEMETRY]
+        reply_to_check = self.reply[sensors.Key.TELEMETRY]
         self.check_temperature_reply(reply_to_check)
 
         await mock_device.close()

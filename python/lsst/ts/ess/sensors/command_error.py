@@ -1,4 +1,4 @@
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_sensors.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -19,15 +19,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["ResponseCode"]
+__all__ = ["CommandError"]
 
-import enum
+from .response_code import ResponseCode
 
 
-class ResponseCode(enum.IntEnum):
-    OK = 0
-    NOT_CONFIGURED = 1
-    NOT_STARTED = 2
-    ALREADY_STARTED = 3
-    INVALID_CONFIGURATION = 4
-    DEVICE_READ_ERROR = 10
+class CommandError(Exception):
+    """Exception raised if a command fails.
+
+    Parameters
+    ----------
+    msg : `str`
+        Error message
+    response_code : `ResponseCode`
+        Response code.
+    """
+
+    def __init__(self, msg: str, response_code: ResponseCode) -> None:
+        super().__init__(msg)
+        self.response_code = response_code

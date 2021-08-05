@@ -1,2 +1,2 @@
 @Library('JenkinsShared')_
-CondaPipeline([], "ts-envsensors", "lsst.ts.envsensors", "noarch")
+CondaPipeline([], "ts-ess-sensors", "lsst.ts.ess.sensors", "noarch")
