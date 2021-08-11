@@ -1,4 +1,4 @@
-# This file is part of ts_ess_sensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -19,15 +19,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["ResponseCode"]
+import typing
 
-import enum
+# For an explanation why these next lines are so complicated, see
+# https://confluence.lsstcorp.org/pages/viewpage.action?spaceKey=LTS&title=Enabling+Mypy+in+Pytest
+if typing.TYPE_CHECKING:
+    __version__ = "?"
+else:
+    try:
+        from .version import *
+    except ImportError:
+        __version__ = "?"
 
+from .command_handler import *
 
-class ResponseCode(enum.IntEnum):
-    OK = 0
-    NOT_CONFIGURED = 1
-    NOT_STARTED = 2
-    ALREADY_STARTED = 3
-    INVALID_CONFIGURATION = 4
-    DEVICE_READ_ERROR = 10
+# Import sub modules
+from . import device
+from . import schema
+from . import sensor

@@ -1,6 +1,6 @@
-.. py:currentmodule:: lsst.ts.ess.sensors
+.. py:currentmodule:: lsst.ts.ess.controller
 
-.. _lsst.ts.ess.sensors.version_history:
+.. _lsst.ts.ess.controller.version_history:
 
 ###############
 Version History
@@ -15,7 +15,7 @@ v0.3.0
 * Cleaned up the Python modules.
 * Added dcoumentation for the sensor protocols.
 * Validating incoming configurations against a JSON schema instead of using very complicated custom code.
-* Renamed the project to ts_ess_sensors.
+* Renamed the project to ts_ess_controller and extracted common code to ts_ess_common.
 
 Requires:
 

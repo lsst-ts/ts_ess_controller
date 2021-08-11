@@ -1,4 +1,4 @@
-# This file is part of ts_ess_sensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -26,11 +26,10 @@ import asyncio
 import logging
 from typing import Any, Callable, List, Optional, Tuple, Union
 
-from ..constants import Key
-from ..response_code import ResponseCode
 from ..sensor import BaseSensor
 from ..utils import create_done_future
 from lsst.ts import salobj
+from lsst.ts.ess import common
 
 
 class BaseDevice(ABC):
@@ -109,16 +108,16 @@ class BaseDevice(ABC):
         while not self._telemetry_loop.done():
             self.log.debug("Reading data.")
             curr_tai: float = salobj.current_tai()
-            response: int = ResponseCode.OK
+            response: int = common.ResponseCode.OK
             try:
                 line: str = await self.readline()
             except Exception:
                 self.log.exception(f"Exception reading device {self.name}. Continuing.")
                 line = f"{self._sensor.terminator}"
-                response = ResponseCode.DEVICE_READ_ERROR
+                response = common.ResponseCode.DEVICE_READ_ERROR
 
             if self._in_error_state:
-                response = ResponseCode.DEVICE_READ_ERROR
+                response = common.ResponseCode.DEVICE_READ_ERROR
 
             sensor_telemetry: List[float] = await self._sensor.extract_telemetry(
                 line=line
@@ -130,7 +129,7 @@ class BaseDevice(ABC):
                 *sensor_telemetry,
             ]
             reply = {
-                Key.TELEMETRY: output,
+                common.Key.TELEMETRY: output,
             }
             self.log.info(f"Returning {reply}")
             await self._callback_func(reply)

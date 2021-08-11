@@ -1,4 +1,4 @@
-# This file is part of ts_ess_sensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -19,22 +19,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["CommandError"]
+import platform
 
-from .response_code import ResponseCode
+from .base_device import *
+from .mock_device import *
 
+# Only import if on a Raspberry Pi4
+if "aarch64" in platform.platform():
+    from .rpi_serial_hat import *
 
-class CommandError(Exception):
-    """Exception raised if a command fails.
-
-    Parameters
-    ----------
-    msg : `str`
-        Error message
-    response_code : `ResponseCode`
-        Response code.
-    """
-
-    def __init__(self, msg: str, response_code: ResponseCode) -> None:
-        super().__init__(msg)
-        self.response_code = response_code
+from .vcp_ftdi import *

@@ -1,4 +1,4 @@
-# This file is part of ts_ess_sensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -36,8 +36,6 @@ import math
 import re
 from typing import List, Optional, Union
 
-from ..constants import DISCONNECTED_VALUE
-from ..response_code import ResponseCode
 from .base_sensor import BaseSensor
 
 """ASCII start character."""

@@ -1,4 +1,4 @@
-# This file is part of ts_ess_sensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -19,29 +19,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["Hx85baSensor"]
+__all__ = ["Hx85aSensor"]
 
 import asyncio
 import logging
 import math
 from typing import List, Optional, Union
 
-from ..constants import DISCONNECTED_VALUE
-from ..response_code import ResponseCode
 from .base_sensor import BaseSensor
+from lsst.ts.ess import common
 
 """The number of output values for this sensor is 3."""
 NUM_VALUES = 3
 
 
-class Hx85baSensor(BaseSensor):
-    """Omega HX85BA Humidity Sensor.
+class Hx85aSensor(BaseSensor):
+    """Omega HX85A Humidity Sensor.
 
-    Perform protocol conversion for Omega HX85BA Humidity instruments. Serial
+    Perform protocol conversion for Omega HX85A Humidity instruments. Serial
     data is output by the instrument once per second with the following
     format:
 
-        '%RH=38.86,AT°C=24.32,Pmb=911.40<\n><\r>'
+        '%RH=38.86,AT°C=24.32,DP°C=9.57<\n><\r>'
 
     where:
 
@@ -49,8 +48,8 @@ class Hx85baSensor(BaseSensor):
         dd.dd       Relative Humidity value (Range 5% to 95%).
         AT°C=       Air Temperature prefix.
         -ddd.dd     Air Temperature value (Range -20C to +120C).
-        Pmb=        Barometric Pressure prefix.
-        ddd.dd      Barometric Pressure value (10mbar to 1100mbar).
+        DP°C=       Dew Point prefix.
+        dd.dd       Dew Point value (Range -60C to +40C).
         <LF><CR>    2-character terminator ('\n\r').
 
     The placeholders shown for the values are displaying the maximum width for

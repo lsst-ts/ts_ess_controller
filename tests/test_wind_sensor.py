@@ -1,4 +1,4 @@
-# This file is part of ts_ess_sensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -24,7 +24,7 @@ import logging
 import math
 import unittest
 
-from lsst.ts.ess import sensors
+from lsst.ts.ess import controller
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -37,15 +37,15 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
     ) -> str:
         """Create a line of output as can be expected from a wind sensor."""
         checksum_string: str = (
-            sensors.sensor.UNIT_IDENTIFIER
+            controller.sensor.UNIT_IDENTIFIER
             + self.wind_sensor.delimiter
             + direction
             + self.wind_sensor.delimiter
             + speed
             + self.wind_sensor.delimiter
-            + sensors.sensor.WINDSPEED_UNIT
+            + controller.sensor.WINDSPEED_UNIT
             + self.wind_sensor.delimiter
-            + sensors.sensor.GOOD_STATUS
+            + controller.sensor.GOOD_STATUS
             + self.wind_sensor.delimiter
         )
         checksum: int = 0
@@ -57,9 +57,9 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
             checksum = 0
 
         line = (
-            sensors.sensor.START_CHARACTER
+            controller.sensor.START_CHARACTER
             + checksum_string
-            + sensors.sensor.END_CHARACTER
+            + controller.sensor.END_CHARACTER
             + f"{checksum:02x}"
             + self.wind_sensor.terminator
         )
@@ -71,7 +71,7 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
         self.missed_channels = 0
         self.name = "WindSensor"
         self.log = logging.getLogger(type(self).__name__)
-        self.wind_sensor = sensors.sensor.WindSensor(self.log)
+        self.wind_sensor = controller.sensor.WindSensor(self.log)
 
         wind_data = ("015.00", "010")
         line = self.create_wind_sensor_line(speed=wind_data[0], direction=wind_data[1])

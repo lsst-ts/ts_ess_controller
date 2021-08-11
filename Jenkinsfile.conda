@@ -1,2 +1,2 @@
 @Library('JenkinsShared')_
-CondaPipeline([], "ts-ess-sensors", "lsst.ts.ess.sensors", "noarch")
+CondaPipeline([], "ts-ess-controller", "lsst.ts.ess.controller", "noarch")

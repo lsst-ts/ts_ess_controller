@@ -1,4 +1,4 @@
-# This file is part of ts_ess_sensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -23,7 +23,7 @@ import asyncio
 import logging
 import unittest
 
-from lsst.ts.ess import sensors
+from lsst.ts.ess import common, controller
 from base_mock_test_case import BaseMockTestCase
 
 logging.basicConfig(
@@ -32,16 +32,12 @@ logging.basicConfig(
 
 
 class MockDeviceTestCase(BaseMockTestCase):
-    async def _callback(self, reply):
-        logging.info(f"Received reply {reply!r}")
-        self.reply = reply
-
-    async def _check_mock_hx85ba_device(self):
+    async def _check_mock_hx85ba_device(self) -> None:
         """Check the working of the MockDevice."""
         self.data = None
         self.log = logging.getLogger(type(self).__name__)
-        tempt_sensor = sensors.sensor.Hx85baSensor(log=self.log)
-        mock_device = sensors.device.MockDevice(
+        tempt_sensor = controller.sensor.Hx85baSensor(log=self.log)
+        mock_device = controller.device.MockDevice(
             name=self.name,
             device_id="MockDevice",
             sensor=tempt_sensor,
@@ -59,7 +55,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.reply = None
         while not self.reply:
             await asyncio.sleep(0.1)
-        reply_to_check = self.reply[sensors.Key.TELEMETRY]
+        reply_to_check = self.reply[common.Key.TELEMETRY]
         self.check_hx85ba_reply(reply_to_check)
 
         # Reset self.missed_channels for the second read otherwise the check
@@ -72,12 +68,12 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.reply = None
         while not self.reply:
             await asyncio.sleep(0.1)
-        reply_to_check = self.reply[sensors.Key.TELEMETRY]
+        reply_to_check = self.reply[common.Key.TELEMETRY]
         self.check_hx85ba_reply(reply_to_check)
 
         await mock_device.close()
 
-    async def test_mock_hx85ba_device(self):
+    async def test_mock_hx85ba_device(self) -> None:
         """Test the MockDevice with a nominal configuration, i.e. no
         disconnected channels and no truncated data.
         """
@@ -87,7 +83,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.in_error_state = False
         await self._check_mock_hx85ba_device()
 
-    async def test_mock_hx85ba_device_with_truncated_output(self):
+    async def test_mock_hx85ba_device_with_truncated_output(self) -> None:
         """Test the MockDevice with no disconnected channels and truncated data
         for two channels.
         """
@@ -97,7 +93,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         self.in_error_state = False
         await self._check_mock_hx85ba_device()
 
-    async def test_mock_hx85ba_device_in_error_state(self):
+    async def test_mock_hx85ba_device_in_error_state(self) -> None:
         """Test the MockDevice in error state meaning it will only return empty
         strings.
         """

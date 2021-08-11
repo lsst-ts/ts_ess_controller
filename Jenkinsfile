@@ -26,11 +26,20 @@ pipeline {
                 }
             }
         }
+        stage("Checkout ts_ess_common") {
+            steps {
+                script {
+                    sh """
+                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd /home/saluser/repos && git clone https://github.com/lsst-ts/ts_ess_common.git && cd ts_ess_common && /home/saluser/.checkout_repo.sh \${work_branches} && pip install --ignore-installed -e . && eups declare -r . -t saluser \"
+                    """
+                }
+            }
+        }
         stage("Running tests") {
             steps {
                 script {
                     sh """
-                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd repo && pip install --ignore-installed -e . && eups declare -r . -t saluser && setup ts_ess_sensors -t saluser && pytest --junitxml=\${XML_REPORT}\"
+                    docker exec -u saluser \${container_name} sh -c \"source ~/.setup.sh && cd repo && pip install --ignore-installed -e . && eups declare -r . -t saluser && setup ts_ess_controller -t saluser && pytest --junitxml=\${XML_REPORT}\"
                     """
                 }
             }
@@ -51,15 +60,15 @@ pipeline {
             sh "docker exec -u saluser \${container_name} sh -c \"" +
                 "source ~/.setup.sh && " +
                 "cd /home/saluser/repo/ && " +
-                "setup ts_ess_sensors -t saluser && " +
+                "setup ts_ess_controller -t saluser && " +
                 "package-docs build\""
 
             script {
                 def RESULT = sh returnStatus: true, script: "docker exec -u saluser \${container_name} sh -c \"" +
                     "source ~/.setup.sh && " +
                     "cd /home/saluser/repo/ && " +
-                    "setup ts_ess_sensors -t saluser && " +
-                    "ltd upload --product ts-ess-sensors --git-ref \${GIT_BRANCH} --dir doc/_build/html\""
+                    "setup ts_ess_controller -t saluser && " +
+                    "ltd upload --product ts-ess-controller --git-ref \${GIT_BRANCH} --dir doc/_build/html\""
 
                 if ( RESULT != 0 ) {
                     unstable("Failed to push documentation.")
