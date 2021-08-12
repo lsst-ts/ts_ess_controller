@@ -25,7 +25,7 @@ import asyncio
 import logging
 import platform
 import time
-from typing import Any, Callable, Dict, List, Optional, Union
+import typing
 
 import jsonschema
 
@@ -66,14 +66,14 @@ class CommandHandler(common.AbstractCommandHandler):
 
     valid_simulation_modes = (0, 1)
 
-    def __init__(self, callback: Callable, simulation_mode: int) -> None:
+    def __init__(self, callback: typing.Callable, simulation_mode: int) -> None:
         super().__init__(callback=callback, simulation_mode=simulation_mode)
-        self._devices: List[BaseDevice] = []
+        self._devices: typing.List[BaseDevice] = []
 
     async def connect_devices(self) -> None:
         """Loop over the configuration and start all devices."""
         self.log.info("connect_devices")
-        device_configurations = self._configuration[common.Key.DEVICES]  # type: ignore
+        device_configurations = self._configuration[common.Key.DEVICES]
         self._devices = []
         for device_configuration in device_configurations:
             device: BaseDevice = self._get_device(device_configuration)
@@ -85,32 +85,39 @@ class CommandHandler(common.AbstractCommandHandler):
             await device.open()
 
     async def disconnect_devices(self) -> None:
-        """Loop over the configuration and start all devices."""
+        """Loop over the configuration and stop all devices."""
         while self._devices:
             device: BaseDevice = self._devices.pop(-1)
             self.log.debug(f"Closing {device} device with name {device.name}")
             await device.close()
 
-    def _get_device(self, device_configuration: dict) -> BaseDevice:
-        """Get the device to connect to by using the configuration of the CSC
-        and by detecting whether the code is running on an aarch64 architecture
-        or not.
+    def _get_device(self, device_configuration: typing.Dict[str, str]) -> BaseDevice:
+        """Get the device to connect to by using the specified configuration.
 
         Parameters
         ----------
         device_configuration: `dict`
             A dict representing the device to connect to. The format of the
-            dict follows the configuration of the ts_ess project.
+            dict follows the configuration of the ts_ess_csc project.
 
         Returns
         -------
-        device: `TemperatureSensor` or `VcpFtdi` or `RpiSerialHat` or `None`
+        device: `BaseDevice`
             The device to connect to.
 
         Raises
         ------
         RuntimeError
             In case an incorrect configuration has been loaded.
+
+        Notes
+        -----
+        In case simulation_mode is set to 1, only the sensor type is
+        used and a mock device is instantiated.
+        In case a serial device is specified, the device will only be
+        instantiated if the code is running on a Raspberry Pi.
+        In all other cases, the architecture of the platform is
+        irrelevant.
         """
         sensor = self._get_sensor(device_configuration=device_configuration)
         if self.simulation_mode == 1:
@@ -166,7 +173,25 @@ class CommandHandler(common.AbstractCommandHandler):
             f"configuration."
         )
 
-    def _get_sensor(self, device_configuration: dict) -> BaseSensor:
+    def _get_sensor(self, device_configuration: typing.Dict[str, str]) -> BaseSensor:
+        """Get the sensor to connect to by using the specified configuration.
+
+        Parameters
+        ----------
+        device_configuration: `dict`
+            A dict representing the device to connect to. The format of the
+            dict follows the configuration of the ts_ess_csc project.
+
+        Returns
+        -------
+        sensor: `BaseSensor`
+            The sensor to connect to.
+
+        Raises
+        ------
+        RuntimeError
+            In case an incorrect configuration has been loaded.
+        """
         if device_configuration[common.Key.SENSOR_TYPE] == common.SensorType.HX85A:
             sensor: BaseSensor = Hx85aSensor(
                 log=self.log,
@@ -192,7 +217,6 @@ class CommandHandler(common.AbstractCommandHandler):
             )
             return sensor
         raise RuntimeError(
-            f"Could not get a {device_configuration[common.Key.SENSOR_TYPE]!r} sensor"
-            f"on architecture {platform.platform()}. Please check the "
-            f"configuration."
+            f"Could not get a {device_configuration[common.Key.SENSOR_TYPE]!r} sensor. "
+            "Please check the configuration."
         )

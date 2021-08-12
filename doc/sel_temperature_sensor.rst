@@ -95,7 +95,7 @@ Channel Error or Disconnected Value
 The instrument can report an error for any temperature channel. The error value commonly represents that the sensor is disconnected.
 Due to the nature of operation of thermocouple and RTD measurements, the instrument error value differs between the two instrument types.
 A thermocouple instrument reports an error value of: '-201.0000'
-A RTD instrument reports an error value of: '9999.9990'
+An RTD instrument reports an error value of: '9999.9990'
 
 Line Length
 ===========

@@ -37,9 +37,8 @@ async def main() -> None:
     moment this script will exit as well.
     """
     logging.info("main method")
-    # An arbitrarily chosen port. Nothing special about it.
     host = "0.0.0.0"
-    port = 5000
+    port = common.CONTROLLER_PORT
     logging.info("Constructing the sensor server.")
     # Simulation mode 0 means "connect to the real sensors."
     # Set simulation_mode to 1 to enable simulation mode and connect to a mock
