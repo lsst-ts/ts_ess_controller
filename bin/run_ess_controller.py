@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -21,7 +21,7 @@
 import asyncio
 import logging
 
-from lsst.ts.envsensors import SocketServer
+from lsst.ts.ess import common, controller
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s",
@@ -29,7 +29,7 @@ logging.basicConfig(
 )
 
 
-async def main():
+async def main() -> None:
     """Main method that, when executed in stand alone mode, starts the socket
     server.
 
@@ -37,14 +37,17 @@ async def main():
     moment this script will exit as well.
     """
     logging.info("main method")
-    # An arbitrarily chosen port. Nothing special about it.
     host = "0.0.0.0"
-    port = 5000
+    port = common.CONTROLLER_PORT
     logging.info("Constructing the sensor server.")
     # Simulation mode 0 means "connect to the real sensors."
     # Set simulation_mode to 1 to enable simulation mode and connect to a mock
     # sensor.
-    srv = SocketServer(host=host, port=port, simulation_mode=0)
+    srv = common.SocketServer(
+        name="EssSensorsServer", host=host, port=port, simulation_mode=0
+    )
+    command_handler = controller.CommandHandler(callback=srv.write, simulation_mode=0)
+    srv.set_command_handler(command_handler)
     logging.info("Starting the sensor server.")
     await srv.start_task
     await srv.server.wait_closed()

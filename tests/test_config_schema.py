@@ -1,4 +1,4 @@
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -25,7 +25,7 @@ import unittest
 
 import jsonschema
 
-from lsst.ts import envsensors
+from lsst.ts.ess import common
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -33,22 +33,22 @@ logging.basicConfig(
 
 
 class ConfigSchemaTestCase(unittest.IsolatedAsyncioTestCase):
-    async def test_config_schema(self):
-        device_config_01 = envsensors.DeviceConfig(
+    async def test_config_schema(self) -> None:
+        device_config_01 = common.DeviceConfig(
             name="Test01",
             num_channels=4,
-            dev_type=envsensors.DeviceType.FTDI.value,
+            dev_type=common.DeviceType.FTDI.value,
             dev_id="ABC",
-            sens_type=envsensors.SensorType.TEMPERATURE.value,
+            sens_type=common.SensorType.TEMPERATURE.value,
         )
-        device_config_02 = envsensors.DeviceConfig(
+        device_config_02 = common.DeviceConfig(
             name="Test01",
-            dev_type=envsensors.DeviceType.SERIAL.value,
+            dev_type=common.DeviceType.SERIAL.value,
             dev_id="ABC",
-            sens_type=envsensors.SensorType.WIND.value,
+            sens_type=common.SensorType.WIND.value,
         )
         configuration = {
-            envsensors.Key.DEVICES: [
+            common.Key.DEVICES: [
                 device_config_01.as_dict(),
                 device_config_02.as_dict(),
             ]
@@ -59,4 +59,4 @@ class ConfigSchemaTestCase(unittest.IsolatedAsyncioTestCase):
         config_loaded = json.loads(config_dumped)
 
         # Validate the configurations against the JSON schema.
-        jsonschema.validate(config_loaded, envsensors.schema.CONFIG_JSCHEMA)
+        jsonschema.validate(config_loaded, common.schema.CONFIG_JSCHEMA)

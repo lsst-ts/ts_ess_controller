@@ -1,4 +1,4 @@
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -22,9 +22,9 @@ This configuration only affects single-package Sphinx documentation builds.
 """
 
 from documenteer.conf.pipelinespkg import *  # noqa
-import lsst.ts.envsensors  # noqa
+import lsst.ts.ess.controller  # noqa
 
-project = "ts_envsensors"
+project = "ts_ess_controller"
 html_theme_options["logotext"] = project  # type: ignore # noqa
 html_title = project
 html_short_title = project

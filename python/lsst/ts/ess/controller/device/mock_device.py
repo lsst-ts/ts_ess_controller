@@ -1,4 +1,4 @@
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -27,15 +27,8 @@ import random
 from typing import Callable, Tuple
 
 from .base_device import BaseDevice
-from ..constants import (
-    DISCONNECTED_VALUE,
-    MockDewPointConfig,
-    MockHumidityConfig,
-    MockPressureConfig,
-    MockTemperatureConfig,
-)
-from ..response_code import ResponseCode
 from ..sensor import BaseSensor, Hx85aSensor, Hx85baSensor, TemperatureSensor
+from lsst.ts.ess import common
 
 
 class MockDevice(BaseDevice):
@@ -88,7 +81,7 @@ class MockDevice(BaseDevice):
         """Open the Sensor Device."""
         pass
 
-    def _format_temperature(self, i: int):
+    def _format_temperature(self, i: int) -> str:
         """Creates a formatted string representing a temperature for the given
         channel.
 
@@ -105,41 +98,51 @@ class MockDevice(BaseDevice):
             return ""
 
         prefix = f"C{i:02d}="
-        value = random.uniform(MockTemperatureConfig.min, MockTemperatureConfig.max)
+        value = random.uniform(
+            common.MockTemperatureConfig.min, common.MockTemperatureConfig.max
+        )
         if i == self._disconnected_channel:
-            value = float(DISCONNECTED_VALUE)
+            value = float(common.DISCONNECTED_VALUE)
         return f"{prefix}{value:09.4f}"
 
-    def _format_hbx85_humidity(self, index: int):
+    def _format_hbx85_humidity(self, index: int) -> str:
         if index < self._missed_channels:
             return ""
         else:
             prefix = "%RH="
-            value = random.uniform(MockHumidityConfig.min, MockHumidityConfig.max)
+            value = random.uniform(
+                common.MockHumidityConfig.min, common.MockHumidityConfig.max
+            )
             return f"{prefix}{value:5.2f}"
 
-    def _format_hbx85_temperature(self, index: int):
+    def _format_hbx85_temperature(self, index: int) -> str:
         if index < self._missed_channels:
             return ""
         else:
             prefix = "AT°C="
-            value = random.uniform(MockTemperatureConfig.min, MockTemperatureConfig.max)
+            value = random.uniform(
+                common.MockTemperatureConfig.min, common.MockTemperatureConfig.max
+            )
             return f"{prefix}{value:6.2f}"
 
-    def _format_hbx85_dew_point(self, index: int):
+    def _format_hbx85_dew_point(self, index: int) -> str:
         if index < self._missed_channels:
             return ""
         else:
             prefix = "DP°C="
-            value = random.uniform(MockDewPointConfig.min, MockDewPointConfig.max)
+            value = random.uniform(
+                common.MockDewPointConfig.min, common.MockDewPointConfig.max
+            )
             return f"{prefix}{value:5.2f}"
 
-    def _format_hbx85_air_pressure(self, index: int):
+    def _format_hbx85_air_pressure(self, index: int) -> str:
         if index < self._missed_channels:
             return ""
         else:
             prefix = "Pmb="
-            value = random.uniform(MockPressureConfig.min, MockPressureConfig.max)
+            value = random.uniform(
+                common.MockPressureConfig.min, common.MockPressureConfig.max
+            )
             return f"{prefix}{value:7.2f}"
 
     async def readline(self) -> str:

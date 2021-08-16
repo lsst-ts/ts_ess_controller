@@ -1,7 +1,7 @@
 {% set data= load_setup_py_data() %}
 
 package:
-  name: "ts-envsensors"
+  name: "ts-ess-controller"
   version: {{ data.get('version') }}
 
 source:
@@ -24,6 +24,7 @@ test:
     - ts-conda-build =0.3
     - ts-idl {{ idl_version }}
     - ts-salobj {{ salobj_version }}
+    - ts-ess-common
     - ts-tcpip
     - pyserial
     - pyftdi
@@ -47,6 +48,7 @@ requirements:
     - setuptools
     - setuptools_scm
     - ts-salobj
+    - ts-ess-common
     - ts-tcpip
     - pyserial
     - pyftdi

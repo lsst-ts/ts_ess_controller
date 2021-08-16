@@ -1,4 +1,4 @@
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -19,8 +19,4 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .base_sensor import *
-from .omega_hx85a import *
-from .omega_hx85ba import *
-from .temperature_sensor import *
-from .wind_sensor import *
+from .config_jschema import CONFIG_JSCHEMA
