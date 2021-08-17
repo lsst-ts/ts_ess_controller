@@ -91,7 +91,9 @@ class CommandHandler(common.AbstractCommandHandler):
             self.log.debug(f"Closing {device} device with name {device.name}")
             await device.close()
 
-    def _get_device(self, device_configuration: typing.Dict[str, str]) -> BaseDevice:
+    def _get_device(
+        self, device_configuration: typing.Dict[str, typing.Any]
+    ) -> BaseDevice:
         """Get the device to connect to by using the specified configuration.
 
         Parameters
@@ -173,7 +175,9 @@ class CommandHandler(common.AbstractCommandHandler):
             f"configuration."
         )
 
-    def _get_sensor(self, device_configuration: typing.Dict[str, str]) -> BaseSensor:
+    def _get_sensor(
+        self, device_configuration: typing.Dict[str, typing.Any]
+    ) -> BaseSensor:
         """Get the sensor to connect to by using the specified configuration.
 
         Parameters
