@@ -59,4 +59,4 @@ class ConfigSchemaTestCase(unittest.IsolatedAsyncioTestCase):
         config_loaded = json.loads(config_dumped)
 
         # Validate the configurations against the JSON schema.
-        jsonschema.validate(config_loaded, common.schema.CONFIG_JSCHEMA)
+        jsonschema.validate(config_loaded, common.CONFIG_SCHEMA)
