@@ -1,4 +1,4 @@
-# This file is part of ts_envsensors.
+# This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
 # This product includes software developed by the LSST Project
@@ -24,17 +24,7 @@ import logging
 import math
 import unittest
 
-from lsst.ts.envsensors.sensor.base_sensor import DELIMITER, TERMINATOR
-from lsst.ts.envsensors.sensor.wind_sensor import (
-    WindSensor,
-    DEFAULT_DIRECTION_VAL,
-    DEFAULT_SPEED_VAL,
-    END_CHARACTER,
-    GOOD_STATUS,
-    START_CHARACTER,
-    UNIT_IDENTIFIER,
-    WINDSPEED_UNIT,
-)
+from lsst.ts.ess import controller
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -47,16 +37,16 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
     ) -> str:
         """Create a line of output as can be expected from a wind sensor."""
         checksum_string: str = (
-            UNIT_IDENTIFIER
-            + DELIMITER
+            controller.sensor.UNIT_IDENTIFIER
+            + self.wind_sensor.delimiter
             + direction
-            + DELIMITER
+            + self.wind_sensor.delimiter
             + speed
-            + DELIMITER
-            + WINDSPEED_UNIT
-            + DELIMITER
-            + GOOD_STATUS
-            + DELIMITER
+            + self.wind_sensor.delimiter
+            + controller.sensor.WINDSPEED_UNIT
+            + self.wind_sensor.delimiter
+            + controller.sensor.GOOD_STATUS
+            + self.wind_sensor.delimiter
         )
         checksum: int = 0
         for i in checksum_string:
@@ -67,11 +57,11 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
             checksum = 0
 
         line = (
-            START_CHARACTER
+            controller.sensor.START_CHARACTER
             + checksum_string
-            + END_CHARACTER
+            + controller.sensor.END_CHARACTER
             + f"{checksum:02x}"
-            + TERMINATOR
+            + self.wind_sensor.terminator
         )
         return line
 
@@ -81,17 +71,17 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
         self.missed_channels = 0
         self.name = "WindSensor"
         self.log = logging.getLogger(type(self).__name__)
-        wind_sensor = WindSensor(self.num_channels, self.log)
+        self.wind_sensor = controller.sensor.WindSensor(self.log)
 
         wind_data = ("015.00", "010")
         line = self.create_wind_sensor_line(speed=wind_data[0], direction=wind_data[1])
-        reply = await wind_sensor.extract_telemetry(line=line)
+        reply = await self.wind_sensor.extract_telemetry(line=line)
         self.assertAlmostEqual(float(wind_data[0]), reply[0])
         self.assertAlmostEqual(float(wind_data[1]), reply[1])
 
         wind_data = ("001.00", "")
         line = self.create_wind_sensor_line(speed=wind_data[0], direction=wind_data[1])
-        reply = await wind_sensor.extract_telemetry(line=line)
+        reply = await self.wind_sensor.extract_telemetry(line=line)
         self.assertAlmostEqual(float(wind_data[0]), reply[0])
         self.assertTrue(math.isnan(reply[1]))
 
@@ -99,6 +89,11 @@ class WindSensorTestCase(unittest.IsolatedAsyncioTestCase):
         line = self.create_wind_sensor_line(
             speed=wind_data[0], direction=wind_data[1], valid_checksum=False
         )
-        reply = await wind_sensor.extract_telemetry(line=line)
+        reply = await self.wind_sensor.extract_telemetry(line=line)
+        self.assertTrue(math.isnan(reply[0]))
+        self.assertTrue(math.isnan(reply[1]))
+
+        line = f"{self.wind_sensor.terminator}"
+        reply = await self.wind_sensor.extract_telemetry(line=line)
         self.assertTrue(math.isnan(reply[0]))
         self.assertTrue(math.isnan(reply[1]))

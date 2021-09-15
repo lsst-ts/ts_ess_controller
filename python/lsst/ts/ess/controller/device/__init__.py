@@ -15,18 +15,17 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Sphinx configuration file for an LSST stack package.
+import platform
 
-This configuration only affects single-package Sphinx documentation builds.
-"""
+from .base_device import *
+from .mock_device import *
 
-from documenteer.conf.pipelinespkg import *  # noqa
-import lsst.ts.ess.controller  # noqa
+# Only import if on a Raspberry Pi4
+if "aarch64" in platform.platform():
+    from .rpi_serial_hat import *
 
-project = "ts_ess_controller"
-html_theme_options["logotext"] = project  # type: ignore # noqa
-html_title = project
-html_short_title = project
-
-intersphinx_mapping["ts_tcpip"] = ("https://ts-tcpip.lsst.io", None)  # type: ignore # noqa
+from .vcp_ftdi import *

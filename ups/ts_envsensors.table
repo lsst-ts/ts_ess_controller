@@ -1,5 +1,0 @@
-setupRequired(sconsUtils)
-setupRequired(ts_tcpip)
-
-envPrepend(PATH, ${PRODUCT_DIR}/bin)
-envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)

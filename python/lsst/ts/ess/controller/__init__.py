@@ -15,18 +15,25 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Sphinx configuration file for an LSST stack package.
+import typing
 
-This configuration only affects single-package Sphinx documentation builds.
-"""
+# For an explanation why these next lines are so complicated, see
+# https://confluence.lsstcorp.org/pages/viewpage.action?spaceKey=LTS&title=Enabling+Mypy+in+Pytest
+if typing.TYPE_CHECKING:
+    __version__ = "?"
+else:
+    try:
+        from .version import *
+    except ImportError:
+        __version__ = "?"
 
-from documenteer.conf.pipelinespkg import *  # noqa
-import lsst.ts.ess.controller  # noqa
+from .command_handler import *
 
-project = "ts_ess_controller"
-html_theme_options["logotext"] = project  # type: ignore # noqa
-html_title = project
-html_short_title = project
-
-intersphinx_mapping["ts_tcpip"] = ("https://ts-tcpip.lsst.io", None)  # type: ignore # noqa
+# Import sub modules
+from . import device
+from . import schema
+from . import sensor

@@ -15,18 +15,21 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Sphinx configuration file for an LSST stack package.
+import asyncio
 
-This configuration only affects single-package Sphinx documentation builds.
-"""
 
-from documenteer.conf.pipelinespkg import *  # noqa
-import lsst.ts.ess.controller  # noqa
+def create_done_future() -> asyncio.Future:
+    """Create a Future that is done.
 
-project = "ts_ess_controller"
-html_theme_options["logotext"] = project  # type: ignore # noqa
-html_title = project
-html_short_title = project
-
-intersphinx_mapping["ts_tcpip"] = ("https://ts-tcpip.lsst.io", None)  # type: ignore # noqa
+    Returns
+    -------
+    future: `asyncio.Future`
+        The done Future.
+    """
+    future: asyncio.Future = asyncio.Future()
+    future.set_result(None)
+    return future

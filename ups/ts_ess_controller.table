@@ -1,0 +1,7 @@
+setupRequired(sconsUtils)
+setupRequired(ts_salobj)
+setupRequired(ts_ess_common)
+setupRequired(ts_tcpip)
+
+envPrepend(PATH, ${PRODUCT_DIR}/bin)
+envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
