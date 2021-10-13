@@ -27,8 +27,7 @@ import logging
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 from ..sensor import BaseSensor
-from ..utils import create_done_future
-from lsst.ts import salobj
+from lsst.ts import utils
 from lsst.ts.ess import common
 
 
@@ -68,7 +67,7 @@ class BaseDevice(ABC):
         self._device_id: str = device_id
         self._sensor: BaseSensor = sensor
         self._callback_func: Callable = callback_func
-        self._telemetry_loop: asyncio.Future = create_done_future()
+        self._telemetry_loop: asyncio.Future = utils.make_done_future()
         self.is_open = False
         self.log = log.getChild(type(self).__name__)
 
@@ -107,7 +106,7 @@ class BaseDevice(ABC):
         self.log.debug("Starting sensor.")
         while not self._telemetry_loop.done():
             self.log.debug("Reading data.")
-            curr_tai: float = salobj.current_tai()
+            curr_tai: float = utils.current_tai()
             response: int = common.ResponseCode.OK
             try:
                 line: str = await self.readline()
@@ -155,7 +154,7 @@ class BaseDevice(ABC):
         """
         self.log.debug(f"Stopping read loop for {self.name!r} sensor.")
         self._telemetry_loop.cancel()
-        self._telemetry_loop = create_done_future()
+        self._telemetry_loop = utils.make_done_future()
 
         if not self.is_open:
             return
