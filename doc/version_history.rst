@@ -6,6 +6,16 @@
 Version History
 ###############
 
+v0.4.0
+======
+
+* Replaced the use of ts_salobj functions with ts_utils functions.
+
+Requires:
+
+* ts_tcpip 0.3
+* ts_utils 1.0
+
 v0.3.0
 ======
 
