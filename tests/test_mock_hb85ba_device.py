@@ -25,7 +25,6 @@ import typing
 import unittest
 
 from lsst.ts.ess import common, controller
-from base_mock_test_case import MockTestTools, MockDeviceProperties
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -40,11 +39,13 @@ class MockDeviceTestCase(unittest.IsolatedAsyncioTestCase):
             typing.Dict[str, typing.List[typing.Union[str, float]]]
         ] = reply
 
-    async def _check_mock_hx85ba_device(self, md_props: MockDeviceProperties) -> None:
+    async def _check_mock_hx85ba_device(
+        self, md_props: common.MockDeviceProperties
+    ) -> None:
         """Check the working of the MockDevice."""
         self.data = None
         self.log = logging.getLogger(type(self).__name__)
-        mtt = MockTestTools()
+        mtt = common.MockTestTools()
         sensor = controller.sensor.Hx85baSensor(log=self.log)
         mock_device = controller.device.MockDevice(
             name=md_props.name,
@@ -86,19 +87,19 @@ class MockDeviceTestCase(unittest.IsolatedAsyncioTestCase):
         """Test the MockDevice with a nominal configuration, i.e. no
         disconnected channels and no truncated data.
         """
-        md_props = MockDeviceProperties(name="MockSensor")
+        md_props = common.MockDeviceProperties(name="MockSensor")
         await self._check_mock_hx85ba_device(md_props=md_props)
 
     async def test_mock_hx85ba_device_with_truncated_output(self) -> None:
         """Test the MockDevice with no disconnected channels and truncated data
         for two channels.
         """
-        md_props = MockDeviceProperties(name="MockSensor", missed_channels=2)
+        md_props = common.MockDeviceProperties(name="MockSensor", missed_channels=2)
         await self._check_mock_hx85ba_device(md_props=md_props)
 
     async def test_mock_hx85ba_device_in_error_state(self) -> None:
         """Test the MockDevice in error state meaning it will only return empty
         strings.
         """
-        md_props = MockDeviceProperties(name="MockSensor", in_error_state=True)
+        md_props = common.MockDeviceProperties(name="MockSensor", in_error_state=True)
         await self._check_mock_hx85ba_device(md_props=md_props)

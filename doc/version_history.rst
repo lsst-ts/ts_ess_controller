@@ -10,9 +10,11 @@ v0.4.0
 ======
 
 * Replaced the use of ts_salobj functions with ts_utils functions.
+* Moved all device reply validating code to ts.ess.common.
 
 Requires:
 
+* ts_ess_common
 * ts_tcpip 0.3
 * ts_utils 1.0
 
@@ -29,6 +31,7 @@ v0.3.0
 
 Requires:
 
+* ts_ess_common
 * ts_tcpip 0.3.1
 
 

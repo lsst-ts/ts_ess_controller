@@ -25,7 +25,6 @@ import typing
 import unittest
 
 from lsst.ts.ess import common, controller
-from base_mock_test_case import MockTestTools, MockDeviceProperties
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -41,12 +40,12 @@ class MockDeviceTestCase(unittest.IsolatedAsyncioTestCase):
         ] = reply
 
     async def _check_mock_temperature_device(
-        self, md_props: MockDeviceProperties
+        self, md_props: common.MockDeviceProperties
     ) -> None:
         """Check the working of the MockDevice."""
         self.data = None
         self.log = logging.getLogger(type(self).__name__)
-        mtt = MockTestTools()
+        mtt = common.MockTestTools()
         sensor = controller.sensor.TemperatureSensor(
             num_channels=md_props.num_channels, log=self.log
         )
@@ -91,14 +90,14 @@ class MockDeviceTestCase(unittest.IsolatedAsyncioTestCase):
         """Test the MockDevice with a nominal configuration, i.e. no
         disconnected channels and no truncated data.
         """
-        md_props = MockDeviceProperties(name="MockSensor", num_channels=4)
+        md_props = common.MockDeviceProperties(name="MockSensor", num_channels=4)
         await self._check_mock_temperature_device(md_props=md_props)
 
     async def test_mock_temperature_device_with_disconnected_channel(self) -> None:
         """Test the MockDevice with one disconnected channel and no truncated
         data.
         """
-        md_props = MockDeviceProperties(
+        md_props = common.MockDeviceProperties(
             name="MockSensor", num_channels=4, disconnected_channel=2
         )
         await self._check_mock_temperature_device(md_props=md_props)
@@ -107,7 +106,7 @@ class MockDeviceTestCase(unittest.IsolatedAsyncioTestCase):
         """Test the MockDevice with no disconnected channels and truncated data
         for two channels.
         """
-        md_props = MockDeviceProperties(
+        md_props = common.MockDeviceProperties(
             name="MockSensor", num_channels=4, missed_channels=2
         )
         await self._check_mock_temperature_device(md_props=md_props)
@@ -116,7 +115,7 @@ class MockDeviceTestCase(unittest.IsolatedAsyncioTestCase):
         """Test the MockDevice in error state meaning it will only return empty
         strings.
         """
-        md_props = MockDeviceProperties(
+        md_props = common.MockDeviceProperties(
             name="MockSensor", num_channels=4, in_error_state=True
         )
         await self._check_mock_temperature_device(md_props=md_props)

@@ -25,7 +25,6 @@ import typing
 import unittest
 
 from lsst.ts.ess import common, controller
-from base_mock_test_case import MockTestTools, MockDeviceProperties
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -194,7 +193,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_telemetry(self) -> None:
         """Test handling of telemetry."""
-        mtt = MockTestTools()
+        mtt = common.MockTestTools()
         await self.command_handler.handle_command(
             command=common.Command.CONFIGURE, configuration=self.configuration
         )
@@ -211,7 +210,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         devices_names_checked: typing.Set[str] = set()
         while len(devices_names_checked) != len(self.device_configs):
             reply = self.responses.pop()
-            md_props = MockDeviceProperties(name=reply[common.Key.TELEMETRY][0])
+            md_props = common.MockDeviceProperties(name=reply[common.Key.TELEMETRY][0])
             devices_names_checked.add(md_props.name)
             device_config = self.device_configs[md_props.name]
             reply_to_check = reply[common.Key.TELEMETRY]
