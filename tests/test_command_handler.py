@@ -25,14 +25,14 @@ import typing
 import unittest
 
 from lsst.ts.ess import common, controller
-from base_mock_test_case import BaseMockTestCase
+from base_mock_test_case import MockTestTools, MockDeviceProperties
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
 )
 
 
-class CommandHandlerTestCase(BaseMockTestCase):
+class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.command_handler = controller.CommandHandler(
             callback=self.callback, simulation_mode=1
@@ -194,6 +194,7 @@ class CommandHandlerTestCase(BaseMockTestCase):
 
     async def test_get_telemetry(self) -> None:
         """Test handling of telemetry."""
+        mtt = MockTestTools()
         await self.command_handler.handle_command(
             command=common.Command.CONFIGURE, configuration=self.configuration
         )
@@ -210,20 +211,17 @@ class CommandHandlerTestCase(BaseMockTestCase):
         devices_names_checked: typing.Set[str] = set()
         while len(devices_names_checked) != len(self.device_configs):
             reply = self.responses.pop()
-            self.name = reply[common.Key.TELEMETRY][0]
-            devices_names_checked.add(self.name)
-            device_config = self.device_configs[self.name]
-            self.disconnected_channel = None
-            self.missed_channels = 0
-            self.in_error_state = False
+            md_props = MockDeviceProperties(name=reply[common.Key.TELEMETRY][0])
+            devices_names_checked.add(md_props.name)
+            device_config = self.device_configs[md_props.name]
             reply_to_check = reply[common.Key.TELEMETRY]
             if device_config.sens_type == common.SensorType.TEMPERATURE:
-                self.num_channels = device_config.num_channels
-                self.check_temperature_reply(reply_to_check)
+                md_props.num_channels = device_config.num_channels
+                mtt.check_temperature_reply(md_props=md_props, reply=reply_to_check)
             elif device_config.sens_type == common.SensorType.HX85A:
-                self.check_hx85a_reply(reply_to_check)
+                mtt.check_hx85a_reply(md_props=md_props, reply=reply_to_check)
             else:
-                self.check_hx85ba_reply(reply_to_check)
+                mtt.check_hx85ba_reply(md_props=md_props, reply=reply_to_check)
 
         await self.command_handler.handle_command(command=common.Command.STOP)
         self.assert_response(common.ResponseCode.OK)

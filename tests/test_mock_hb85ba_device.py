@@ -21,30 +21,39 @@
 
 import asyncio
 import logging
+import typing
 import unittest
 
 from lsst.ts.ess import common, controller
-from base_mock_test_case import BaseMockTestCase
+from base_mock_test_case import MockTestTools, MockDeviceProperties
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
 )
 
 
-class MockDeviceTestCase(BaseMockTestCase):
-    async def _check_mock_hx85ba_device(self) -> None:
+class MockDeviceTestCase(unittest.IsolatedAsyncioTestCase):
+    async def _callback(
+        self, reply: typing.Dict[str, typing.List[typing.Union[str, float]]]
+    ) -> None:
+        self.reply: typing.Optional[
+            typing.Dict[str, typing.List[typing.Union[str, float]]]
+        ] = reply
+
+    async def _check_mock_hx85ba_device(self, md_props: MockDeviceProperties) -> None:
         """Check the working of the MockDevice."""
         self.data = None
         self.log = logging.getLogger(type(self).__name__)
-        tempt_sensor = controller.sensor.Hx85baSensor(log=self.log)
+        mtt = MockTestTools()
+        sensor = controller.sensor.Hx85baSensor(log=self.log)
         mock_device = controller.device.MockDevice(
-            name=self.name,
+            name=md_props.name,
             device_id="MockDevice",
-            sensor=tempt_sensor,
+            sensor=sensor,
             callback_func=self._callback,
             log=self.log,
-            missed_channels=self.missed_channels,
-            in_error_state=self.in_error_state,
+            missed_channels=md_props.missed_channels,
+            in_error_state=md_props.in_error_state,
         )
 
         await mock_device.open()
@@ -56,12 +65,12 @@ class MockDeviceTestCase(BaseMockTestCase):
         while not self.reply:
             await asyncio.sleep(0.1)
         reply_to_check = self.reply[common.Key.TELEMETRY]
-        self.check_hx85ba_reply(reply_to_check)
+        mtt.check_hx85ba_reply(md_props=md_props, reply=reply_to_check)
 
         # Reset self.missed_channels for the second read otherwise the check
         # will fail.
-        if self.missed_channels > 0:
-            self.missed_channels = 0
+        if md_props.missed_channels > 0:
+            md_props.missed_channels = 0
 
         # First read of the telemetry to verify that no more truncated data is
         # produced is the MockDevice was instructed to produce such data.
@@ -69,7 +78,7 @@ class MockDeviceTestCase(BaseMockTestCase):
         while not self.reply:
             await asyncio.sleep(0.1)
         reply_to_check = self.reply[common.Key.TELEMETRY]
-        self.check_hx85ba_reply(reply_to_check)
+        mtt.check_hx85ba_reply(md_props=md_props, reply=reply_to_check)
 
         await mock_device.close()
 
@@ -77,28 +86,19 @@ class MockDeviceTestCase(BaseMockTestCase):
         """Test the MockDevice with a nominal configuration, i.e. no
         disconnected channels and no truncated data.
         """
-        self.name = "MockSensor"
-        self.disconnected_channel = None
-        self.missed_channels = 0
-        self.in_error_state = False
-        await self._check_mock_hx85ba_device()
+        md_props = MockDeviceProperties(name="MockSensor")
+        await self._check_mock_hx85ba_device(md_props=md_props)
 
     async def test_mock_hx85ba_device_with_truncated_output(self) -> None:
         """Test the MockDevice with no disconnected channels and truncated data
         for two channels.
         """
-        self.name = "MockSensor"
-        self.disconnected_channel = None
-        self.missed_channels = 2
-        self.in_error_state = False
-        await self._check_mock_hx85ba_device()
+        md_props = MockDeviceProperties(name="MockSensor", missed_channels=2)
+        await self._check_mock_hx85ba_device(md_props=md_props)
 
     async def test_mock_hx85ba_device_in_error_state(self) -> None:
         """Test the MockDevice in error state meaning it will only return empty
         strings.
         """
-        self.name = "MockSensor"
-        self.disconnected_channel = None
-        self.missed_channels = 0
-        self.in_error_state = True
-        await self._check_mock_hx85ba_device()
+        md_props = MockDeviceProperties(name="MockSensor", in_error_state=True)
+        await self._check_mock_hx85ba_device(md_props=md_props)

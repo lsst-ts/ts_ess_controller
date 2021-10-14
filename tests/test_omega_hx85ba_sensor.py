@@ -33,10 +33,6 @@ logging.basicConfig(
 
 class OmegaHx85baSensorTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_extract_telemetry(self) -> None:
-        self.num_channels = 4
-        self.disconnected_channel = None
-        self.missed_channels = 0
-        self.name = "Hx85baSensor"
         self.log = logging.getLogger(type(self).__name__)
         sensor = controller.sensor.Hx85baSensor(self.log)
         line = f"%RH=38.86,AT°C=24.32,Pmb=911.40{sensor.terminator}"
