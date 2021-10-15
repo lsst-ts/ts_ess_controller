@@ -13,6 +13,7 @@ v0.4.0
 * Moved all device reply validating code to ts.ess.common.
 * Moved all sensors code from ts.ess.controller to ts.ess.common.
 * Moved code to determine what sensor is connected from ts.ess.controller to ts.ess.common.
+* Moved BaseDevice and MockDevice from ts.ess.controller to ts.ess.common.
 
 Requires:
 

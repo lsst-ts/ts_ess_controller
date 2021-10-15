@@ -24,7 +24,6 @@ __all__ = ["CommandHandler"]
 import platform
 import typing
 
-from .device import BaseDevice
 from lsst.ts.ess import common
 
 
@@ -61,7 +60,7 @@ class CommandHandler(common.AbstractCommandHandler):
 
     def __init__(self, callback: typing.Callable, simulation_mode: int) -> None:
         super().__init__(callback=callback, simulation_mode=simulation_mode)
-        self._devices: typing.List[BaseDevice] = []
+        self._devices: typing.List[common.device.BaseDevice] = []
 
     async def connect_devices(self) -> None:
         """Loop over the configuration and start all devices."""
@@ -69,7 +68,7 @@ class CommandHandler(common.AbstractCommandHandler):
         device_configurations = self._configuration[common.Key.DEVICES]
         self._devices = []
         for device_configuration in device_configurations:
-            device: BaseDevice = self._get_device(device_configuration)
+            device: common.device.BaseDevice = self._get_device(device_configuration)
             self._devices.append(device)
             self.log.debug(
                 f"Opening {device_configuration[common.Key.DEVICE_TYPE]} "
@@ -80,13 +79,13 @@ class CommandHandler(common.AbstractCommandHandler):
     async def disconnect_devices(self) -> None:
         """Loop over the configuration and stop all devices."""
         while self._devices:
-            device: BaseDevice = self._devices.pop(-1)
+            device: common.device.BaseDevice = self._devices.pop(-1)
             self.log.debug(f"Closing {device} device with name {device.name}")
             await device.close()
 
     def _get_device(
         self, device_configuration: typing.Dict[str, typing.Any]
-    ) -> BaseDevice:
+    ) -> common.device.BaseDevice:
         """Get the device to connect to by using the specified configuration.
 
         Parameters
@@ -97,7 +96,7 @@ class CommandHandler(common.AbstractCommandHandler):
 
         Returns
         -------
-        device: `BaseDevice`
+        device: `common.device.BaseDevice`
             The device to connect to.
 
         Raises
@@ -116,12 +115,10 @@ class CommandHandler(common.AbstractCommandHandler):
         """
         sensor = self.get_sensor(device_configuration=device_configuration)
         if self.simulation_mode == 1:
-            from .device import MockDevice
-
             self.log.debug(
                 f"Creating MockDevice with name {device_configuration[common.Key.NAME]} and sensor {sensor}"
             )
-            device: BaseDevice = MockDevice(
+            device: common.device.BaseDevice = common.device.MockDevice(
                 name=device_configuration[common.Key.NAME],
                 device_id=device_configuration[common.Key.FTDI_ID],
                 sensor=sensor,

@@ -28,11 +28,10 @@ from typing import Callable
 import RPi.GPIO as gpio
 import serial
 
-from .base_device import BaseDevice
 from lsst.ts.ess import common
 
 
-class RpiSerialHat(BaseDevice):
+class RpiSerialHat(common.device.BaseDevice):
     """USB Virtual Communications Port (VCP) for FTDI device.
 
     Parameters

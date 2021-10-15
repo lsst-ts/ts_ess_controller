@@ -27,11 +27,10 @@ from typing import Callable
 
 from pylibftdi import Device
 
-from .base_device import BaseDevice
 from lsst.ts.ess import common
 
 
-class VcpFtdi(BaseDevice):
+class VcpFtdi(common.device.BaseDevice):
     """USB Virtual Communications Port (VCP) for FTDI device.
 
     Parameters
