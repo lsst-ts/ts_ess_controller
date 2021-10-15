@@ -21,17 +21,10 @@
 
 __all__ = ["CommandHandler"]
 
-import asyncio
-import logging
 import platform
-import time
 import typing
 
-import jsonschema
-
 from .device import BaseDevice
-from .sensor import BaseSensor, Hx85aSensor, Hx85baSensor, TemperatureSensor, WindSensor
-
 from lsst.ts.ess import common
 
 
@@ -177,7 +170,7 @@ class CommandHandler(common.AbstractCommandHandler):
 
     def _get_sensor(
         self, device_configuration: typing.Dict[str, typing.Any]
-    ) -> BaseSensor:
+    ) -> common.sensor.BaseSensor:
         """Get the sensor to connect to by using the specified configuration.
 
         Parameters
@@ -188,7 +181,7 @@ class CommandHandler(common.AbstractCommandHandler):
 
         Returns
         -------
-        sensor: `BaseSensor`
+        sensor: `common.sensor.BaseSensor`
             The sensor to connect to.
 
         Raises
@@ -197,12 +190,12 @@ class CommandHandler(common.AbstractCommandHandler):
             In case an incorrect configuration has been loaded.
         """
         if device_configuration[common.Key.SENSOR_TYPE] == common.SensorType.HX85A:
-            sensor: BaseSensor = Hx85aSensor(
+            sensor: common.sensor.BaseSensor = common.sensor.Hx85aSensor(
                 log=self.log,
             )
             return sensor
         elif device_configuration[common.Key.SENSOR_TYPE] == common.SensorType.HX85BA:
-            sensor = Hx85baSensor(
+            sensor = common.sensor.Hx85baSensor(
                 log=self.log,
             )
             return sensor
@@ -210,13 +203,13 @@ class CommandHandler(common.AbstractCommandHandler):
             device_configuration[common.Key.SENSOR_TYPE]
             == common.SensorType.TEMPERATURE
         ):
-            sensor = TemperatureSensor(
+            sensor = common.sensor.TemperatureSensor(
                 log=self.log,
                 num_channels=device_configuration[common.Key.CHANNELS],
             )
             return sensor
         elif device_configuration[common.Key.SENSOR_TYPE] == common.SensorType.WIND:
-            sensor = WindSensor(
+            sensor = common.sensor.WindSensor(
                 log=self.log,
             )
             return sensor

@@ -46,7 +46,7 @@ class MockDeviceTestCase(unittest.IsolatedAsyncioTestCase):
         self.data = None
         self.log = logging.getLogger(type(self).__name__)
         mtt = common.MockTestTools()
-        sensor = controller.sensor.TemperatureSensor(
+        sensor = common.sensor.TemperatureSensor(
             num_channels=md_props.num_channels, log=self.log
         )
         mock_device = controller.device.MockDevice(

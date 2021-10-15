@@ -24,9 +24,8 @@ __all__ = ["BaseDevice"]
 from abc import ABC, abstractmethod
 import asyncio
 import logging
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Callable, List, Union
 
-from ..sensor import BaseSensor
 from lsst.ts import utils
 from lsst.ts.ess import common
 
@@ -46,7 +45,7 @@ class BaseDevice(ABC):
         The hardware device ID to connect to. This can be a physical ID (e.g.
         /dev/ttyUSB0), a serial port (e.g. serial_ch_1) or any other ID used by
         the specific device.
-    sensor: `BaseSensor`
+    sensor: `common.sensor.BaseSensor`
         The sensor that produces the telemetry.
     callback_func : `Callable`
         Callback function to receive the telemetry.
@@ -59,13 +58,13 @@ class BaseDevice(ABC):
         self,
         name: str,
         device_id: str,
-        sensor: BaseSensor,
+        sensor: common.sensor.BaseSensor,
         callback_func: Callable,
         log: logging.Logger,
     ) -> None:
         self.name: str = name
         self._device_id: str = device_id
-        self._sensor: BaseSensor = sensor
+        self._sensor: common.sensor.BaseSensor = sensor
         self._callback_func: Callable = callback_func
         self._telemetry_loop: asyncio.Future = utils.make_done_future()
         self.is_open = False

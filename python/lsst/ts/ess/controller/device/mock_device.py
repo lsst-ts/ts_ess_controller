@@ -24,10 +24,9 @@ __all__ = ["MockDevice"]
 import asyncio
 import logging
 import random
-from typing import Callable, Tuple
+from typing import Callable
 
 from .base_device import BaseDevice
-from ..sensor import BaseSensor, Hx85aSensor, Hx85baSensor, TemperatureSensor
 from lsst.ts.ess import common
 
 
@@ -40,7 +39,7 @@ class MockDevice(BaseDevice):
         The name of the device.
     device_id: `str`
         The hardware device ID to connect to.
-    sensor: `BaseSensor`
+    sensor: `common.sensor.BaseSensor`
         The sensor that produces the telemetry.
     callback_func : `Callable`
         Callback function to receive the telemetry.
@@ -59,7 +58,7 @@ class MockDevice(BaseDevice):
         self,
         name: str,
         device_id: str,
-        sensor: BaseSensor,
+        sensor: common.sensor.BaseSensor,
         callback_func: Callable,
         log: logging.Logger,
         disconnected_channel: int = None,
@@ -163,17 +162,17 @@ class MockDevice(BaseDevice):
             return f"{self._sensor.terminator}"
 
         channel_strs = []
-        if isinstance(self._sensor, TemperatureSensor):
+        if isinstance(self._sensor, common.sensor.TemperatureSensor):
             channel_strs = [
                 self._format_temperature(i) for i in range(0, self._sensor.num_channels)
             ]
-        elif isinstance(self._sensor, Hx85aSensor):
+        elif isinstance(self._sensor, common.sensor.Hx85aSensor):
             channel_strs = [
                 self._format_hbx85_humidity(index=0),
                 self._format_hbx85_temperature(index=1),
                 self._format_hbx85_dew_point(index=2),
             ]
-        elif isinstance(self._sensor, Hx85baSensor):
+        elif isinstance(self._sensor, common.sensor.Hx85baSensor):
             channel_strs = [
                 self._format_hbx85_humidity(index=0),
                 self._format_hbx85_temperature(index=1),

@@ -23,13 +23,13 @@ __all__ = ["RpiSerialHat"]
 
 import asyncio
 import logging
-from typing import Callable, Tuple
+from typing import Callable
 
 import RPi.GPIO as gpio
 import serial
 
 from .base_device import BaseDevice
-from ..sensor import BaseSensor
+from lsst.ts.ess import common
 
 
 class RpiSerialHat(BaseDevice):
@@ -41,7 +41,7 @@ class RpiSerialHat(BaseDevice):
         The hardware device ID to connect to. This can be a physical ID (e.g.
         /dev/ttyUSB0), a serial port (e.g. serial_ch_1) or any other ID used by
         the specific device.
-    sensor: `BaseSensor`
+    sensor: `common.sensor.BaseSensor`
         The sensor that produces the telemetry.
     callback_func : `Callable`
         Callback function to receive instrument output.
@@ -93,7 +93,7 @@ class RpiSerialHat(BaseDevice):
         self,
         name: str,
         device_id: str,
-        sensor: BaseSensor,
+        sensor: common.sensor.BaseSensor,
         callback_func: Callable,
         log: logging.Logger,
     ) -> None:

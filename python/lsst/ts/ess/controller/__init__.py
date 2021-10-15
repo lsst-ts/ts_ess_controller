@@ -36,4 +36,3 @@ from .command_handler import *
 # Import sub modules
 from . import device
 from . import schema
-from . import sensor
