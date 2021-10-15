@@ -12,6 +12,7 @@ v0.4.0
 * Replaced the use of ts_salobj functions with ts_utils functions.
 * Moved all device reply validating code to ts.ess.common.
 * Moved all sensors code from ts.ess.controller to ts.ess.common.
+* Moved code to determine what sensor is connected from ts.ess.controller to ts.ess.common.
 
 Requires:
 

@@ -114,7 +114,7 @@ class CommandHandler(common.AbstractCommandHandler):
         In all other cases, the architecture of the platform is
         irrelevant.
         """
-        sensor = self._get_sensor(device_configuration=device_configuration)
+        sensor = self.get_sensor(device_configuration=device_configuration)
         if self.simulation_mode == 1:
             from .device import MockDevice
 
@@ -166,54 +166,4 @@ class CommandHandler(common.AbstractCommandHandler):
             f"Could not get a {device_configuration[common.Key.DEVICE_TYPE]!r} device"
             f"on architecture {platform.platform()}. Please check the "
             f"configuration."
-        )
-
-    def _get_sensor(
-        self, device_configuration: typing.Dict[str, typing.Any]
-    ) -> common.sensor.BaseSensor:
-        """Get the sensor to connect to by using the specified configuration.
-
-        Parameters
-        ----------
-        device_configuration: `dict`
-            A dict representing the device to connect to. The format of the
-            dict follows the configuration of the ts_ess_csc project.
-
-        Returns
-        -------
-        sensor: `common.sensor.BaseSensor`
-            The sensor to connect to.
-
-        Raises
-        ------
-        RuntimeError
-            In case an incorrect configuration has been loaded.
-        """
-        if device_configuration[common.Key.SENSOR_TYPE] == common.SensorType.HX85A:
-            sensor: common.sensor.BaseSensor = common.sensor.Hx85aSensor(
-                log=self.log,
-            )
-            return sensor
-        elif device_configuration[common.Key.SENSOR_TYPE] == common.SensorType.HX85BA:
-            sensor = common.sensor.Hx85baSensor(
-                log=self.log,
-            )
-            return sensor
-        elif (
-            device_configuration[common.Key.SENSOR_TYPE]
-            == common.SensorType.TEMPERATURE
-        ):
-            sensor = common.sensor.TemperatureSensor(
-                log=self.log,
-                num_channels=device_configuration[common.Key.CHANNELS],
-            )
-            return sensor
-        elif device_configuration[common.Key.SENSOR_TYPE] == common.SensorType.WIND:
-            sensor = common.sensor.WindSensor(
-                log=self.log,
-            )
-            return sensor
-        raise RuntimeError(
-            f"Could not get a {device_configuration[common.Key.SENSOR_TYPE]!r} sensor. "
-            "Please check the configuration."
         )
