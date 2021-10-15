@@ -15,6 +15,7 @@ v0.4.0
 * Moved code to determine what sensor is connected from ts.ess.controller to ts.ess.common.
 * Moved BaseDevice and MockDevice from ts.ess.controller to ts.ess.common.
 * Removed all obsolete schema related code since it also is in ts.ess.common.
+* Updated the documentation to reflect all changes.
 
 Requires:
 
