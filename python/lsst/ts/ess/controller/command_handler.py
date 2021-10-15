@@ -60,30 +60,8 @@ class CommandHandler(common.AbstractCommandHandler):
 
     def __init__(self, callback: typing.Callable, simulation_mode: int) -> None:
         super().__init__(callback=callback, simulation_mode=simulation_mode)
-        self._devices: typing.List[common.device.BaseDevice] = []
 
-    async def connect_devices(self) -> None:
-        """Loop over the configuration and start all devices."""
-        self.log.info("connect_devices")
-        device_configurations = self._configuration[common.Key.DEVICES]
-        self._devices = []
-        for device_configuration in device_configurations:
-            device: common.device.BaseDevice = self._get_device(device_configuration)
-            self._devices.append(device)
-            self.log.debug(
-                f"Opening {device_configuration[common.Key.DEVICE_TYPE]} "
-                f"device with name {device_configuration[common.Key.NAME]}"
-            )
-            await device.open()
-
-    async def disconnect_devices(self) -> None:
-        """Loop over the configuration and stop all devices."""
-        while self._devices:
-            device: common.device.BaseDevice = self._devices.pop(-1)
-            self.log.debug(f"Closing {device} device with name {device.name}")
-            await device.close()
-
-    def _get_device(
+    def get_device(
         self, device_configuration: typing.Dict[str, typing.Any]
     ) -> common.device.BaseDevice:
         """Get the device to connect to by using the specified configuration.
