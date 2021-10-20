@@ -36,7 +36,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         self.command_handler = controller.CommandHandler(
             callback=self.callback, simulation_mode=1
         )
-        self.assertIsNone(self.command_handler._configuration)
+        self.assertIsNone(self.command_handler.configuration)
 
         # Despite simulation_mode being set to 1, full fledged configuration is
         # needed because of the configuration validation. All device
@@ -91,7 +91,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             command=common.Command.CONFIGURE, configuration=self.configuration
         )
         self.assert_response(common.ResponseCode.OK)
-        self.assertDictEqual(self.configuration, self.command_handler._configuration)
+        self.assertDictEqual(self.configuration, self.command_handler.configuration)
 
         # The value for common.Key.DEVICES may not be empty.
         bad_configuration: typing.Dict[str, typing.Any] = {common.Key.DEVICES: []}
@@ -157,14 +157,14 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         """Test handling of the start command."""
         await self.command_handler.handle_command(command=common.Command.START)
         self.assert_response(common.ResponseCode.NOT_CONFIGURED)
-        self.assertIsNone(self.command_handler._configuration)
+        self.assertIsNone(self.command_handler.configuration)
         self.assertFalse(self.command_handler._started)
 
         await self.command_handler.handle_command(
             command=common.Command.CONFIGURE, configuration=self.configuration
         )
         self.assert_response(common.ResponseCode.OK)
-        self.assertDictEqual(self.configuration, self.command_handler._configuration)
+        self.assertDictEqual(self.configuration, self.command_handler.configuration)
         await self.command_handler.handle_command(command=common.Command.START)
         self.assert_response(common.ResponseCode.OK)
         self.assertTrue(self.command_handler._started)
@@ -173,14 +173,14 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         """Test handling of the stop command."""
         await self.command_handler.handle_command(command=common.Command.STOP)
         self.assert_response(common.ResponseCode.NOT_STARTED)
-        self.assertIsNone(self.command_handler._configuration)
+        self.assertIsNone(self.command_handler.configuration)
         self.assertFalse(self.command_handler._started)
 
         await self.command_handler.handle_command(
             command=common.Command.CONFIGURE, configuration=self.configuration
         )
         self.assert_response(common.ResponseCode.OK)
-        self.assertDictEqual(self.configuration, self.command_handler._configuration)
+        self.assertDictEqual(self.configuration, self.command_handler.configuration)
         await self.command_handler.handle_command(command=common.Command.START)
         self.assert_response(common.ResponseCode.OK)
         self.assertTrue(self.command_handler._started)
@@ -198,7 +198,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             command=common.Command.CONFIGURE, configuration=self.configuration
         )
         self.assert_response(common.ResponseCode.OK)
-        self.assertDictEqual(self.configuration, self.command_handler._configuration)
+        self.assertDictEqual(self.configuration, self.command_handler.configuration)
         await self.command_handler.handle_command(command=common.Command.START)
         self.assert_response(common.ResponseCode.OK)
         self.assertTrue(self.command_handler._started)
