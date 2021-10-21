@@ -210,17 +210,19 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         devices_names_checked: typing.Set[str] = set()
         while len(devices_names_checked) != len(self.device_configs):
             reply = self.responses.pop()
-            md_props = common.MockDeviceProperties(name=reply[common.Key.TELEMETRY][0])
-            devices_names_checked.add(md_props.name)
-            device_config = self.device_configs[md_props.name]
+            name = reply[common.Key.TELEMETRY][0]
+            devices_names_checked.add(name)
+            device_config = self.device_configs[name]
             reply_to_check = reply[common.Key.TELEMETRY]
             if device_config.sens_type == common.SensorType.TEMPERATURE:
-                md_props.num_channels = device_config.num_channels
-                mtt.check_temperature_reply(md_props=md_props, reply=reply_to_check)
+                num_channels = device_config.num_channels
+                mtt.check_temperature_reply(
+                    reply=reply_to_check, name=name, num_channels=num_channels
+                )
             elif device_config.sens_type == common.SensorType.HX85A:
-                mtt.check_hx85a_reply(md_props=md_props, reply=reply_to_check)
+                mtt.check_hx85a_reply(reply=reply_to_check, name=name)
             else:
-                mtt.check_hx85ba_reply(md_props=md_props, reply=reply_to_check)
+                mtt.check_hx85ba_reply(reply=reply_to_check, name=name)
 
         await self.command_handler.handle_command(command=common.Command.STOP)
         self.assert_response(common.ResponseCode.OK)
