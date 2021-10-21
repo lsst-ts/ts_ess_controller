@@ -91,7 +91,9 @@ class CommandHandler(common.AbstractCommandHandler):
         In all other cases, the architecture of the platform is
         irrelevant.
         """
-        sensor = self.create_sensor(device_configuration=device_configuration)
+        sensor = common.sensor.create_sensor(
+            device_configuration=device_configuration, log=self.log
+        )
         if self.simulation_mode == 1:
             self.log.debug(
                 f"Creating MockDevice with name {device_configuration[common.Key.NAME]} and sensor {sensor}"
