@@ -102,7 +102,6 @@ class CommandHandler(common.AbstractCommandHandler):
                 sensor=sensor,
                 callback_func=self._callback,
                 log=self.log,
-                disconnected_channel=None,
             )
             return device
         elif device_configuration[common.Key.DEVICE_TYPE] == common.DeviceType.FTDI:
