@@ -33,11 +33,11 @@ class CommandHandler(common.AbstractCommandHandler):
 
     Parameters
     ----------
-    callback: `Callable`
+    callback : `Callable`
         The callback coroutine handling the sensor telemetry. This can be a
         coroutine that sends the data via a socket connection or a coroutine in
         a test class to verify that the command has been handled correctly.
-    simulation_mode: `int`
+    simulation_mode : `int`
         Indicating if a simulation mode (> 0) or not (0) is active.
 
     The commands that can be handled are:
@@ -68,13 +68,13 @@ class CommandHandler(common.AbstractCommandHandler):
 
         Parameters
         ----------
-        device_configuration: `dict`
+        device_configuration : `dict`
             A dict representing the device to connect to. The format of the
             dict follows the configuration of the ts_ess_csc project.
 
         Returns
         -------
-        device: `common.device.BaseDevice`
+        device : `common.device.BaseDevice`
             The device to connect to.
 
         Raises
