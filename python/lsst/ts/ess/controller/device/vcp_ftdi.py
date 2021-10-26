@@ -35,11 +35,11 @@ class VcpFtdi(common.device.BaseDevice):
 
     Parameters
     ----------
-    device_id: `str`
+    device_id : `str`
         The hardware device ID to connect to. This can be a physical ID (e.g.
         /dev/ttyUSB0), a serial port (e.g. serial_ch_1) or any other ID used by
         the specific device.
-    sensor: `common.sensor.BaseSensor`
+    sensor : `common.sensor.BaseSensor`
         The sensor that produces the telemetry.
     callback_func : `Callable`
         Callback function to receive instrument output.
