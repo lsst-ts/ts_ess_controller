@@ -25,19 +25,18 @@ import typing
 import unittest
 
 from lsst.ts.ess import common, controller
-from base_mock_test_case import BaseMockTestCase
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
 )
 
 
-class CommandHandlerTestCase(BaseMockTestCase):
+class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.command_handler = controller.CommandHandler(
             callback=self.callback, simulation_mode=1
         )
-        self.assertIsNone(self.command_handler._configuration)
+        assert self.command_handler.configuration is None
 
         # Despite simulation_mode being set to 1, full fledged configuration is
         # needed because of the configuration validation. All device
@@ -81,7 +80,7 @@ class CommandHandlerTestCase(BaseMockTestCase):
 
     def assert_response(self, response_code: str) -> None:
         response = self.responses.pop()
-        self.assertEqual(response[common.Key.RESPONSE], response_code)
+        assert response[common.Key.RESPONSE] == response_code
 
     async def test_configure(self) -> None:
         """Test the configuration validation of the CommandHandler."""
@@ -92,7 +91,7 @@ class CommandHandlerTestCase(BaseMockTestCase):
             command=common.Command.CONFIGURE, configuration=self.configuration
         )
         self.assert_response(common.ResponseCode.OK)
-        self.assertDictEqual(self.configuration, self.command_handler._configuration)
+        assert self.configuration == self.command_handler.configuration
 
         # The value for common.Key.DEVICES may not be empty.
         bad_configuration: typing.Dict[str, typing.Any] = {common.Key.DEVICES: []}
@@ -158,50 +157,53 @@ class CommandHandlerTestCase(BaseMockTestCase):
         """Test handling of the start command."""
         await self.command_handler.handle_command(command=common.Command.START)
         self.assert_response(common.ResponseCode.NOT_CONFIGURED)
-        self.assertIsNone(self.command_handler._configuration)
-        self.assertFalse(self.command_handler._started)
+        assert self.command_handler.configuration is None
+        assert self.command_handler._started is False
 
         await self.command_handler.handle_command(
             command=common.Command.CONFIGURE, configuration=self.configuration
         )
         self.assert_response(common.ResponseCode.OK)
-        self.assertDictEqual(self.configuration, self.command_handler._configuration)
+        assert self.command_handler.configuration is not None
+        assert self.configuration == self.command_handler.configuration
         await self.command_handler.handle_command(command=common.Command.START)
         self.assert_response(common.ResponseCode.OK)
-        self.assertTrue(self.command_handler._started)
+        assert self.command_handler._started is True
 
     async def test_stop(self) -> None:
         """Test handling of the stop command."""
         await self.command_handler.handle_command(command=common.Command.STOP)
         self.assert_response(common.ResponseCode.NOT_STARTED)
-        self.assertIsNone(self.command_handler._configuration)
-        self.assertFalse(self.command_handler._started)
+        assert self.command_handler.configuration is None
+        assert self.command_handler._started is False
 
         await self.command_handler.handle_command(
             command=common.Command.CONFIGURE, configuration=self.configuration
         )
         self.assert_response(common.ResponseCode.OK)
-        self.assertDictEqual(self.configuration, self.command_handler._configuration)
+        assert self.command_handler.configuration is not None
+        assert self.configuration == self.command_handler.configuration
         await self.command_handler.handle_command(command=common.Command.START)
         self.assert_response(common.ResponseCode.OK)
-        self.assertTrue(self.command_handler._started)
+        assert self.command_handler._started is True
 
         await self.command_handler.handle_command(command=common.Command.STOP)
         self.assert_response(common.ResponseCode.OK)
         # Give time to the telemetry_task to get cancelled.
         await asyncio.sleep(0.5)
-        self.assertFalse(self.command_handler._started)
+        assert self.command_handler._started is False
 
     async def test_get_telemetry(self) -> None:
         """Test handling of telemetry."""
+        mtt = common.MockTestTools()
         await self.command_handler.handle_command(
             command=common.Command.CONFIGURE, configuration=self.configuration
         )
         self.assert_response(common.ResponseCode.OK)
-        self.assertDictEqual(self.configuration, self.command_handler._configuration)
+        assert self.configuration == self.command_handler.configuration
         await self.command_handler.handle_command(command=common.Command.START)
         self.assert_response(common.ResponseCode.OK)
-        self.assertTrue(self.command_handler._started)
+        assert self.command_handler._started is True
 
         # Give some time to the mock sensor to produce data
         while len(self.responses) < len(self.device_configs):
@@ -210,23 +212,22 @@ class CommandHandlerTestCase(BaseMockTestCase):
         devices_names_checked: typing.Set[str] = set()
         while len(devices_names_checked) != len(self.device_configs):
             reply = self.responses.pop()
-            self.name = reply[common.Key.TELEMETRY][0]
-            devices_names_checked.add(self.name)
-            device_config = self.device_configs[self.name]
-            self.disconnected_channel = None
-            self.missed_channels = 0
-            self.in_error_state = False
+            name = reply[common.Key.TELEMETRY][0]
+            devices_names_checked.add(name)
+            device_config = self.device_configs[name]
             reply_to_check = reply[common.Key.TELEMETRY]
             if device_config.sens_type == common.SensorType.TEMPERATURE:
-                self.num_channels = device_config.num_channels
-                self.check_temperature_reply(reply_to_check)
+                num_channels = device_config.num_channels
+                mtt.check_temperature_reply(
+                    reply=reply_to_check, name=name, num_channels=num_channels
+                )
             elif device_config.sens_type == common.SensorType.HX85A:
-                self.check_hx85a_reply(reply_to_check)
+                mtt.check_hx85a_reply(reply=reply_to_check, name=name)
             else:
-                self.check_hx85ba_reply(reply_to_check)
+                mtt.check_hx85ba_reply(reply=reply_to_check, name=name)
 
         await self.command_handler.handle_command(command=common.Command.STOP)
         self.assert_response(common.ResponseCode.OK)
         # Give time to the telemetry_task to get cancelled.
         await asyncio.sleep(0.5)
-        self.assertFalse(self.command_handler._started)
+        assert self.command_handler._started is False

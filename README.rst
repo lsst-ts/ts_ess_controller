@@ -8,8 +8,10 @@ SocketServer and sensor reading code for the Environmental Sensors Support syste
 The SocketServer is used to facilitate basic TCP/IP communication.
 This communication will allow for starting and stopping the sensor reading code, as well as for configuring which sensors to read.
 The sensor reading code will then send the sensor telemetry data back via the SocketServer.
+Note that the base device and all sensor code is in ts.ess.common.
+This package only holds the code for the Raspberry Pi Serial Hat and VCP FTDI (Virtual COM Port Future Technology Device International) devices.
 
-Both FTDI and Serial connections of the sensors are supported.
+Both Serial and FTDI connections of the sensors are supported.
 It is unlikely that more connection types will be added in the future.
 
 Currently the following sensor types are supported:

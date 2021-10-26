@@ -23,25 +23,24 @@ __all__ = ["RpiSerialHat"]
 
 import asyncio
 import logging
-from typing import Callable, Tuple
+from typing import Callable
 
 import RPi.GPIO as gpio
 import serial
 
-from .base_device import BaseDevice
-from ..sensor import BaseSensor
+from lsst.ts.ess import common
 
 
-class RpiSerialHat(BaseDevice):
+class RpiSerialHat(common.device.BaseDevice):
     """USB Virtual Communications Port (VCP) for FTDI device.
 
     Parameters
     ----------
-    device_id: `str`
+    device_id : `str`
         The hardware device ID to connect to. This can be a physical ID (e.g.
         /dev/ttyUSB0), a serial port (e.g. serial_ch_1) or any other ID used by
         the specific device.
-    sensor: `BaseSensor`
+    sensor : `common.sensor.BaseSensor`
         The sensor that produces the telemetry.
     callback_func : `Callable`
         Callback function to receive instrument output.
@@ -93,7 +92,7 @@ class RpiSerialHat(BaseDevice):
         self,
         name: str,
         device_id: str,
-        sensor: BaseSensor,
+        sensor: common.sensor.BaseSensor,
         callback_func: Callable,
         log: logging.Logger,
     ) -> None:
@@ -155,9 +154,9 @@ class RpiSerialHat(BaseDevice):
 
         Parameters
         ----------
-        rpi_pin: `int`
+        rpi_pin : `int`
             The pin number.
-        pin_type: `int`
+        pin_type : `int`
             The pin type.
         """
         try:
@@ -170,9 +169,9 @@ class RpiSerialHat(BaseDevice):
 
         Parameters
         ----------
-        rpi_pin: `int`
+        rpi_pin : `int`
             The pin number.
-        state: `bool`
+        state : `bool`
             high = True, low = False.
         """
         try:
@@ -187,7 +186,7 @@ class RpiSerialHat(BaseDevice):
 
         Parameters
         ----------
-        rpi_pin: `int`
+        rpi_pin : `int`
             The pin number.
         """
         try:

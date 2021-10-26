@@ -21,9 +21,6 @@
 
 import platform
 
-from .base_device import *
-from .mock_device import *
-
 # Only import if on a Raspberry Pi4
 if "aarch64" in platform.platform():
     from .rpi_serial_hat import *

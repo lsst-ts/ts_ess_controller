@@ -21,16 +21,8 @@
 
 __all__ = ["CommandHandler"]
 
-import asyncio
-import logging
 import platform
-import time
 import typing
-
-import jsonschema
-
-from .device import BaseDevice
-from .sensor import BaseSensor, Hx85aSensor, Hx85baSensor, TemperatureSensor, WindSensor
 
 from lsst.ts.ess import common
 
@@ -41,11 +33,11 @@ class CommandHandler(common.AbstractCommandHandler):
 
     Parameters
     ----------
-    callback: `Callable`
+    callback : `Callable`
         The callback coroutine handling the sensor telemetry. This can be a
         coroutine that sends the data via a socket connection or a coroutine in
         a test class to verify that the command has been handled correctly.
-    simulation_mode: `int`
+    simulation_mode : `int`
         Indicating if a simulation mode (> 0) or not (0) is active.
 
     The commands that can be handled are:
@@ -68,43 +60,21 @@ class CommandHandler(common.AbstractCommandHandler):
 
     def __init__(self, callback: typing.Callable, simulation_mode: int) -> None:
         super().__init__(callback=callback, simulation_mode=simulation_mode)
-        self._devices: typing.List[BaseDevice] = []
 
-    async def connect_devices(self) -> None:
-        """Loop over the configuration and start all devices."""
-        self.log.info("connect_devices")
-        device_configurations = self._configuration[common.Key.DEVICES]
-        self._devices = []
-        for device_configuration in device_configurations:
-            device: BaseDevice = self._get_device(device_configuration)
-            self._devices.append(device)
-            self.log.debug(
-                f"Opening {device_configuration[common.Key.DEVICE_TYPE]} "
-                f"device with name {device_configuration[common.Key.NAME]}"
-            )
-            await device.open()
-
-    async def disconnect_devices(self) -> None:
-        """Loop over the configuration and stop all devices."""
-        while self._devices:
-            device: BaseDevice = self._devices.pop(-1)
-            self.log.debug(f"Closing {device} device with name {device.name}")
-            await device.close()
-
-    def _get_device(
+    def create_device(
         self, device_configuration: typing.Dict[str, typing.Any]
-    ) -> BaseDevice:
+    ) -> common.device.BaseDevice:
         """Get the device to connect to by using the specified configuration.
 
         Parameters
         ----------
-        device_configuration: `dict`
+        device_configuration : `dict`
             A dict representing the device to connect to. The format of the
             dict follows the configuration of the ts_ess_csc project.
 
         Returns
         -------
-        device: `BaseDevice`
+        device : `common.device.BaseDevice`
             The device to connect to.
 
         Raises
@@ -121,20 +91,19 @@ class CommandHandler(common.AbstractCommandHandler):
         In all other cases, the architecture of the platform is
         irrelevant.
         """
-        sensor = self._get_sensor(device_configuration=device_configuration)
+        sensor = common.sensor.create_sensor(
+            device_configuration=device_configuration, log=self.log
+        )
         if self.simulation_mode == 1:
-            from .device import MockDevice
-
             self.log.debug(
                 f"Creating MockDevice with name {device_configuration[common.Key.NAME]} and sensor {sensor}"
             )
-            device: BaseDevice = MockDevice(
+            device: common.device.BaseDevice = common.device.MockDevice(
                 name=device_configuration[common.Key.NAME],
                 device_id=device_configuration[common.Key.FTDI_ID],
                 sensor=sensor,
                 callback_func=self._callback,
                 log=self.log,
-                disconnected_channel=None,
             )
             return device
         elif device_configuration[common.Key.DEVICE_TYPE] == common.DeviceType.FTDI:
@@ -173,54 +142,4 @@ class CommandHandler(common.AbstractCommandHandler):
             f"Could not get a {device_configuration[common.Key.DEVICE_TYPE]!r} device"
             f"on architecture {platform.platform()}. Please check the "
             f"configuration."
-        )
-
-    def _get_sensor(
-        self, device_configuration: typing.Dict[str, typing.Any]
-    ) -> BaseSensor:
-        """Get the sensor to connect to by using the specified configuration.
-
-        Parameters
-        ----------
-        device_configuration: `dict`
-            A dict representing the device to connect to. The format of the
-            dict follows the configuration of the ts_ess_csc project.
-
-        Returns
-        -------
-        sensor: `BaseSensor`
-            The sensor to connect to.
-
-        Raises
-        ------
-        RuntimeError
-            In case an incorrect configuration has been loaded.
-        """
-        if device_configuration[common.Key.SENSOR_TYPE] == common.SensorType.HX85A:
-            sensor: BaseSensor = Hx85aSensor(
-                log=self.log,
-            )
-            return sensor
-        elif device_configuration[common.Key.SENSOR_TYPE] == common.SensorType.HX85BA:
-            sensor = Hx85baSensor(
-                log=self.log,
-            )
-            return sensor
-        elif (
-            device_configuration[common.Key.SENSOR_TYPE]
-            == common.SensorType.TEMPERATURE
-        ):
-            sensor = TemperatureSensor(
-                log=self.log,
-                num_channels=device_configuration[common.Key.CHANNELS],
-            )
-            return sensor
-        elif device_configuration[common.Key.SENSOR_TYPE] == common.SensorType.WIND:
-            sensor = WindSensor(
-                log=self.log,
-            )
-            return sensor
-        raise RuntimeError(
-            f"Could not get a {device_configuration[common.Key.SENSOR_TYPE]!r} sensor. "
-            "Please check the configuration."
         )
