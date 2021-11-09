@@ -19,5 +19,4 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .rpi_serial_hat import *
-from .vcp_ftdi import *
+from .base_real_sensor_mock_test_case import BaseRealSensorMockTestCase

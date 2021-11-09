@@ -60,13 +60,14 @@ class VcpFtdi(common.device.BaseDevice):
             callback_func=callback_func,
             log=log,
         )
-        self._vcp: Device = Device(
-            self._device_id,
+        self.vcp: Device = Device(
+            self.device_id,
             mode="t",
             encoding="ASCII",
             lazy_open=True,
             auto_detach=False,
         )
+        self.vcp.baudrate = 19600
 
     async def basic_open(self) -> None:
         """Open the Sensor Device.
@@ -78,11 +79,10 @@ class VcpFtdi(common.device.BaseDevice):
         ------
         IOError if virtual communications port fails to open.
         """
-        self._vcp.open()
-        self._vcp.baudrate = 19600
-        if not self._vcp.closed:
+        self.vcp.open()
+        if not self.vcp.closed:
             self.log.debug("FTDI device open.")
-            self._vcp.flush()
+            self.vcp.flush()
         else:
             self.log.error("Failed to open the FTDI device.")
             raise IOError(f"{self.name}: Failed to open the FTDI device.")
@@ -102,8 +102,8 @@ class VcpFtdi(common.device.BaseDevice):
         # get event loop to run blocking tasks
         loop = asyncio.get_event_loop()
 
-        while not line.endswith(self._sensor.terminator):
-            line += await loop.run_in_executor(None, self._vcp.read, 1)
+        while not line.endswith(self.sensor.terminator):
+            line += await loop.run_in_executor(None, self.vcp.read, 1)
         return line
 
     async def basic_close(self) -> None:
@@ -113,8 +113,8 @@ class VcpFtdi(common.device.BaseDevice):
         ------
         IOError if virtual communications port fails to close.
         """
-        self._vcp.close()
-        if self._vcp.closed:
+        self.vcp.close()
+        if self.vcp.closed:
             self.log.debug("FTDI device closed.")
         else:
             self.log.debug("FTDI device failed to close.")
