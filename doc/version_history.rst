@@ -17,6 +17,8 @@ v0.4.0
 * Removed all obsolete schema related code since it also is in ts.ess.common.
 * Updated the documentation to reflect all sensor and device code changes.
 * Moved most of the command handler code and the socket server unit test from ts.ess.controller to ts.ess.common.
+* Removed all Raspberry Pi specific code since setting the GPIO pins should be handled by the OS.
+* Added unit tests for the FTDI and Raspberry Pi Serial Hat devices.
 
 Requires:
 
