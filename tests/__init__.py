@@ -19,4 +19,4 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .config_jschema import CONFIG_JSCHEMA
+from .base_real_sensor_mock_test_case import BaseRealSensorMockTestCase

@@ -19,13 +19,5 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import platform
-
-from .base_device import *
-from .mock_device import *
-
-# Only import if on a Raspberry Pi4
-if "aarch64" in platform.platform():
-    from .rpi_serial_hat import *
-
+from .rpi_serial_hat import *
 from .vcp_ftdi import *

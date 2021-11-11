@@ -10,6 +10,19 @@ SocketServer and sensor reading code for the Environmental Sensors Support syste
 The SocketServer is used to facilitate basic TCP/IP communication.
 This communication will allow for starting and stopping the sensor reading code, as well as for configuring which sensors to read.
 The sensor reading code will then send the sensor telemetry data back via the SocketServer.
+Note that the base device and all sensor code is in ts.ess.common.
+This package only holds the code for the Raspberry Pi Serial Hat and VCP FTDI (Virtual COM Port Future Technology Device International) devices.
+
+Note that for the Raspberry Pi Serial Hat devices, the GPIO pins need to be set to specific states at boot time.
+This can be achieved by adding these lines to /boot/config.txt of the Raspberry Pi::
+
+    # Set these pins to be an output
+    gpio=11,17,18,23=op,dh
+
+    # Set these pins to be an input
+    gpio=3,7,24=ip
+
+Note that this is done automatically by Puppet for those Raspberry Pis that are provisioned that way.
 
 .. .. _lsst.ts.ess.controller-using:
 

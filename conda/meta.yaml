@@ -22,10 +22,9 @@ build:
 test:
   requires:
     - ts-conda-build =0.3
-    - ts-idl {{ idl_version }}
-    - ts-salobj {{ salobj_version }}
     - ts-ess-common
     - ts-tcpip
+    - ts-utils
     - pyserial
     - pyftdi
     - pylibftdi
@@ -47,9 +46,9 @@ requirements:
     - python
     - setuptools
     - setuptools_scm
-    - ts-salobj
     - ts-ess-common
     - ts-tcpip
+    - ts-utils
     - pyserial
     - pyftdi
     - pylibftdi
