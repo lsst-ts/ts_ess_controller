@@ -48,18 +48,21 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             dev_type=common.DeviceType.FTDI,
             dev_id="ABC",
             sens_type=common.SensorType.TEMPERATURE,
+            location="Test1",
         )
         device_config_02 = common.DeviceConfig(
             name="Test02",
             dev_type=common.DeviceType.FTDI,
             dev_id="ABC",
             sens_type=common.SensorType.HX85A,
+            location="Test2",
         )
         device_config_03 = common.DeviceConfig(
             name="Test03",
             dev_type=common.DeviceType.FTDI,
             dev_id="ABC",
             sens_type=common.SensorType.HX85BA,
+            location="Test3",
         )
         self.configuration = {
             common.Key.DEVICES: [

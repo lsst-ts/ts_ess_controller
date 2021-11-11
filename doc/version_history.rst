@@ -19,6 +19,8 @@ v0.4.0
 * Moved most of the command handler code and the socket server unit test from ts.ess.controller to ts.ess.common.
 * Removed all Raspberry Pi specific code since setting the GPIO pins should be handled by the OS.
 * Added unit tests for the FTDI and Raspberry Pi Serial Hat devices.
+* Added location to the configuration of the devices.
+* Fixed wrong baudrate values for serial and FTDI devices.
 
 Requires:
 

@@ -61,7 +61,7 @@ class RpiSerialHat(common.device.BaseDevice):
             log=log,
         )
         try:
-            self.ser = serial.Serial(port=device_id, baudrate=19600)
+            self.ser = serial.Serial(port=device_id, baudrate=common.device.BAUDRATE)
             self.log.debug(f"Port: {self.ser.port}")
         except serial.SerialException as e:
             self.log.exception(e)

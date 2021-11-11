@@ -67,7 +67,7 @@ class VcpFtdi(common.device.BaseDevice):
             lazy_open=True,
             auto_detach=False,
         )
-        self.vcp.baudrate = 19600
+        self.vcp.baudrate = common.device.BAUDRATE
 
     async def basic_open(self) -> None:
         """Open the Sensor Device.
