@@ -27,6 +27,7 @@ import typing
 import unittest
 
 from lsst.ts.ess import common
+from lsst.ts.ess.common.test_utils import MockTestTools
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -52,7 +53,7 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
     return_as_plain_text : `bool`
         Is the output string expected to be plain text (True) or byte encoded
         (False).
-    mtt : `common.MockTestTools`
+    mtt : `MockTestTools`
         Test tools for mock classes to ease testing the output of the sensor.
     """
 
@@ -63,7 +64,7 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
             num_channels=self.num_channels, log=self.log
         )
         self.return_as_plain_text = True
-        self.mtt = common.MockTestTools()
+        self.mtt = MockTestTools()
 
         self._sensor_output = None
         self._read_task: asyncio.Future = asyncio.Future()
