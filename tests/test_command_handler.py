@@ -25,6 +25,7 @@ import typing
 import unittest
 
 from lsst.ts.ess import common, controller
+from lsst.ts.ess.common.test_utils import MockTestTools
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
@@ -198,7 +199,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_telemetry(self) -> None:
         """Test handling of telemetry."""
-        mtt = common.MockTestTools()
+        mtt = MockTestTools()
         await self.command_handler.handle_command(
             command=common.Command.CONFIGURE, configuration=self.configuration
         )
