@@ -11,6 +11,7 @@ v0.4.2
 
 * Fixed setting the BAUD rate for FTDI devices.
 * Added a reference to the documentation for the 3D Campbell Scientific anemometers to the documentation index.
+* Ignoring 'doc/conf.py' for MyPy.
 
 Requires:
 
