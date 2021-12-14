@@ -67,7 +67,6 @@ class VcpFtdi(common.device.BaseDevice):
             lazy_open=True,
             auto_detach=False,
         )
-        self.vcp.baudrate = common.device.BAUDRATE
 
     async def basic_open(self) -> None:
         """Open the Sensor Device.
@@ -80,6 +79,9 @@ class VcpFtdi(common.device.BaseDevice):
         IOError if virtual communications port fails to open.
         """
         self.vcp.open()
+        # Do not move this line to before the instruction to open the device
+        # because doing so will result in an error.
+        self.vcp.baudrate = common.device.BAUDRATE
         if not self.vcp.closed:
             self.log.debug("FTDI device open.")
             self.vcp.flush()
