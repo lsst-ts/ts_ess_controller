@@ -67,7 +67,6 @@ class VcpFtdi(common.device.BaseDevice):
             lazy_open=True,
             auto_detach=False,
         )
-        self.vcp.baudrate = common.device.BAUDRATE
 
     async def basic_open(self) -> None:
         """Open the Sensor Device.
@@ -80,6 +79,10 @@ class VcpFtdi(common.device.BaseDevice):
         IOError if virtual communications port fails to open.
         """
         self.vcp.open()
+        # Setting the baud rate requires the vcp Device to have set up a
+        # context, which only happens when open() is called. That's why this
+        # next line *needs* to be called after calling open().
+        self.vcp.baudrate = common.device.BAUDRATE
         if not self.vcp.closed:
             self.log.debug("FTDI device open.")
             self.vcp.flush()
