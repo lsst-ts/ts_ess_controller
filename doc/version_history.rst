@@ -6,6 +6,19 @@
 Version History
 ###############
 
+v0.4.2
+======
+
+* Fixed setting the BAUD rate for FTDI devices.
+* Added a reference to the documentation for the 3D Campbell Scientific anemometers to the documentation index.
+* Ignoring 'doc/conf.py' for MyPy.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 0.3
+* ts_utils 1.0
+
 v0.4.1
 ======
 
