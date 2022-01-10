@@ -10,6 +10,7 @@ v0.4.4
 ======
 
 * Remove START and STOP commands.
+* The sensor name, timestamp, response code and data are encoded as separate named entities.
 
 Requires:
 
