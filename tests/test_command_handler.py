@@ -103,8 +103,6 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         self.assert_response(common.ResponseCode.ALREADY_STARTED)
         # Make sure to stop so a new config command can be sent.
         await self.command_handler.stop_sending_telemetry()
-        # Give time to the telemetry_task to get cancelled.
-        await asyncio.sleep(0.5)
         assert self.command_handler._started is False
         # Send the same configuration again which should now be OK.
         await self.command_handler.handle_command(
@@ -113,8 +111,6 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         self.assert_response(common.ResponseCode.OK)
         # Make sure to stop so a new config command can be sent.
         await self.command_handler.stop_sending_telemetry()
-        # Give time to the telemetry_task to get cancelled.
-        await asyncio.sleep(0.5)
         assert self.command_handler._started is False
 
         # The value for common.Key.DEVICES may not be empty.
@@ -191,8 +187,6 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         assert self.command_handler._started is True
 
         await self.command_handler.stop_sending_telemetry()
-        # Give time to the telemetry_task to get cancelled.
-        await asyncio.sleep(0.5)
         assert self.command_handler._started is False
 
     async def test_get_telemetry(self) -> None:
@@ -227,6 +221,4 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
                 mtt.check_hx85ba_reply(reply=reply_to_check, name=name)
 
         await self.command_handler.stop_sending_telemetry()
-        # Give time to the telemetry_task to get cancelled.
-        await asyncio.sleep(0.5)
         assert self.command_handler._started is False
