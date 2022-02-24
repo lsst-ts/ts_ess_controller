@@ -22,6 +22,7 @@
 __all__ = ["VcpFtdi"]
 
 import asyncio
+import concurrent
 import logging
 from typing import Callable
 
@@ -103,8 +104,9 @@ class VcpFtdi(common.device.BaseDevice):
             the readline was started during device reception.
         """
         line: str = ""
-        while not line.endswith(self.sensor.terminator):
-            line += await self.loop.run_in_executor(None, self.vcp.read, 1)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            while not line.endswith(self.sensor.terminator):
+                line += await self.loop.run_in_executor(pool, self.vcp.read, 1)
         return line
 
     async def basic_close(self) -> None:
