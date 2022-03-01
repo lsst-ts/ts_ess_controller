@@ -132,3 +132,7 @@ class CommandHandler(common.AbstractCommandHandler):
                 log=self.log,
             )
             return device
+        raise RuntimeError(
+            f"Could not get a {device_configuration[common.Key.DEVICE_TYPE]!r} device."
+            "Please check the configuration."
+        )

@@ -68,8 +68,6 @@ class VcpFtdi(common.device.BaseDevice):
             lazy_open=True,
             auto_detach=False,
         )
-        # get event loop to run blocking tasks
-        self.loop = asyncio.get_event_loop()
 
     async def basic_open(self) -> None:
         """Open the Sensor Device.
@@ -104,9 +102,11 @@ class VcpFtdi(common.device.BaseDevice):
             the readline was started during device reception.
         """
         line: str = ""
+        # get running loop to run blocking tasks
+        loop = asyncio.get_running_loop()
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             while not line.endswith(self.sensor.terminator):
-                line += await self.loop.run_in_executor(pool, self.vcp.read, 1)
+                line += await loop.run_in_executor(pool, self.vcp.read, 1)
         return line
 
     async def basic_close(self) -> None:

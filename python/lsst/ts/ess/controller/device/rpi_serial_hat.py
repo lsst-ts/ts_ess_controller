@@ -67,8 +67,6 @@ class RpiSerialHat(common.device.BaseDevice):
             self.log.exception(e)
             # Unrecoverable error, so propagate error
             raise e
-        # get event loop to run blocking tasks
-        self.loop = asyncio.get_event_loop()
 
     async def basic_open(self) -> None:
         """Open and configure serial port.
@@ -100,9 +98,11 @@ class RpiSerialHat(common.device.BaseDevice):
         """
         buffer = BytesIO()
         terminator = self.sensor.terminator.encode(self.sensor.charset)
+        # get running loop to run blocking tasks
+        loop = asyncio.get_running_loop()
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             while not buffer.getvalue().endswith(terminator):
-                buffer.write(await self.loop.run_in_executor(pool, self.ser.read, 1))
+                buffer.write(await loop.run_in_executor(pool, self.ser.read, 1))
         return buffer.getvalue().decode(self.sensor.charset)
 
     async def basic_close(self) -> None:
