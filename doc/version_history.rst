@@ -6,6 +6,18 @@
 Version History
 ###############
 
+v0.4.5
+======
+
+* Remove unnecessary code that checks for aarch64 architecture.
+* Use a ThreadPool for reading the FTDI device.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 0.3
+* ts_utils 1.0
+
 v0.4.4
 ======
 

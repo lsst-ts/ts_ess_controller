@@ -21,9 +21,9 @@
 
 __all__ = ["CommandHandler"]
 
-import platform
 import typing
 
+from .device import RpiSerialHat, VcpFtdi
 from lsst.ts.ess import common
 
 
@@ -107,8 +107,6 @@ class CommandHandler(common.AbstractCommandHandler):
             )
             return device
         elif device_configuration[common.Key.DEVICE_TYPE] == common.DeviceType.FTDI:
-            from .device import VcpFtdi
-
             self.log.debug(
                 f"Creating VcpFtdi device with name {device_configuration[common.Key.NAME]} "
                 f"and sensor {sensor}"
@@ -122,24 +120,19 @@ class CommandHandler(common.AbstractCommandHandler):
             )
             return device
         elif device_configuration[common.Key.DEVICE_TYPE] == common.DeviceType.SERIAL:
-            # make sure we are on a Raspberry Pi4
-            if "aarch64" in platform.platform():
-                from .device import RpiSerialHat
-
-                self.log.debug(
-                    f"Creating RpiSerialHat device with name {device_configuration[common.Key.NAME]} "
-                    f"and sensor {sensor}"
-                )
-                device = RpiSerialHat(
-                    name=device_configuration[common.Key.NAME],
-                    device_id=device_configuration[common.Key.SERIAL_PORT],
-                    sensor=sensor,
-                    callback_func=self._callback,
-                    log=self.log,
-                )
-                return device
+            self.log.debug(
+                f"Creating RpiSerialHat device with name {device_configuration[common.Key.NAME]} "
+                f"and sensor {sensor}"
+            )
+            device = RpiSerialHat(
+                name=device_configuration[common.Key.NAME],
+                device_id=device_configuration[common.Key.SERIAL_PORT],
+                sensor=sensor,
+                callback_func=self._callback,
+                log=self.log,
+            )
+            return device
         raise RuntimeError(
-            f"Could not get a {device_configuration[common.Key.DEVICE_TYPE]!r} device"
-            f"on architecture {platform.platform()}. Please check the "
-            f"configuration."
+            f"Could not get a {device_configuration[common.Key.DEVICE_TYPE]!r} device."
+            "Please check the configuration."
         )
