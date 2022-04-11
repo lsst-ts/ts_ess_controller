@@ -33,7 +33,7 @@ The following sensors are supported:
 
 .. toctree::
    campbellscientific_CSAT3BH_sensor
-   gil_windsonic_2-d_sonic_wind_sensor
+   gill_windsonic_2-d_sonic_wind_sensor
    omega_hx85a_sensor
    omega_hx85ba_sensor
    sel_temperature_sensor
