@@ -1,6 +1,6 @@
-###################################################################
-Serial protocol definition for: GIL Winsonic 2-D Sonic Wind Sensor.
-###################################################################
+####################################################################
+Serial protocol definition for: GILL Winsonic 2-D Sonic Wind Sensor.
+####################################################################
 
 Garry Knight
 2021-07-15
@@ -16,7 +16,7 @@ Serial Interface & Parameters
 | Flow Control: None
 | Data type: ISO8859-1
 
-The GIL Windsonic 2-D Sonic Wind Sensor (Anemometer) measures wind speed and direction.
+The GILL Windsonic 2-D Sonic Wind Sensor (Anemometer) measures wind speed and direction.
 
 Data output by the Anemometer instrument is:
 
