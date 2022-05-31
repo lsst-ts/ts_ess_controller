@@ -1,5 +1,4 @@
 {% set data= load_setup_py_data() %}
-
 package:
   name: "ts-ess-controller"
   version: {{ data.get('version') }}
@@ -10,6 +9,8 @@ source:
 build:
   noarch: generic
   script: python -m pip install --no-deps --ignore-installed .
+  entry_points:
+    - run_ess_controller = lsst.ts.ess.controller.cli:execute_controller
   script_env:
     - PATH
     - PYTHONPATH
@@ -33,6 +34,7 @@ test:
     - bin
     - tests
     - setup.cfg
+    - pyproject.toml
   commands:
     - py.test
 
