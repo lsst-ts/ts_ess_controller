@@ -13,12 +13,10 @@ build:
     - run_ess_controller = lsst.ts.ess.controller.cli:execute_controller
   script_env:
     - PATH
-    - PYTHONPATH
     - LD_LIBRARY_PATH
     - OSPL_HOME
-    - PYTHON_BUILD_VERSION
     - PYTHON_BUILD_LOCATION
-    - LSST_DDS_DOMAIN
+    - LSST_DDS_PARTITION_PREFIX
 
 test:
   requires:
