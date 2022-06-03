@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
@@ -17,19 +15,24 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import asyncio
+__all__ = ["execute_controller"]
+
 import logging
 
-from lsst.ts.ess import common, controller
+from .command_handler import CommandHandler
+from lsst.ts.ess import common
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s",
-    level=logging.DEBUG,
+    level=logging.INFO,
 )
 
 
-async def main() -> None:
+async def execute_controller() -> None:
     """Main method that, when executed in stand alone mode, starts the socket
     server.
 
@@ -46,20 +49,8 @@ async def main() -> None:
     srv = common.SocketServer(
         name="EssSensorsServer", host=host, port=port, simulation_mode=0
     )
-    command_handler = controller.CommandHandler(callback=srv.write, simulation_mode=0)
+    command_handler = CommandHandler(callback=srv.write, simulation_mode=0)
     srv.set_command_handler(command_handler)
     logging.info("Starting the sensor server.")
     await srv.start_task
     await srv.server.wait_closed()
-
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
-    )
-
-    try:
-        logging.info("Calling main method")
-        asyncio.run(main())
-    except (asyncio.CancelledError, KeyboardInterrupt):
-        pass
