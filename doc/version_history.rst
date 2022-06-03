@@ -6,6 +6,19 @@
 Version History
 ###############
 
+v0.5.0
+======
+
+* Modernize pre-commit config versions.
+* Switch to pyproject.toml.
+* Use entry_points instead of bin scripts.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 0.3
+* ts_utils 1.0
+
 v0.4.6
 ======
 
