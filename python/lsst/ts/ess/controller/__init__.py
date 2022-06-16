@@ -31,6 +31,7 @@ else:
     except ImportError:
         __version__ = "?"
 
+from .cli import *
 from .command_handler import *
 
 # Import sub modules

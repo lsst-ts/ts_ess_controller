@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # This file is part of ts_ess_controller.
 #
 # Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
@@ -19,7 +21,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from setuptools import setup
-import setuptools_scm
+from lsst.ts.ess.controller.cli import execute_controller
 
-setup(version=setuptools_scm.get_version())
+
+execute_controller()
