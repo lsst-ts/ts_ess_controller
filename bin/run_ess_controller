@@ -21,7 +21,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from lsst.ts.ess.controller.cli import execute_controller
+from lsst.ts.ess.controller.cli import run_ess_controller
 
 
-execute_controller()
+run_ess_controller()
