@@ -10,7 +10,7 @@ build:
   noarch: generic
   script: python -m pip install --no-deps --ignore-installed .
   entry_points:
-    - run_ess_controller = lsst.ts.ess.controller.cli:execute_controller
+    - run_ess_controller = lsst.ts.ess.controller.cli:run_ess_controller
   script_env:
     - PATH
     - LD_LIBRARY_PATH

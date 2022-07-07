@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["execute_controller"]
+__all__ = ["run_ess_controller"]
 
 import asyncio
 import logging
@@ -33,18 +33,18 @@ logging.basicConfig(
 )
 
 
-def execute_controller() -> None:
+def run_ess_controller() -> None:
     """Main method that, when executed in stand alone mode, starts the socket
     server.
 
     The SocketServer automatically stops once the client exits and at that
     moment this script will exit as well.
     """
-    asyncio.run(_execute_controller_impl())
+    asyncio.run(_run_ess_controller_impl())
 
 
-async def _execute_controller_impl() -> None:
-    """Async implementation of execute_controller."""
+async def _run_ess_controller_impl() -> None:
+    """Async implementation of run_ess_controller."""
     logging.info("main method")
     host = "0.0.0.0"
     port = common.CONTROLLER_PORT
