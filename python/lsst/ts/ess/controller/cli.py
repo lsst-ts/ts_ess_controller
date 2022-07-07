@@ -21,6 +21,7 @@
 
 __all__ = ["execute_controller"]
 
+import asyncio
 import logging
 
 from .command_handler import CommandHandler
@@ -32,13 +33,18 @@ logging.basicConfig(
 )
 
 
-async def execute_controller() -> None:
+def execute_controller() -> None:
     """Main method that, when executed in stand alone mode, starts the socket
     server.
 
     The SocketServer automatically stops once the client exits and at that
     moment this script will exit as well.
     """
+    asyncio.run(_execute_controller_impl())
+
+
+async def _execute_controller_impl() -> None:
+    """Async implementation of execute_controller."""
     logging.info("main method")
     host = "0.0.0.0"
     port = common.CONTROLLER_PORT
