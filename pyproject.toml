@@ -9,6 +9,7 @@ license = { text = "GPL" }
 classifiers = [ "Programming Language :: Python :: 3" ]
 urls = { documentation = "https://ts-ess-controller.lsst.io", repository = "https://github.com/lsst-ts/ts_ess_controller" }
 dynamic = [ "version" ]
+dependencies = [ "pyserial", "pyftdi", "pylibftdi" ]
 
 [tool.setuptools.dynamic]
 version = { attr = "setuptools_scm.get_version" }
@@ -43,9 +44,4 @@ ignore_missing_imports = "True"
 exclude = "version.py"
 
 [project.optional-dependencies]
-dev = [
-    "documenteer[pipelines]",
-    "pyserial",
-    "pyftdi",
-    "pylibftdi"
-]
+dev = [ "documenteer[pipelines]" ]
