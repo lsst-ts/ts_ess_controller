@@ -6,6 +6,11 @@
 Version History
 ###############
 
+v0.5.1
+======
+
+* Make the entry point synchronous (and rename it to match the bin script).
+
 v0.5.0
 ======
 

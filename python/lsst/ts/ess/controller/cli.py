@@ -19,30 +19,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["execute_controller"]
+__all__ = ["run_ess_controller"]
 
+import asyncio
 import logging
 
 from .command_handler import CommandHandler
 from lsst.ts.ess import common
 
-logging.basicConfig(
-    format="%(asctime)s:%(levelname)s:%(name)s:%(message)s",
-    level=logging.INFO,
-)
 
-
-async def execute_controller() -> None:
+def run_ess_controller() -> None:
     """Main method that, when executed in stand alone mode, starts the socket
     server.
 
     The SocketServer automatically stops once the client exits and at that
     moment this script will exit as well.
     """
-    logging.info("main method")
+    asyncio.run(_run_ess_controller_impl())
+
+
+async def _run_ess_controller_impl() -> None:
+    """Async implementation of run_ess_controller."""
+
+    logging.basicConfig(
+        format="%(asctime)s:%(levelname)s:%(name)s:%(message)s",
+        level=logging.INFO,
+    )
+    log = logging.getLogger()
+
+    log.info("main method")
     host = "0.0.0.0"
     port = common.CONTROLLER_PORT
-    logging.info("Constructing the sensor server.")
+    log.info("Constructing the sensor server.")
     # Simulation mode 0 means "connect to the real sensors."
     # Set simulation_mode to 1 to enable simulation mode and connect to a mock
     # sensor.
@@ -51,6 +59,6 @@ async def execute_controller() -> None:
     )
     command_handler = CommandHandler(callback=srv.write, simulation_mode=0)
     srv.set_command_handler(command_handler)
-    logging.info("Starting the sensor server.")
+    log.info("Starting the sensor server.")
     await srv.start_task
     await srv.server.wait_closed()
