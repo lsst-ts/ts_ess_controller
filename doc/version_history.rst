@@ -6,6 +6,18 @@
 Version History
 ###############
 
+v0.6.0
+======
+
+* Add baud_rate configuration key.
+* Add support for the Campbell Scientific CSAT3B 3D anemometer.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 0.3
+* ts_utils 1.0
+
 v0.5.1
 ======
 
