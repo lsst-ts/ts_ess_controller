@@ -49,6 +49,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             dev_type=common.DeviceType.FTDI,
             dev_id="ABC",
             sens_type=common.SensorType.TEMPERATURE,
+            baud_rate=19200,
             location="Test1",
         )
         device_config_02 = common.DeviceConfig(
@@ -56,6 +57,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             dev_type=common.DeviceType.FTDI,
             dev_id="ABC",
             sens_type=common.SensorType.HX85A,
+            baud_rate=19200,
             location="Test2",
         )
         device_config_03 = common.DeviceConfig(
@@ -63,6 +65,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             dev_type=common.DeviceType.FTDI,
             dev_id="ABC",
             sens_type=common.SensorType.HX85BA,
+            baud_rate=19200,
             location="Test3",
         )
         self.configuration = {

@@ -115,6 +115,7 @@ class CommandHandler(common.AbstractCommandHandler):
                 name=device_configuration[common.Key.NAME],
                 device_id=device_configuration[common.Key.FTDI_ID],
                 sensor=sensor,
+                baud_rate=device_configuration[common.Key.BAUD_RATE],
                 callback_func=self._callback,
                 log=self.log,
             )
@@ -128,6 +129,7 @@ class CommandHandler(common.AbstractCommandHandler):
                 name=device_configuration[common.Key.NAME],
                 device_id=device_configuration[common.Key.SERIAL_PORT],
                 sensor=sensor,
+                baud_rate=device_configuration[common.Key.BAUD_RATE],
                 callback_func=self._callback,
                 log=self.log,
             )

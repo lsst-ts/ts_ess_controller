@@ -36,14 +36,19 @@ class VcpFtdi(common.device.BaseDevice):
 
     Parameters
     ----------
+    name : `str`
+        The name of the device.
     device_id : `str`
-        The hardware device ID to connect to. This can be a physical ID (e.g.
-        /dev/ttyUSB0), a serial port (e.g. serial_ch_1) or any other ID used by
-        the specific device.
-    sensor : `common.sensor.BaseSensor`
+        The hardware device ID to connect to. This needs to be an FTDI device
+        identifier.
+    sensor : `BaseSensor`
         The sensor that produces the telemetry.
+    baud_rate : `int`
+        The baud rate of the sensor.
     callback_func : `Callable`
-        Callback function to receive instrument output.
+        Callback function to receive the telemetry.
+    log : `logging.Logger`
+        The logger to create a child logger for.
     """
 
     def __init__(
@@ -51,6 +56,7 @@ class VcpFtdi(common.device.BaseDevice):
         name: str,
         device_id: str,
         sensor: common.sensor.BaseSensor,
+        baud_rate: int,
         callback_func: Callable,
         log: logging.Logger,
     ) -> None:
@@ -58,6 +64,7 @@ class VcpFtdi(common.device.BaseDevice):
             name=name,
             device_id=device_id,
             sensor=sensor,
+            baud_rate=baud_rate,
             callback_func=callback_func,
             log=log,
         )
@@ -83,7 +90,7 @@ class VcpFtdi(common.device.BaseDevice):
         # Setting the baud rate requires the vcp Device to have set up a
         # context, which only happens when open() is called. That's why this
         # next line *needs* to be called after calling open().
-        self.vcp.baudrate = common.device.BAUDRATE
+        self.vcp.baudrate = self.baud_rate
         if not self.vcp.closed:
             self.log.debug("FTDI device open.")
             self.vcp.flush()
