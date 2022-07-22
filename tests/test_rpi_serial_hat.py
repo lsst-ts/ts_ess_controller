@@ -41,6 +41,7 @@ class RpiSerialHatTestCase(BaseRealSensorMockTestCase):
             name=name,
             device_id="/dev/ttyAMA1",
             sensor=self.sensor,
+            baud_rate=19200,
             callback_func=self._callback,
             log=self.log,
         )

@@ -49,6 +49,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             dev_type=common.DeviceType.FTDI,
             dev_id="ABC",
             sens_type=common.SensorType.TEMPERATURE,
+            baud_rate=19200,
             location="Test1",
         )
         device_config_02 = common.DeviceConfig(
@@ -56,6 +57,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             dev_type=common.DeviceType.FTDI,
             dev_id="ABC",
             sens_type=common.SensorType.HX85A,
+            baud_rate=19200,
             location="Test2",
         )
         device_config_03 = common.DeviceConfig(
@@ -63,19 +65,30 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             dev_type=common.DeviceType.FTDI,
             dev_id="ABC",
             sens_type=common.SensorType.HX85BA,
+            baud_rate=19200,
             location="Test3",
+        )
+        device_config_04 = common.DeviceConfig(
+            name="Test04",
+            dev_type=common.DeviceType.FTDI,
+            dev_id="ABC",
+            sens_type=common.SensorType.CSAT3B,
+            baud_rate=151200,
+            location="Test4",
         )
         self.configuration = {
             common.Key.DEVICES: [
                 device_config_01.as_dict(),
                 device_config_02.as_dict(),
                 device_config_03.as_dict(),
+                device_config_04.as_dict(),
             ]
         }
         self.device_configs = {
             device_config_01.name: device_config_01,
             device_config_02.name: device_config_02,
             device_config_03.name: device_config_03,
+            device_config_04.name: device_config_04,
         }
         self.responses: typing.List[typing.List[typing.Union[str, float]]] = []
 
@@ -217,8 +230,14 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
                 )
             elif device_config.sens_type == common.SensorType.HX85A:
                 mtt.check_hx85a_reply(reply=reply_to_check, name=name)
-            else:
+            elif device_config.sens_type == common.SensorType.HX85BA:
                 mtt.check_hx85ba_reply(reply=reply_to_check, name=name)
+            elif device_config.sens_type == common.SensorType.CSAT3B:
+                mtt.check_csat3b_reply(reply=reply_to_check, name=name)
+            else:
+                raise ValueError(
+                    f"Unsupported sensor type {device_config.sens_type} encountered."
+                )
 
         await self.command_handler.stop_sending_telemetry()
         assert self.command_handler._started is False
