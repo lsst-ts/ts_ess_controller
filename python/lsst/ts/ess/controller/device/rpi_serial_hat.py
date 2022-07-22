@@ -37,12 +37,19 @@ class RpiSerialHat(common.device.BaseDevice):
 
     Parameters
     ----------
+    name : `str`
+        The name of the device.
     device_id : `str`
-        The hardware device ID to connect to, for instance /dev/ttyAMA1.
-    sensor : `common.sensor.BaseSensor`
+        The hardware device ID to connect to. This needs to be a physical ID
+        (e.g. /dev/ttyUSB0).
+    sensor : `BaseSensor`
         The sensor that produces the telemetry.
+    baud_rate : `int`
+        The baud rate of the sensor.
     callback_func : `Callable`
-        Callback function to receive instrument output.
+        Callback function to receive the telemetry.
+    log : `logging.Logger`
+        The logger to create a child logger for.
     """
 
     def __init__(
@@ -50,6 +57,7 @@ class RpiSerialHat(common.device.BaseDevice):
         name: str,
         device_id: str,
         sensor: common.sensor.BaseSensor,
+        baud_rate: int,
         callback_func: Callable,
         log: logging.Logger,
     ) -> None:
@@ -57,11 +65,12 @@ class RpiSerialHat(common.device.BaseDevice):
             name=name,
             device_id=device_id,
             sensor=sensor,
+            baud_rate=baud_rate,
             callback_func=callback_func,
             log=log,
         )
         try:
-            self.ser = serial.Serial(port=device_id, baudrate=common.device.BAUDRATE)
+            self.ser = serial.Serial(port=device_id, baudrate=self.baud_rate)
             self.log.debug(f"Port: {self.ser.port}")
         except serial.SerialException as e:
             self.log.exception(e)

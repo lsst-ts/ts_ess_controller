@@ -41,6 +41,7 @@ class VcpFtdiTestCase(BaseRealSensorMockTestCase):
             name=name,
             device_id="ABCDEF",
             sensor=self.sensor,
+            baud_rate=19200,
             callback_func=self._callback,
             log=self.log,
         )
