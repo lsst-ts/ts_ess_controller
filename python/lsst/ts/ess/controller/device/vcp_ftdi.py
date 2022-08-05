@@ -26,9 +26,8 @@ import concurrent
 import logging
 from typing import Callable
 
-from pylibftdi import Device
-
 from lsst.ts.ess import common
+from pylibftdi import Device
 
 
 class VcpFtdi(common.device.BaseDevice):

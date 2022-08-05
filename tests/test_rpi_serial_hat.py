@@ -22,8 +22,9 @@
 import logging
 from unittest import mock
 
-from .base_real_sensor_mock_test_case import BaseRealSensorMockTestCase
 from lsst.ts.ess import common, controller
+
+from .base_real_sensor_mock_test_case import BaseRealSensorMockTestCase
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG

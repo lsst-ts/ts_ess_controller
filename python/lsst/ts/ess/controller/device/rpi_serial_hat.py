@@ -28,7 +28,6 @@ from io import BytesIO
 from typing import Callable
 
 import serial
-
 from lsst.ts.ess import common
 
 

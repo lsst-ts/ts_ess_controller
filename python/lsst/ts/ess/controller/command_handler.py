@@ -23,8 +23,9 @@ __all__ = ["CommandHandler"]
 
 import typing
 
-from .device import RpiSerialHat, VcpFtdi
 from lsst.ts.ess import common
+
+from .device import RpiSerialHat, VcpFtdi
 
 
 class CommandHandler(common.AbstractCommandHandler):

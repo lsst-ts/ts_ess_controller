@@ -23,5 +23,4 @@
 
 from lsst.ts.ess.controller.cli import run_ess_controller
 
-
 run_ess_controller()
