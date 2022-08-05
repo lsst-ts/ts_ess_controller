@@ -24,8 +24,9 @@ __all__ = ["run_ess_controller"]
 import asyncio
 import logging
 
-from .command_handler import CommandHandler
 from lsst.ts.ess import common
+
+from .command_handler import CommandHandler
 
 
 def run_ess_controller() -> None:

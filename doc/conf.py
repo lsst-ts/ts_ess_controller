@@ -21,8 +21,9 @@
 This configuration only affects single-package Sphinx documentation builds.
 """
 
-from documenteer.conf.pipelinespkg import *  # noqa
 from typing import TYPE_CHECKING
+
+from documenteer.conf.pipelinespkg import *  # noqa
 
 # This "if" works around a mypy problem with implicit namespaces.
 # The symptom is:
