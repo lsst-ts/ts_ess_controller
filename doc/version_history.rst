@@ -6,6 +6,18 @@
 Version History
 ###############
 
+v0.7.1
+======
+
+* Restore pytest config.
+* Fix CSAT3B baud rate.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 0.3
+* ts_utils 1.0
+
 v0.7.0
 ======
 
