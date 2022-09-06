@@ -9,7 +9,7 @@ Serial Interface & Parameters
 =============================
 
 | Serial Interface: RS-485
-| BAUD: 151200
+| BAUD: 115200
 | Bits: 8
 | Parity: None
 | Stop Bits: 1
