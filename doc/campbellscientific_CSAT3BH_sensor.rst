@@ -31,9 +31,9 @@ A line terminator is added to the serial data line.
 Example Output Line
 ===================
 
-| '0.08945,0.06552,0.05726,19.69336,0,5,c3a6\\r'
-| '0.10103,0.06517,0.05312,19.70499,0,6,3927\\r'
-| '0.09045,0.04732,0.04198,19.71161,0,7,d7e5\\r'
+| '0.08945,0.06552,0.05726,19.69336,0,5,c3a6\\r\\n'
+| '0.10103,0.06517,0.05312,19.70499,0,6,3927\\r\\n'
+| '0.09045,0.04732,0.04198,19.71161,0,7,d7e5\\r\\n'
 
 Line Format
 ===========
@@ -49,7 +49,7 @@ A line consists of:
     - Signature. Four character hexadecimal value.
 
 All values are delimited by ','.
-The line is terminated immediately following the signature value by '\\r'.
+The line is terminated immediately following the signature value by '\\r\\n'.
 
 Line Length
 ===========
@@ -87,6 +87,10 @@ The 4-characters of the signature value must be read and cast to long data to co
 | lsb = b;
 | }
 | return (unsigned short)((msb << 8) + lsb);
+
+Note that the signature examples provided in the documentation of the Campbell CSAT3B sensor are incorrect.
+This was discovered by trial and error using the output of the real sensor.
+Signature checking has been disabled in our sensor implementation.
 
 Timeout may be used to determine if the instrument is connected/disconnected.
 Timeout should occur if terminator is not received within the timeout period.
