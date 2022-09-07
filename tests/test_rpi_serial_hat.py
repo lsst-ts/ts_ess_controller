@@ -22,6 +22,7 @@
 import logging
 from unittest import mock
 
+import pytest
 from lsst.ts.ess import common, controller
 
 from .base_real_sensor_mock_test_case import BaseRealSensorMockTestCase
@@ -32,6 +33,7 @@ logging.basicConfig(
 
 
 class RpiSerialHatTestCase(BaseRealSensorMockTestCase):
+    @pytest.mark.skip("Need to investigate how to mock AioSerial.")
     @mock.patch("lsst.ts.ess.controller.device.rpi_serial_hat.serial.Serial")
     async def test_rpi_serial_hat(self, mock_serial: mock.AsyncMock) -> None:
         self.return_as_plain_text = False
