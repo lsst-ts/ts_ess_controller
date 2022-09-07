@@ -21,13 +21,10 @@
 
 __all__ = ["RpiSerialHat"]
 
-import asyncio
-import concurrent
 import logging
-from io import BytesIO
 from typing import Callable
 
-import serial
+import aioserial
 from lsst.ts.ess import common
 
 
@@ -69,9 +66,9 @@ class RpiSerialHat(common.device.BaseDevice):
             log=log,
         )
         try:
-            self.ser = serial.Serial(port=device_id, baudrate=self.baud_rate)
+            self.ser = aioserial.AioSerial(port=device_id, baudrate=self.baud_rate)
             self.log.debug(f"Port: {self.ser.port}")
-        except serial.SerialException as e:
+        except aioserial.SerialException as e:
             self.log.exception(e)
             # Unrecoverable error, so propagate error
             raise e
@@ -88,7 +85,7 @@ class RpiSerialHat(common.device.BaseDevice):
             try:
                 self.ser.open()
                 self.log.info("Serial port opened.")
-            except serial.SerialException as e:
+            except aioserial.SerialException as e:
                 self.log.exception("Serial port open failed.")
                 raise e
         else:
@@ -104,14 +101,9 @@ class RpiSerialHat(common.device.BaseDevice):
             one. May be returned empty if nothing was received or partial if
             the readline was started during device reception.
         """
-        buffer = BytesIO()
         terminator = self.sensor.terminator.encode(self.sensor.charset)
-        # get running loop to run blocking tasks
-        loop = asyncio.get_running_loop()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            while not buffer.getvalue().endswith(terminator):
-                buffer.write(await loop.run_in_executor(pool, self.ser.read, 1))
-        return buffer.getvalue().decode(self.sensor.charset)
+        bytes_read = await self.ser.read_until_async(expected=terminator)
+        return bytes_read.decode(self.sensor.charset)
 
     async def basic_close(self) -> None:
         """Close the Sensor Device.

@@ -20,9 +20,12 @@ This can be achieved by adding these lines to /boot/config.txt of the Raspberry 
     gpio=11,17,18,23=op,dh
 
     # Set these pins to be an input
-    gpio=3,7,24=ip
+    gpio=7,24=ip
 
-Note that this is done automatically by Puppet for those Raspberry Pis that are provisioned that way.
+    # Set this pin to be an output as well
+    gpio=3=op
+
+Note that this is done automatically by Puppet for those Raspberry Pi devices that are provisioned that way.
 
 .. .. _lsst.ts.ess.controller-using:
 

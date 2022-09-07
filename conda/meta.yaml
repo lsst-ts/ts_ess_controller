@@ -27,6 +27,7 @@ test:
     - pyserial
     - pyftdi
     - pylibftdi
+    - aioserial
   source_files:
     - python
     - bin
@@ -59,3 +60,4 @@ requirements:
     - pyserial
     - pyftdi
     - pylibftdi
+    - aioserial
