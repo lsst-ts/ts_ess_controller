@@ -6,6 +6,18 @@
 Version History
 ###############
 
+v0.7.3
+======
+
+* Switch from py.test to pytest.
+* Add documentation for the Boltek lightning and electric field level sensors.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 0.3
+* ts_utils 1.0
+
 v0.7.2
 ======
 
