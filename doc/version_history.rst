@@ -6,6 +6,17 @@
 Version History
 ###############
 
+v0.7.4
+======
+
+* pre-commit: update mypy version
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 0.3
+* ts_utils 1.0
+
 v0.7.3
 ======
 
