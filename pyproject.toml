@@ -9,7 +9,7 @@ license = { text = "GPL" }
 classifiers = [ "Programming Language :: Python :: 3" ]
 urls = { documentation = "https://ts-ess-controller.lsst.io", repository = "https://github.com/lsst-ts/ts_ess_controller" }
 dynamic = [ "version" ]
-dependencies = [ "pyserial", "pyftdi", "pylibftdi", "aioserial" ]
+dependencies = [ "pyserial", "pylibftdi", "aioserial" ]
 
 [tool.setuptools.dynamic]
 version = { attr = "setuptools_scm.get_version" }
