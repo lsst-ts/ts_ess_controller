@@ -6,6 +6,18 @@
 Version History
 ###############
 
+v0.7.7
+======
+
+* Clean up pyproject.toml dependencies.
+* Remove `pip install` step since the dependencies were added to ts-develop.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 0.3
+* ts_utils 1.0
+
 v0.7.6
 ======
 
