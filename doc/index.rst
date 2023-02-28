@@ -35,6 +35,7 @@ Using lsst.ts.ess.controller
 The following sensors are supported:
 
 .. toctree::
+   auroracloud_sensor
    boltek_EFM-100C_sensor
    boltek_LD-250_sensor
    campbellscientific_CSAT3BH_sensor
