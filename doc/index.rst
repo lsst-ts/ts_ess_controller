@@ -35,6 +35,7 @@ Using lsst.ts.ess.controller
 The following sensors are supported:
 
 .. toctree::
+   auroracloud_sensor
    boltek_EFM-100C_sensor
    boltek_LD-250_sensor
    campbellscientific_CSAT3BH_sensor
@@ -42,6 +43,7 @@ The following sensors are supported:
    omega_hx85a_sensor
    omega_hx85ba_sensor
    sel_temperature_sensor
+   young_weather_station
    :maxdepth: 1
 
 .. _lsst.ts.ess.controller-contributing:

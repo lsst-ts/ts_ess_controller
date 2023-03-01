@@ -68,25 +68,25 @@ The value rolls over to 0 at 63.
 This value may be used to determine missing measurements.
 
 Signature may be used to test the integrity of all the characters in the line up to the end of the record counter.
-The 4-characters of the signature value must be read and cast to long data to compare with the result of the following algorithm is provided by the instruments manual.
+The 4-characters of the signature value must be read and cast to long data to compare with the result of the following algorithm is provided by the instruments manual::
 
-| // signature(), signature algorithm.
-| // Standard signature is initialized with a seed of 0xaaaa.
-| // Returns signature.
-| unsigned short signature(unsigned char* buf, int swath, unsigned short seed) {
-| unsigned char msb, lsb;
-| unsigned char b;
-| int i;
-| msb = seed >> 8;
-| lsb = seed;
-| for (i = 0; i < swath; i++)
-| {
-| b = (lsb << 1) + msb + *buf++;
-| if (lsb & 0x80) b++;
-| msb = lsb;
-| lsb = b;
-| }
-| return (unsigned short)((msb << 8) + lsb);
+    // signature(), signature algorithm.
+    // Standard signature is initialized with a seed of 0xaaaa.
+    // Returns signature.
+    unsigned short signature(unsigned char* buf, int swath, unsigned short seed) {
+    unsigned char msb, lsb;
+    unsigned char b;
+    int i;
+    msb = seed >> 8;
+    lsb = seed;
+    for (i = 0; i < swath; i++)
+    {
+    b = (lsb << 1) + msb + *buf++;
+    if (lsb & 0x80) b++;
+    msb = lsb;
+    lsb = b;
+    }
+    return (unsigned short)((msb << 8) + lsb);
 
 Note that the signature examples provided in the documentation of the Campbell CSAT3B sensor are incorrect.
 This was discovered by trial and error using the output of the real sensor.
