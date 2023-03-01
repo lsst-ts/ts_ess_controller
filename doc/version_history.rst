@@ -14,6 +14,7 @@ v0.7.8
   * Add Young weather station documentation.
   * Add missing Aurora Cloud Sensor documentation (it was present but not part of the built documentation).
   * Fix a sphinx error in Campbell Scientific CSAT3B Three-Dimensional Sonic Anemometer docs.
+  * Add documentation for how to add a new sensor.
 
 * git ignore built documentation files.
 
