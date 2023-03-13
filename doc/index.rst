@@ -54,6 +54,10 @@ Contributing
 ``lsst.ts.ess.controller`` is developed at https://github.com/lsst-ts/ts_ess_controller.
 You can find Jira issues for this module using `labels=ts_ess_controller <https://jira.lsstcorp.org/issues/?jql=project%3DDM%20AND%20labels%3Dts_ess_controller>`_.
 
+.. toctree::
+   add_a_new_sensor
+   :maxdepth: 1
+
 Python API reference
 ====================
 
