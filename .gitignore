@@ -1,24 +1,24 @@
-*.o
-*.os
-*.so
-*.cfgc
-*.pyc
-*_wrap.cc
-*Lib.py
-doc/_build
-doc/py-api
-
-# Built by sconsUtils
+__pycache__
+*.egg
+*.egg-info
+.sconf_temp
+.sconsign.dblite
+*.log
 version.py
 
-# Pytest
+# pytest
 tests/.tests
 pytest_session.txt
-.cache/
 .hypothesis
 .pytest_cache
 .coverage
-*.log
 
-.idea/
+# editors
+.idea
 .vscode
+
+# ts_pre_commit_conf
+.pre-commit-config.yaml
+.flake8
+.isort.cfg
+.mypy.ini
