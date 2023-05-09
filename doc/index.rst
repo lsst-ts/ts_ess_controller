@@ -35,6 +35,7 @@ Using lsst.ts.ess.controller
 The following sensors are supported:
 
 .. toctree::
+   auroracloud_sensor
    boltek_EFM-100C_sensor
    boltek_LD-250_sensor
    campbellscientific_CSAT3BH_sensor
@@ -42,6 +43,7 @@ The following sensors are supported:
    omega_hx85a_sensor
    omega_hx85ba_sensor
    sel_temperature_sensor
+   young_weather_station
    :maxdepth: 1
 
 .. _lsst.ts.ess.controller-contributing:
@@ -51,6 +53,10 @@ Contributing
 
 ``lsst.ts.ess.controller`` is developed at https://github.com/lsst-ts/ts_ess_controller.
 You can find Jira issues for this module using `labels=ts_ess_controller <https://jira.lsstcorp.org/issues/?jql=project%3DDM%20AND%20labels%3Dts_ess_controller>`_.
+
+.. toctree::
+   add_a_new_sensor
+   :maxdepth: 1
 
 Python API reference
 ====================

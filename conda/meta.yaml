@@ -11,12 +11,6 @@ build:
   script: {{ PYTHON }} -m pip install --no-deps --ignore-installed .
   entry_points:
     - run_ess_controller = lsst.ts.ess.controller:run_ess_controller
-  script_env:
-    - PATH
-    - LD_LIBRARY_PATH
-    - OSPL_HOME
-    - PYTHON_BUILD_LOCATION
-    - LSST_DDS_PARTITION_PREFIX
 
 test:
   requires:
@@ -29,7 +23,6 @@ test:
     - python
     - bin
     - tests
-    - setup.cfg
     - pyproject.toml
   commands:
     - pytest

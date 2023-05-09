@@ -6,6 +6,41 @@
 Version History
 ###############
 
+v0.7.9
+======
+
+* Remove scons support.
+* Git hide egg info and simplify .gitignore.
+* Further refinements for ts_pre_commit_config:
+
+  * Stop running pytest linters in ``pyproject.toml``.
+  * Delete ``setup.cfg``; it has been replaced by ``.flake8``.
+  * ``conda/meta.yaml``: remove setup.cfg (and the obsolete script_env section).
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 0.3
+* ts_utils 1.0
+
+v0.7.8
+======
+
+* Documentation changes:
+
+  * Add Young weather station documentation.
+  * Add missing Aurora Cloud Sensor documentation (it was present but not part of the built documentation).
+  * Fix a sphinx error in Campbell Scientific CSAT3B Three-Dimensional Sonic Anemometer docs.
+  * Add documentation for how to add a new sensor.
+
+* git ignore built documentation files.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 0.3
+* ts_utils 1.0
+
 v0.7.7
 ======
 
