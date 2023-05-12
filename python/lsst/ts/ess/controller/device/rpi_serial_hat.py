@@ -21,11 +21,15 @@
 
 __all__ = ["RpiSerialHat"]
 
+import asyncio
 import logging
 from typing import Callable
 
-import aioserial
+from aioserial import AioSerial, SerialException
 from lsst.ts.ess import common
+
+# Read tiumeout [seconds].
+READ_TIMEOUT = 5.0
 
 
 class RpiSerialHat(common.device.BaseDevice):
@@ -66,12 +70,12 @@ class RpiSerialHat(common.device.BaseDevice):
             log=log,
         )
         try:
-            self.ser = aioserial.AioSerial(port=device_id, baudrate=self.baud_rate)
+            self.ser = AioSerial(port=device_id, baudrate=self.baud_rate)
             self.log.debug(f"Port: {self.ser.port}")
-        except aioserial.SerialException as e:
-            self.log.exception(e)
+        except SerialException as e:
+            self.log.exception(f"{e!r}")
             # Unrecoverable error, so propagate error
-            raise e
+            raise
 
         # Keep track of whether the first telemetry from the sensor have been
         # read or not. If not then decoding errors will be ignored.
@@ -89,7 +93,7 @@ class RpiSerialHat(common.device.BaseDevice):
             try:
                 self.ser.open()
                 self.log.info("Serial port opened.")
-            except aioserial.SerialException as e:
+            except SerialException as e:
                 self.log.exception("Serial port open failed.")
                 raise e
         else:
@@ -106,15 +110,23 @@ class RpiSerialHat(common.device.BaseDevice):
             the readline was started during device reception.
         """
         terminator = self.sensor.terminator.encode(self.sensor.charset)
-        bytes_read = await self.ser.read_until_async(expected=terminator)
-        st = self.sensor.terminator
 
-        # Reading the first line of telemetry from the sensor may lead to
-        # decoding errors since the line may have only been partially read. In
-        # such case the decoding error is silently ignored.
-        if self.first_telemetry_read:
+        # In order for the unit test to work, it is necessary to wrap this in
+        # an ``asyncio.wait_for`` construction. Simply waiting for the
+        # ``read_until_async`` method to return will make the unit test hang.
+        bytes_read = await asyncio.wait_for(
+            self.ser.read_until_async(expected=terminator), timeout=READ_TIMEOUT
+        )
+
+        # Always ignore the first line of telemetry from the sensor since it
+        # may lead to decoding errors since the line may have only been
+        # partially read.
+        if not self.first_telemetry_read:
+            self.first_telemetry_read = True
+            st = self.sensor.terminator
+        else:
             st = bytes_read.decode(encoding=self.sensor.charset)
-        self.first_telemetry_read = True
+        self.log.debug(f"Returning {st=}")
         return st
 
     async def basic_close(self) -> None:

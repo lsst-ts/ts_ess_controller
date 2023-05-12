@@ -29,18 +29,16 @@ import unittest
 from lsst.ts.ess import common
 from lsst.ts.ess.common.test_utils import MockTestTools
 
-logging.basicConfig(
-    format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
-)
-
 # Read timeout [sec].
 STD_TIMEOUT = 5.0
 
 
 class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
-    """Test Case for mocking real hardware sensors. Subclasses need to
-    implement test methods that replace the read method of the sensor with the
-    read method in this class and then call the read_next method.
+    """Test Case for mocking real hardware sensors.
+
+    Subclasses need to implement test methods that replace the read method of
+    the sensor with the read method in this class and then call the
+    wait_for_read_event method.
 
     Attributes
     ----------
@@ -67,17 +65,19 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         self.mtt = MockTestTools()
 
         self._sensor_output = None
-        self._read_task: asyncio.Future = asyncio.Future()
+        self._read_event: asyncio.Event = asyncio.Event()
         self._num_read_calls = 0
+        self._reply: typing.Dict[str, typing.List[typing.Union[str, float]]] = {}
 
     async def _callback(
         self, reply: typing.Dict[str, typing.List[typing.Union[str, float]]]
     ) -> None:
-        if not self._read_task.done():
-            self._read_task.set_result(reply)
+        self._reply = reply
         self._sensor_output = None
+        self.log.debug("Setting read event.")
+        self._read_event.set()
 
-    def read(self, length: int) -> str:
+    def read(self, length: int) -> str | bytes:
         """Mock reading sensor output.
 
         Parameters
@@ -88,7 +88,7 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
 
         Returns
         -------
-        `str`
+        `str` | `bytes`
             A plain text or byte encoded string representing the output of the
             sensor.
         """
@@ -116,19 +116,39 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         else:
             return ch.encode(self.sensor.charset)
 
-    async def read_next(self, timeout: float = STD_TIMEOUT) -> str:
-        """Helper method to ease reading output from a mocked sensor.
+    async def wait_for_read_event(self, timeout: float = STD_TIMEOUT) -> None:
+        """Clear the read event and then wait for it to be set again.
+
+        It having been set again indicates new sensor data has been read.
 
         Parameters
         ----------
         timeout : `float`
             The timeout for reading the output.
+        """
+        self._read_event.clear()
+        self.log.debug("Waiting for read event.")
+        await asyncio.wait_for(self._read_event.wait(), timeout=timeout)
+
+    async def read_until_async(self, expected: bytes) -> bytes:
+        """Helper method that mocks reading data until it is terminated by the
+        ``expected`` bytes asynchronously.
+
+        Parameters
+        ----------
+        expected : `bytes`
+            The bytes expected to terminate the bytes that are read.
 
         Returns
         -------
-        `str`
-            A plain text or byte encoded string representing the output of the
-            sensor.
+        bytes
+            The data read ending in ``expected``.
         """
-        self._read_task = asyncio.Future()
-        return await asyncio.wait_for(self._read_task, timeout=timeout)
+        line = ""
+        expected_str = expected.decode(self.sensor.charset)
+        while not line.endswith(expected_str):
+            c = self.read(1)
+            assert isinstance(c, bytes)
+            line += c.decode(self.sensor.charset)
+        self.log.debug(f"Returning {line=}")
+        return line.encode(self.sensor.charset)
