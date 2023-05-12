@@ -33,5 +33,4 @@ else:
 
 # Import sub modules
 from . import device
-from .cli import *
 from .command_handler import *
