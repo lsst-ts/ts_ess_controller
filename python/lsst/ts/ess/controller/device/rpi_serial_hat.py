@@ -21,10 +21,11 @@
 
 __all__ = ["RpiSerialHat"]
 
+import asyncio
 import logging
 from typing import Callable
 
-import aioserial
+from aioserial import AioSerial, SerialException
 from lsst.ts.ess import common
 
 
@@ -66,9 +67,9 @@ class RpiSerialHat(common.device.BaseDevice):
             log=log,
         )
         try:
-            self.ser = aioserial.AioSerial(port=device_id, baudrate=self.baud_rate)
+            self.ser = AioSerial(port=device_id, baudrate=self.baud_rate)
             self.log.debug(f"Port: {self.ser.port}")
-        except aioserial.SerialException as e:
+        except SerialException as e:
             self.log.exception(e)
             # Unrecoverable error, so propagate error
             raise e
@@ -89,7 +90,7 @@ class RpiSerialHat(common.device.BaseDevice):
             try:
                 self.ser.open()
                 self.log.info("Serial port opened.")
-            except aioserial.SerialException as e:
+            except SerialException as e:
                 self.log.exception("Serial port open failed.")
                 raise e
         else:
@@ -106,15 +107,19 @@ class RpiSerialHat(common.device.BaseDevice):
             the readline was started during device reception.
         """
         terminator = self.sensor.terminator.encode(self.sensor.charset)
-        bytes_read = await self.ser.read_until_async(expected=terminator)
-        st = self.sensor.terminator
+        bytes_read = await asyncio.wait_for(
+            self.ser.read_until_async(expected=terminator), timeout=5.0
+        )
 
         # Reading the first line of telemetry from the sensor may lead to
         # decoding errors since the line may have only been partially read. In
         # such case the decoding error is silently ignored.
-        if self.first_telemetry_read:
+        if not self.first_telemetry_read:
+            self.first_telemetry_read = True
+            st = self.sensor.terminator
+        else:
             st = bytes_read.decode(encoding=self.sensor.charset)
-        self.first_telemetry_read = True
+        self.log.debug(f"Returning {st=}")
         return st
 
     async def basic_close(self) -> None:

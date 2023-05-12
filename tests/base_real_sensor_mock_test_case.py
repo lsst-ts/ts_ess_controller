@@ -67,17 +67,19 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         self.mtt = MockTestTools()
 
         self._sensor_output = None
-        self._read_task: asyncio.Future = asyncio.Future()
+        self._read_event: asyncio.Event = asyncio.Event()
         self._num_read_calls = 0
+        self._reply: typing.Dict[str, typing.List[typing.Union[str, float]]] = {}
 
     async def _callback(
         self, reply: typing.Dict[str, typing.List[typing.Union[str, float]]]
     ) -> None:
-        if not self._read_task.done():
-            self._read_task.set_result(reply)
+        self._reply = reply
         self._sensor_output = None
+        self.log.debug("Setting read event.")
+        self._read_event.set()
 
-    def read(self, length: int) -> str:
+    def read(self, length: int) -> str | bytes:
         """Mock reading sensor output.
 
         Parameters
@@ -88,7 +90,7 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
 
         Returns
         -------
-        `str`
+        `str` or `bytes`
             A plain text or byte encoded string representing the output of the
             sensor.
         """
@@ -116,7 +118,7 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         else:
             return ch.encode(self.sensor.charset)
 
-    async def read_next(self, timeout: float = STD_TIMEOUT) -> str:
+    async def read_next(self, timeout: float = STD_TIMEOUT) -> None:
         """Helper method to ease reading output from a mocked sensor.
 
         Parameters
@@ -130,5 +132,16 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
             A plain text or byte encoded string representing the output of the
             sensor.
         """
-        self._read_task = asyncio.Future()
-        return await asyncio.wait_for(self._read_task, timeout=timeout)
+        self._read_event.clear()
+        self.log.debug("Waiting for read event.")
+        await asyncio.wait_for(self._read_event.wait(), timeout=timeout)
+
+    async def read_until_async(self, expected: bytes) -> bytes:
+        line = ""
+        expected_str = expected.decode(self.sensor.charset)
+        while not line.endswith(expected_str):
+            c = self.read(1)
+            assert isinstance(c, bytes)
+            line += c.decode(self.sensor.charset)
+        self.log.debug(f"Returning {line=}")
+        return line.encode(self.sensor.charset)

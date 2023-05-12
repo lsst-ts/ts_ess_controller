@@ -50,16 +50,16 @@ class VcpFtdiTestCase(BaseRealSensorMockTestCase):
         await device.open()
 
         type(device.vcp).read = self.read
-        reply = await self.read_next()
-        assert reply is not None
-        reply_to_check = reply[common.Key.TELEMETRY]
+        await self.read_next()
+        assert self._reply is not None
+        reply_to_check = self._reply[common.Key.TELEMETRY]
         self.mtt.check_temperature_reply(
             reply=reply_to_check, name=name, num_channels=self.num_channels
         )
 
-        reply = await self.read_next()
-        assert reply is not None
-        reply_to_check = reply[common.Key.TELEMETRY]
+        await self.read_next()
+        assert self._reply is not None
+        reply_to_check = self._reply[common.Key.TELEMETRY]
         self.mtt.check_temperature_reply(
             reply=reply_to_check, name=name, num_channels=self.num_channels
         )

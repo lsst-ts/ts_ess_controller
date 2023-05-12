@@ -22,7 +22,6 @@
 import logging
 from unittest import mock
 
-import pytest
 from lsst.ts.ess import common, controller
 
 from .base_real_sensor_mock_test_case import BaseRealSensorMockTestCase
@@ -33,9 +32,10 @@ logging.basicConfig(
 
 
 class RpiSerialHatTestCase(BaseRealSensorMockTestCase):
-    @pytest.mark.skip("Need to investigate how to mock AioSerial.")
-    @mock.patch("lsst.ts.ess.controller.device.rpi_serial_hat.serial.Serial")
-    async def test_rpi_serial_hat(self, mock_serial: mock.AsyncMock) -> None:
+    @mock.patch(
+        "lsst.ts.ess.controller.device.rpi_serial_hat.AioSerial", new=mock.AsyncMock
+    )
+    async def test_rpi_serial_hat(self) -> None:
         self.return_as_plain_text = False
         name = "MockedRpiSerialHat"
         self.num_channels = 2
@@ -50,22 +50,21 @@ class RpiSerialHatTestCase(BaseRealSensorMockTestCase):
         )
 
         type(device.ser).is_open = mock.PropertyMock(return_value=False)
+        type(device.ser).open = mock.PropertyMock()
         await device.open()
 
         type(device.ser).read = self.read
-        reply = await self.read_next()
-        assert reply is not None
-        reply_to_check = reply[common.Key.TELEMETRY]
-        self.mtt.check_temperature_reply(
-            reply=reply_to_check, name=name, num_channels=self.num_channels
-        )
+        type(device.ser).read_until_async = self.read_until_async
+        await self.read_next()
+        assert self._reply is not None
 
-        reply = await self.read_next()
-        assert reply is not None
-        reply_to_check = reply[common.Key.TELEMETRY]
+        await self.read_next()
+        assert self._reply is not None
+        reply_to_check = self._reply[common.Key.TELEMETRY]
         self.mtt.check_temperature_reply(
             reply=reply_to_check, name=name, num_channels=self.num_channels
         )
 
         type(device.ser).is_open = mock.PropertyMock(return_value=True)
+        type(device.ser).close = mock.PropertyMock()
         await device.close()
