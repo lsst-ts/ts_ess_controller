@@ -6,6 +6,20 @@
 Version History
 ###############
 
+v0.7.10
+======-
+
+* Use ts_pre_commit_conf.
+* Modernize Jenkinsfile.
+* Improve entry point.
+* Make the RpiSerialHat test work.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 1.1
+* ts_utils 1.0
+
 v0.7.9
 ======
 
