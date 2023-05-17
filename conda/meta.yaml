@@ -7,10 +7,8 @@ source:
   path: ../
 
 build:
-  noarch: generic
+  noarch: python
   script: {{ PYTHON }} -m pip install --no-deps --ignore-installed .
-  entry_points:
-    - run_ess_controller = lsst.ts.ess.controller:run_ess_controller
 
 test:
   requires:

@@ -19,19 +19,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import logging
 from unittest import mock
 
 from lsst.ts.ess import common, controller
 
-from .base_real_sensor_mock_test_case import BaseRealSensorMockTestCase
 
-logging.basicConfig(
-    format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
-)
-
-
-class VcpFtdiTestCase(BaseRealSensorMockTestCase):
+class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
     @mock.patch("lsst.ts.ess.controller.device.vcp_ftdi.Device")
     async def test_vcp_ftdi(self, mock_ftdi_device: mock.AsyncMock) -> None:
         name = "MockedVcpFtdi"
@@ -50,16 +43,16 @@ class VcpFtdiTestCase(BaseRealSensorMockTestCase):
         await device.open()
 
         type(device.vcp).read = self.read
-        reply = await self.read_next()
-        assert reply is not None
-        reply_to_check = reply[common.Key.TELEMETRY]
+        await self.wait_for_read_event()
+        assert self._reply is not None
+        reply_to_check = self._reply[common.Key.TELEMETRY]
         self.mtt.check_temperature_reply(
             reply=reply_to_check, name=name, num_channels=self.num_channels
         )
 
-        reply = await self.read_next()
-        assert reply is not None
-        reply_to_check = reply[common.Key.TELEMETRY]
+        await self.wait_for_read_event()
+        assert self._reply is not None
+        reply_to_check = self._reply[common.Key.TELEMETRY]
         self.mtt.check_temperature_reply(
             reply=reply_to_check, name=name, num_channels=self.num_channels
         )
