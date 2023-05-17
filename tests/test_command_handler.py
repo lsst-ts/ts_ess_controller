@@ -20,16 +20,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
-import logging
 import typing
 import unittest
 
 from lsst.ts.ess import common, controller
 from lsst.ts.ess.common.test_utils import MockTestTools
-
-logging.basicConfig(
-    format="%(asctime)s:%(levelname)s:%(name)s:%(message)s", level=logging.DEBUG
-)
 
 
 class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):

@@ -6,6 +6,21 @@
 Version History
 ###############
 
+v0.7.10
+======-
+
+* Use ts_pre_commit_conf.
+* Modernize Jenkinsfile.
+* Improve entry point.
+  This includes removing it from `conda/meta.yaml` since having it in `pyproject.toml` is enough.
+* Make the RpiSerialHat test work.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 1.1
+* ts_utils 1.0
+
 v0.7.9
 ======
 
