@@ -6,8 +6,19 @@
 Version History
 ###############
 
+v0.8.0
+======
+
+* Move the sensor documentation to ts_ess_common.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 1.1
+* ts_utils 1.0
+
 v0.7.10
-======-
+=======
 
 * Use ts_pre_commit_conf.
 * Modernize Jenkinsfile.
