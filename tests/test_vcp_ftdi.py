@@ -22,9 +22,12 @@
 from unittest import mock
 
 from lsst.ts.ess import common, controller
+from lsst.ts.ess.controller.base_real_sensor_mock_test_case import (
+    BaseRealSensorMockTestCase,
+)
 
 
-class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
+class VcpFtdiTestCase(BaseRealSensorMockTestCase):
     @mock.patch("lsst.ts.ess.controller.device.vcp_ftdi.Device")
     async def test_vcp_ftdi(self, mock_ftdi_device: mock.AsyncMock) -> None:
         name = "MockedVcpFtdi"
