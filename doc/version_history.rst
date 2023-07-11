@@ -6,6 +6,20 @@
 Version History
 ###############
 
+v0.8.2
+======
+
+* Fix write JSON.
+* Revert changes related to pytest import issue.
+  This was fixed in ts_ess_common.
+* Fix conda build by adding aioserial to project dependencies.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 1.1
+* ts_utils 1.0
+
 v0.8.1
 ======
 
