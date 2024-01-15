@@ -126,7 +126,7 @@ class RpiSerialHat(common.device.BaseDevice):
             st = self.sensor.terminator
         else:
             st = bytes_read.decode(encoding=self.sensor.charset)
-        self.log.debug(f"Returning {st=}")
+        self.log.debug(f"Returning {self.name} {st=}")
         return st
 
     async def basic_close(self) -> None:

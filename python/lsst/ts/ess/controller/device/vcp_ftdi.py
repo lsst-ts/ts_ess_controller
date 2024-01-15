@@ -113,6 +113,7 @@ class VcpFtdi(common.device.BaseDevice):
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             while not line.endswith(self.sensor.terminator):
                 line += await loop.run_in_executor(pool, self.vcp.read, 1)
+        self.log.debug(f"Returning {self.name} {line=}")
         return line
 
     async def basic_close(self) -> None:
