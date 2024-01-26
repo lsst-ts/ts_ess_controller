@@ -25,9 +25,7 @@ from lsst.ts.ess import common, controller
 
 
 class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
-    @mock.patch(
-        "lsst.ts.ess.controller.device.rpi_serial_hat.AioSerial", new=mock.AsyncMock
-    )
+    @mock.patch("lsst.ts.ess.controller.device.rpi_serial_hat.Serial", new=mock.Mock)
     async def test_rpi_serial_hat(self) -> None:
         self.return_as_plain_text = False
         name = "MockedRpiSerialHat"
@@ -47,7 +45,6 @@ class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
         await device.open()
 
         type(device.ser).read = self.read
-        type(device.ser).read_until_async = self.read_until_async
         await self.wait_for_read_event()
         assert self._reply is not None
 
