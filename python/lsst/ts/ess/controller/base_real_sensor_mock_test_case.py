@@ -126,29 +126,8 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         timeout : `float`
             The timeout for reading the output.
         """
+        self.log.debug("Clearing read event.")
         self._read_event.clear()
         self.log.debug("Waiting for read event.")
         await asyncio.wait_for(self._read_event.wait(), timeout=timeout)
-
-    async def read_until_async(self, expected: bytes) -> bytes:
-        """Helper method that mocks reading data until it is terminated by the
-        ``expected`` bytes asynchronously.
-
-        Parameters
-        ----------
-        expected : `bytes`
-            The bytes expected to terminate the bytes that are read.
-
-        Returns
-        -------
-        bytes
-            The data read ending in ``expected``.
-        """
-        line = ""
-        expected_str = expected.decode(self.sensor.charset)
-        while not line.endswith(expected_str):
-            c = self.read(1)
-            assert isinstance(c, bytes)
-            line += c.decode(self.sensor.charset)
-        self.log.debug(f"Returning {line=}")
-        return line.encode(self.sensor.charset)
+        self.log.debug("Confirmed that read event has been set.")

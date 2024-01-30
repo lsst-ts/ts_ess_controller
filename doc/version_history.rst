@@ -6,6 +6,18 @@
 Version History
 ###############
 
+v0.8.3
+======
+
+* Improve telemetry logging.
+* Revert use of AioSerial to Serial.
+
+Requires:
+
+* ts_ess_common
+* ts_tcpip 1.1
+* ts_utils 1.0
+
 v0.8.2
 ======
 
