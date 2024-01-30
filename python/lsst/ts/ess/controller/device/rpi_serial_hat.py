@@ -22,11 +22,12 @@
 __all__ = ["RpiSerialHat"]
 
 import asyncio
+import concurrent
 import logging
 from typing import Callable
 
-from aioserial import AioSerial, SerialException
 from lsst.ts.ess import common
+from serial import Serial, SerialException
 
 # Read tiumeout [seconds].
 READ_TIMEOUT = 5.0
@@ -70,7 +71,9 @@ class RpiSerialHat(common.device.BaseDevice):
             log=log,
         )
         try:
-            self.ser = AioSerial(port=device_id, baudrate=self.baud_rate)
+            self.ser = Serial(
+                port=device_id, baudrate=self.baud_rate, timeout=READ_TIMEOUT
+            )
             self.log.debug(f"Port: {self.ser.port}")
         except SerialException as e:
             self.log.exception(f"{e!r}")
@@ -109,25 +112,15 @@ class RpiSerialHat(common.device.BaseDevice):
             one. May be returned empty if nothing was received or partial if
             the readline was started during device reception.
         """
-        terminator = self.sensor.terminator.encode(self.sensor.charset)
-
-        # In order for the unit test to work, it is necessary to wrap this in
-        # an ``asyncio.wait_for`` construction. Simply waiting for the
-        # ``read_until_async`` method to return will make the unit test hang.
-        bytes_read = await asyncio.wait_for(
-            self.ser.read_until_async(expected=terminator), timeout=READ_TIMEOUT
-        )
-
-        # Always ignore the first line of telemetry from the sensor since it
-        # may lead to decoding errors since the line may have only been
-        # partially read.
-        if not self.first_telemetry_read:
-            self.first_telemetry_read = True
-            st = self.sensor.terminator
-        else:
-            st = bytes_read.decode(encoding=self.sensor.charset)
-        self.log.debug(f"Returning {st=}")
-        return st
+        line: str = ""
+        # get running loop to run blocking tasks
+        loop = asyncio.get_running_loop()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            while not line.endswith(self.sensor.terminator):
+                ch = await loop.run_in_executor(pool, self.ser.read, 1)
+                line += ch.decode(encoding=self.sensor.charset)
+        self.log.debug(f"Returning {self.name} {line=}")
+        return line
 
     async def basic_close(self) -> None:
         """Close the Sensor Device.
