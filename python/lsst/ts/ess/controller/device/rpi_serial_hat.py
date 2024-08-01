@@ -74,7 +74,6 @@ class RpiSerialHat(common.device.BaseDevice):
             self.ser = Serial(
                 port=device_id, baudrate=self.baud_rate, timeout=READ_TIMEOUT
             )
-            self.log.debug(f"Port: {self.ser.port}")
         except SerialException as e:
             self.log.exception(f"{e!r}")
             # Unrecoverable error, so propagate error
@@ -95,12 +94,12 @@ class RpiSerialHat(common.device.BaseDevice):
         if not self.ser.is_open:
             try:
                 self.ser.open()
-                self.log.info("Serial port opened.")
+                self.log.info(f"Serial port {self.device_id} opened.")
             except SerialException as e:
-                self.log.exception("Serial port open failed.")
+                self.log.exception(f"Serial port {self.device_id} open failed.")
                 raise e
         else:
-            self.log.info("Port already open!")
+            self.log.info(f"Serial port {self.device_id} already open!")
 
     async def readline(self) -> str:
         """Read a line of telemetry from the device.
@@ -119,7 +118,7 @@ class RpiSerialHat(common.device.BaseDevice):
             while not line.endswith(self.sensor.terminator):
                 ch = await loop.run_in_executor(pool, self.ser.read, 1)
                 line += ch.decode(encoding=self.sensor.charset)
-        self.log.debug(f"Returning {self.name} {line=}")
+        self.log.info(f"Returning {self.name} {line=}")
         return line
 
     async def basic_close(self) -> None:
@@ -131,6 +130,6 @@ class RpiSerialHat(common.device.BaseDevice):
         """
         if self.ser.is_open:
             self.ser.close()
-            self.log.exception("Serial port closed.")
+            self.log.info(f"Serial port {self.device_id} closed.")
         else:
-            self.log.info("Serial port already closed.")
+            self.log.info(f"Serial port {self.device_id} already closed.")
