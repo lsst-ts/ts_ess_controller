@@ -26,7 +26,7 @@ from lsst.ts.ess import common, controller
 
 class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
     @mock.patch("lsst.ts.ess.controller.device.rpi_serial_hat.Serial", new=mock.Mock)
-    async def test_rpi_serial_hat(self) -> None:
+    async def verify_rpi_serial_hat(self) -> None:
         self.return_as_plain_text = False
         name = "MockedRpiSerialHat"
         self.num_channels = 2
@@ -58,3 +58,11 @@ class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
         type(device.ser).is_open = mock.PropertyMock(return_value=True)
         type(device.ser).close = mock.PropertyMock()
         await device.close()
+
+    async def test_rpi_serial_hat_with_normal_terminator(self) -> None:
+        self.add_null_character_in_terminator = False
+        await self.verify_rpi_serial_hat()
+
+    async def test_rpi_serial_hat_with_enhanced_terminator(self) -> None:
+        self.add_null_character_in_terminator = True
+        await self.verify_rpi_serial_hat()
