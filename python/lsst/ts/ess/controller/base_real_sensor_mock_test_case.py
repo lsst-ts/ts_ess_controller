@@ -68,6 +68,7 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         self._read_event: asyncio.Event = asyncio.Event()
         self._num_read_calls = 0
         self._reply: typing.Dict[str, typing.List[typing.Union[str, float]]] = {}
+        self.add_null_character_in_terminator = False
 
     async def _callback(
         self, reply: typing.Dict[str, typing.List[typing.Union[str, float]]]
@@ -94,13 +95,17 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         """
         assert length == 1
 
+        terminator = self.sensor.terminator
+        if self.add_null_character_in_terminator:
+            terminator = "\x00".join(self.sensor.terminator)
+
         if self._sensor_output is None:
             formatter = common.device.MockTemperatureFormatter()
             self._sensor_output = (
                 self.sensor.delimiter.join(
                     formatter.format_output(num_channels=self.num_channels)
                 )
-                + self.sensor.terminator
+                + terminator
             )
 
         assert self._sensor_output is not None

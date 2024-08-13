@@ -22,8 +22,8 @@
 __all__ = ["RpiSerialHat"]
 
 import asyncio
-import concurrent
 import logging
+import re
 from typing import Callable
 
 from lsst.ts.ess import common
@@ -74,7 +74,6 @@ class RpiSerialHat(common.device.BaseDevice):
             self.ser = Serial(
                 port=device_id, baudrate=self.baud_rate, timeout=READ_TIMEOUT
             )
-            self.log.debug(f"Port: {self.ser.port}")
         except SerialException as e:
             self.log.exception(f"{e!r}")
             # Unrecoverable error, so propagate error
@@ -83,6 +82,13 @@ class RpiSerialHat(common.device.BaseDevice):
         # Keep track of whether the first telemetry from the sensor have been
         # read or not. If not then decoding errors will be ignored.
         self.first_telemetry_read = False
+
+        # Build a regular expression to use when checking if the sensor has
+        # sent the end of a telemetry string. Occasionally an additional
+        # NULL character may show up so we need to check for that.
+        enhanced_terminator = ".?".join(self.sensor.terminator)
+        self.enhanced_terminator_regex = re.compile(enhanced_terminator)
+        self.terminator_regex = re.compile("^.*" + enhanced_terminator + "$")
 
     async def basic_open(self) -> None:
         """Open and configure serial port.
@@ -95,12 +101,12 @@ class RpiSerialHat(common.device.BaseDevice):
         if not self.ser.is_open:
             try:
                 self.ser.open()
-                self.log.info("Serial port opened.")
+                self.log.info(f"Serial port {self.device_id} opened.")
             except SerialException as e:
-                self.log.exception("Serial port open failed.")
+                self.log.exception(f"Serial port {self.device_id} open failed.")
                 raise e
         else:
-            self.log.info("Port already open!")
+            self.log.info(f"Serial port {self.device_id} already open!")
 
     async def readline(self) -> str:
         """Read a line of telemetry from the device.
@@ -115,10 +121,10 @@ class RpiSerialHat(common.device.BaseDevice):
         line: str = ""
         # get running loop to run blocking tasks
         loop = asyncio.get_running_loop()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            while not line.endswith(self.sensor.terminator):
-                ch = await loop.run_in_executor(pool, self.ser.read, 1)
-                line += ch.decode(encoding=self.sensor.charset)
+        while not self.terminator_regex.match(line):
+            ch = await loop.run_in_executor(None, self.ser.read, 1)
+            line += ch.decode(encoding=self.sensor.charset)
+        line = self.enhanced_terminator_regex.sub(self.sensor.terminator, line)
         self.log.debug(f"Returning {self.name} {line=}")
         return line
 
@@ -131,6 +137,6 @@ class RpiSerialHat(common.device.BaseDevice):
         """
         if self.ser.is_open:
             self.ser.close()
-            self.log.exception("Serial port closed.")
+            self.log.info(f"Serial port {self.device_id} closed.")
         else:
-            self.log.info("Serial port already closed.")
+            self.log.info(f"Serial port {self.device_id} already closed.")
