@@ -10,6 +10,8 @@ v0.8.5
 ======
 
 * Fix the conda recipe.
+* Remove superfluous use of a ThreadPoolExecutor.
+* Check for a terminator that may contain additional NULL characters.
 
 Requires:
 
