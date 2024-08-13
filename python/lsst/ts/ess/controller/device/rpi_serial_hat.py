@@ -22,7 +22,6 @@
 __all__ = ["RpiSerialHat"]
 
 import asyncio
-import concurrent
 import logging
 from typing import Callable
 
@@ -114,11 +113,10 @@ class RpiSerialHat(common.device.BaseDevice):
         line: str = ""
         # get running loop to run blocking tasks
         loop = asyncio.get_running_loop()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            while not line.endswith(self.sensor.terminator):
-                ch = await loop.run_in_executor(pool, self.ser.read, 1)
-                line += ch.decode(encoding=self.sensor.charset)
-        self.log.info(f"Returning {self.name} {line=}")
+        while not line.endswith(self.sensor.terminator):
+            ch = await loop.run_in_executor(None, self.ser.read, 1)
+            line += ch.decode(encoding=self.sensor.charset)
+        self.log.debug(f"Returning {self.name} {line=}")
         return line
 
     async def basic_close(self) -> None:

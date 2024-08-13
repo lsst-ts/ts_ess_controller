@@ -22,7 +22,6 @@
 __all__ = ["VcpFtdi"]
 
 import asyncio
-import concurrent
 import logging
 from typing import Callable
 
@@ -110,9 +109,8 @@ class VcpFtdi(common.device.BaseDevice):
         line: str = ""
         # get running loop to run blocking tasks
         loop = asyncio.get_running_loop()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            while not line.endswith(self.sensor.terminator):
-                line += await loop.run_in_executor(pool, self.vcp.read, 1)
+        while not line.endswith(self.sensor.terminator):
+            line += await loop.run_in_executor(None, self.vcp.read, 1)
         self.log.debug(f"Returning {self.name} {line=}")
         return line
 
