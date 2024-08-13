@@ -26,7 +26,7 @@ from lsst.ts.ess import common, controller
 
 class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
     @mock.patch("lsst.ts.ess.controller.device.vcp_ftdi.Device")
-    async def test_vcp_ftdi(self, mock_ftdi_device: mock.AsyncMock) -> None:
+    async def verify_vcp_ftdi(self, mock_ftdi_device: mock.AsyncMock) -> None:
         name = "MockedVcpFtdi"
         self.num_channels = 2
         self.sensor.num_channels = self.num_channels
@@ -59,3 +59,11 @@ class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
 
         type(device.vcp).closed = mock.PropertyMock(return_value=True)
         await device.close()
+
+    async def test_vcp_ftdi_with_normal_terminator(self) -> None:
+        self.add_null_character_in_terminator = False
+        await self.verify_vcp_ftdi()
+
+    async def test_vcp_ftdi_with_enhanced_terminator(self) -> None:
+        self.add_null_character_in_terminator = True
+        await self.verify_vcp_ftdi()

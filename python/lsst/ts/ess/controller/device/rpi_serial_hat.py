@@ -23,6 +23,7 @@ __all__ = ["RpiSerialHat"]
 
 import asyncio
 import logging
+import re
 from typing import Callable
 
 from lsst.ts.ess import common
@@ -82,6 +83,13 @@ class RpiSerialHat(common.device.BaseDevice):
         # read or not. If not then decoding errors will be ignored.
         self.first_telemetry_read = False
 
+        # Build a regular expression to use when checking if the sensor has
+        # sent the end of a telemetry string. Occasionally an additional
+        # NULL character may show up so we need to check for that.
+        enhanced_terminator = ".?".join(self.sensor.terminator)
+        self.enhanced_terminator_regex = re.compile(enhanced_terminator)
+        self.terminator_regex = re.compile("^.*" + enhanced_terminator + "$")
+
     async def basic_open(self) -> None:
         """Open and configure serial port.
         Open the serial communications port and set BAUD.
@@ -113,9 +121,10 @@ class RpiSerialHat(common.device.BaseDevice):
         line: str = ""
         # get running loop to run blocking tasks
         loop = asyncio.get_running_loop()
-        while not line.endswith(self.sensor.terminator):
+        while not self.terminator_regex.match(line):
             ch = await loop.run_in_executor(None, self.ser.read, 1)
             line += ch.decode(encoding=self.sensor.charset)
+        line = self.enhanced_terminator_regex.sub(self.sensor.terminator, line)
         self.log.debug(f"Returning {self.name} {line=}")
         return line
 
