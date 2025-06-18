@@ -65,7 +65,9 @@ class CommandHandler(common.AbstractCommandHandler):
     valid_simulation_modes = (0, 1)
 
     def create_device(
-        self, device_configuration: typing.Dict[str, typing.Any]
+        self,
+        device_configuration: typing.Dict[str, typing.Any],
+        devices_in_error_state: bool = False,
     ) -> common.device.BaseDevice:
         """Get the device to connect to by using the specified configuration.
 
@@ -74,6 +76,9 @@ class CommandHandler(common.AbstractCommandHandler):
         device_configuration : `dict`
             A dict representing the device to connect to. The format of the
             dict follows the configuration of the ts_ess_csc project.
+        devices_in_error_state : `bool`
+            Whether the devices are in error state (True) or not (False,
+            default). To be used by unit tests.
 
         Returns
         -------
@@ -107,6 +112,7 @@ class CommandHandler(common.AbstractCommandHandler):
                 sensor=sensor,
                 callback_func=self._callback,
                 log=self.log,
+                in_error_state=devices_in_error_state,
             )
             return device
         elif device_configuration[common.Key.DEVICE_TYPE] == common.DeviceType.FTDI:
