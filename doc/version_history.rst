@@ -6,6 +6,29 @@
 Version History
 ###############
 
+.. towncrier release notes start
+
+v0.9.0 (2025-06-19)
+===================
+
+New Features
+------------
+
+- Switched to towncrier and ruff. (`OSW-558 <https://rubinobs.atlassian.net//browse/OSW-558>`_)
+
+
+Bug Fixes
+---------
+
+- Fixed version module import. (`OSW-558 <https://rubinobs.atlassian.net//browse/OSW-558>`_)
+
+
+Performance Enhancement
+-----------------------
+
+- Added reconnect in case of an error. (`OSW-558 <https://rubinobs.atlassian.net//browse/OSW-558>`_)
+
+
 v0.8.5
 ======
 
