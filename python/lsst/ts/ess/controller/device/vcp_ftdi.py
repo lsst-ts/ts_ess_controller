@@ -29,6 +29,9 @@ from typing import Callable
 from lsst.ts.ess import common
 from pylibftdi import Device
 
+# Reconnect sleep time [seconds].
+RECONNECT_SLEEP = 60.0
+
 
 class VcpFtdi(common.device.BaseDevice):
     """USB Virtual Communications Port (VCP) for FTDI device.
@@ -118,10 +121,30 @@ class VcpFtdi(common.device.BaseDevice):
         # get running loop to run blocking tasks
         loop = asyncio.get_running_loop()
         while not self.terminator_regex.match(line):
-            line += await loop.run_in_executor(None, self.vcp.read, 1)
+            ch = await loop.run_in_executor(None, self.vcp.read, 1)
+            self.log.debug(f"Read {ch=!r}.")
+            line += ch
         line = self.enhanced_terminator_regex.sub(self.sensor.terminator, line)
         self.log.debug(f"Returning {self.name} {line=}")
         return line
+
+    async def handle_readline_exception(self, exception: BaseException) -> None:
+        """Handle any exception that happened in the `readline` method.
+
+        The default is to log and ignore but subclasses may override this
+        method to customize the behavior.
+
+        Parameters
+        ----------
+        exception : `BaseException`
+            The exception to handle.
+        """
+        self.log.exception(
+            f"Exception reading device {self.name}. "
+            f"Trying to reconnect after {RECONNECT_SLEEP} seconds."
+        )
+        self.is_open = False
+        await asyncio.sleep(RECONNECT_SLEEP)
 
     async def basic_close(self) -> None:
         """Close the Sensor Device.

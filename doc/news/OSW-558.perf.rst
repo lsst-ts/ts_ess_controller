@@ -1,0 +1,1 @@
+Added reconnect in case of an error.

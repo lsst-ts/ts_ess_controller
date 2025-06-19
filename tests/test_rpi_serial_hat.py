@@ -26,12 +26,13 @@ from lsst.ts.ess import common, controller
 
 class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
     @mock.patch("lsst.ts.ess.controller.device.rpi_serial_hat.Serial", new=mock.Mock)
+    @mock.patch("lsst.ts.ess.controller.device.rpi_serial_hat.RECONNECT_SLEEP", 1.0)
     async def verify_rpi_serial_hat(self) -> None:
         self.return_as_plain_text = False
         name = "MockedRpiSerialHat"
         self.num_channels = 2
         self.sensor.num_channels = self.num_channels
-        device = controller.device.RpiSerialHat(
+        self.device = controller.device.RpiSerialHat(
             name=name,
             device_id="/dev/ttyAMA1",
             sensor=self.sensor,
@@ -39,25 +40,38 @@ class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
             callback_func=self._callback,
             log=self.log,
         )
+        # Set this first so no mock related exception is generated when the
+        # device gets opened.
+        type(self.device.ser).read = self.read
 
-        type(device.ser).is_open = mock.PropertyMock(return_value=False)
-        type(device.ser).open = mock.PropertyMock()
-        await device.open()
+        type(self.device.ser).open = mock.MagicMock()
+        type(self.device.ser).close = mock.MagicMock()
 
-        type(device.ser).read = self.read
-        await self.wait_for_read_event()
-        assert self._reply is not None
+        type(self.device.ser).is_open = mock.PropertyMock(return_value=False)
+        await self.device.open()
 
         await self.wait_for_read_event()
         assert self._reply is not None
         reply_to_check = self._reply[common.Key.TELEMETRY]
         self.mtt.check_temperature_reply(
-            reply=reply_to_check, name=name, num_channels=self.num_channels
+            reply=reply_to_check,
+            name=name,
+            num_channels=self.num_channels,
+            in_error_state=self.read_generates_error,
         )
 
-        type(device.ser).is_open = mock.PropertyMock(return_value=True)
-        type(device.ser).close = mock.PropertyMock()
-        await device.close()
+        await self.wait_for_read_event()
+        assert self._reply is not None
+        reply_to_check = self._reply[common.Key.TELEMETRY]
+        self.mtt.check_temperature_reply(
+            reply=reply_to_check,
+            name=name,
+            num_channels=self.num_channels,
+            in_error_state=self.read_generates_error,
+        )
+
+        type(self.device.ser).is_open = mock.PropertyMock(return_value=True)
+        await self.device.close()
 
     async def test_rpi_serial_hat_with_normal_terminator(self) -> None:
         self.add_null_character_in_terminator = False
@@ -65,4 +79,8 @@ class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
 
     async def test_rpi_serial_hat_with_enhanced_terminator(self) -> None:
         self.add_null_character_in_terminator = True
+        await self.verify_rpi_serial_hat()
+
+    async def test_rpi_serial_hat_with_read_error(self) -> None:
+        self.read_generates_error = True
         await self.verify_rpi_serial_hat()
