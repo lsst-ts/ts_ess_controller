@@ -64,19 +64,20 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         self.return_as_plain_text = True
         self.mtt = MockTestTools()
 
+        self.device: common.device.BaseDevice | None = None
+
         self._sensor_output = None
         self._read_event: asyncio.Event = asyncio.Event()
         self._num_read_calls = 0
         self._reply: typing.Dict[str, typing.List[typing.Union[str, float]]] = {}
         self.add_null_character_in_terminator = False
+        self.read_generates_error = False
 
     async def _callback(
         self, reply: typing.Dict[str, typing.List[typing.Union[str, float]]]
     ) -> None:
         self._reply = reply
         self._sensor_output = None
-        self.log.debug("Setting read event.")
-        self._read_event.set()
 
     def read(self, length: int) -> str | bytes:
         """Mock reading sensor output.
@@ -93,6 +94,9 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
             A plain text or byte encoded string representing the output of the
             sensor.
         """
+        if self.read_generates_error:
+            raise RuntimeError("Raising RuntimeError on purpose.")
+
         assert length == 1
 
         terminator = self.sensor.terminator
@@ -131,8 +135,13 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         timeout : `float`
             The timeout for reading the output.
         """
+        assert self.device is not None
         self.log.debug("Clearing read event.")
-        self._read_event.clear()
+        self.device.readline_event.clear()
         self.log.debug("Waiting for read event.")
-        await asyncio.wait_for(self._read_event.wait(), timeout=timeout)
-        self.log.debug("Confirmed that read event has been set.")
+        try:
+            await asyncio.wait_for(self.device.readline_event.wait(), timeout=timeout)
+            self.log.debug("Confirmed that read event has been set.")
+            assert self.read_generates_error is False
+        except TimeoutError:
+            assert self.read_generates_error is True
