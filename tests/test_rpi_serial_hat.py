@@ -25,7 +25,6 @@ from lsst.ts.ess import common, controller
 
 
 class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
-    @mock.patch("lsst.ts.ess.controller.device.rpi_serial_hat.Serial", new=mock.Mock)
     @mock.patch("lsst.ts.ess.controller.device.rpi_serial_hat.RECONNECT_SLEEP", 1.0)
     async def verify_rpi_serial_hat(self) -> None:
         self.return_as_plain_text = False
@@ -39,15 +38,9 @@ class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
             baud_rate=19200,
             callback_func=self._callback,
             log=self.log,
+            use_mock_device=True,
+            read_generates_error=self.read_generates_error,
         )
-        # Set this first so no mock related exception is generated when the
-        # device gets opened.
-        type(self.device.ser).read = self.read
-
-        type(self.device.ser).open = mock.MagicMock()
-        type(self.device.ser).close = mock.MagicMock()
-
-        type(self.device.ser).is_open = mock.PropertyMock(return_value=False)
         await self.device.open()
 
         await self.wait_for_read_event()
@@ -70,7 +63,6 @@ class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
             in_error_state=self.read_generates_error,
         )
 
-        type(self.device.ser).is_open = mock.PropertyMock(return_value=True)
         await self.device.close()
 
     async def test_rpi_serial_hat_with_normal_terminator(self) -> None:

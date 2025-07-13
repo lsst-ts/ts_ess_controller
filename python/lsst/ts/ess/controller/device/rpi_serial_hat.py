@@ -29,8 +29,13 @@ from typing import Callable
 from lsst.ts.ess import common
 from serial import Serial, SerialException
 
+from .mock_serial import MockSerial
+
 # Reconnect sleep time [seconds].
 RECONNECT_SLEEP = 60.0
+
+# Read timeout [sec].
+READ_TIMEOUT = 10.0
 
 
 class RpiSerialHat(common.device.BaseDevice):
@@ -51,6 +56,10 @@ class RpiSerialHat(common.device.BaseDevice):
         Callback function to receive the telemetry.
     log : `logging.Logger`
         The logger to create a child logger for.
+    use_mock_device : `bool`
+        Use the mock device or not. Defaults to False.
+    read_generates_error : `bool`
+        Does reading the divice generate an error or not. Defaults to False.
     """
 
     def __init__(
@@ -61,6 +70,8 @@ class RpiSerialHat(common.device.BaseDevice):
         baud_rate: int,
         callback_func: Callable,
         log: logging.Logger,
+        use_mock_device: bool = False,
+        read_generates_error: bool = False,
     ) -> None:
         super().__init__(
             name=name,
@@ -71,7 +82,12 @@ class RpiSerialHat(common.device.BaseDevice):
             log=log,
         )
         try:
-            self.ser = Serial(port=device_id, baudrate=self.baud_rate)
+            if use_mock_device:
+                self.ser = MockSerial(
+                    read_generates_error=read_generates_error, encode_reply=True
+                )
+            else:
+                self.ser = Serial(port=device_id, baudrate=self.baud_rate)
         except SerialException as e:
             self.log.exception(f"{e!r}")
             # Unrecoverable error, so propagate error
@@ -104,7 +120,7 @@ class RpiSerialHat(common.device.BaseDevice):
                 self.log.exception(f"Serial port {self.device_id} open failed.")
                 raise e
         else:
-            self.log.info(f"Serial port {self.device_id} already open!")
+            self.log.info(f"Serial port {self.device_id} already open.")
 
     async def readline(self) -> str:
         """Read a line of telemetry from the device.
@@ -118,13 +134,18 @@ class RpiSerialHat(common.device.BaseDevice):
         """
         line: str = ""
         loop = asyncio.get_running_loop()
-        while not self.terminator_regex.match(line):
-            b_ch = await loop.run_in_executor(None, self.ser.read, 1)
-            ch = b_ch.decode(encoding=self.sensor.charset)
-            self.log.debug(f"Read {ch=!r}.")
-            line += ch
+
+        async with asyncio.timeout(READ_TIMEOUT):
+            # All sensor telemetry lines end either in \r\n or in \n\r so this
+            # next while condition should be safe.
+            while not ("\r" in line and "\n" in line):
+                b_ch = await loop.run_in_executor(None, self.ser.read, 1)
+                assert isinstance(b_ch, bytes)
+                ch = b_ch.decode(encoding=self.sensor.charset)
+                self.log.info(f"Read {self.name} {ch=!r}.")
+                line += ch
         line = self.enhanced_terminator_regex.sub(self.sensor.terminator, line)
-        self.log.debug(f"Returning {self.name} {line=}")
+        self.log.info(f"Returning {self.name} {line=}")
         return line
 
     async def handle_readline_exception(self, exception: BaseException) -> None:
@@ -138,12 +159,13 @@ class RpiSerialHat(common.device.BaseDevice):
         exception : `BaseException`
             The exception to handle.
         """
-        self.log.exception(
-            f"Exception reading device {self.name}. "
-            f"Trying to reconnect after {RECONNECT_SLEEP} seconds."
-        )
-        self.is_open = False
-        await asyncio.sleep(RECONNECT_SLEEP)
+        if not isinstance(exception, asyncio.CancelledError):
+            self.log.exception(
+                f"Exception reading device {self.name}. "
+                f"Trying to reconnect after {RECONNECT_SLEEP} seconds."
+            )
+            self.is_open = False
+            await asyncio.sleep(RECONNECT_SLEEP)
 
     async def basic_close(self) -> None:
         """Close the Sensor Device.

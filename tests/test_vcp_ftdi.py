@@ -25,9 +25,8 @@ from lsst.ts.ess import common, controller
 
 
 class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
-    @mock.patch("lsst.ts.ess.controller.device.vcp_ftdi.Device")
     @mock.patch("lsst.ts.ess.controller.device.vcp_ftdi.RECONNECT_SLEEP", 1.0)
-    async def verify_vcp_ftdi(self, mock_ftdi_device: mock.AsyncMock) -> None:
+    async def verify_vcp_ftdi(self) -> None:
         self.return_as_plain_text = True
         name = "MockedVcpFtdi"
         self.num_channels = 2
@@ -39,15 +38,9 @@ class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
             baud_rate=19200,
             callback_func=self._callback,
             log=self.log,
+            use_mock_device=True,
+            read_generates_error=self.read_generates_error,
         )
-        # Set this first so no mock related exception is generated when the
-        # device gets opened.
-        type(self.device.vcp).read = self.read
-
-        type(self.device.vcp).open = mock.MagicMock()
-        type(self.device.vcp).close = mock.MagicMock()
-
-        type(self.device.vcp).closed = mock.PropertyMock(return_value=False)
         await self.device.open()
 
         await self.wait_for_read_event()
@@ -70,7 +63,6 @@ class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
             in_error_state=self.read_generates_error,
         )
 
-        type(self.device.vcp).closed = mock.PropertyMock(return_value=True)
         await self.device.close()
 
     async def test_vcp_ftdi_with_normal_terminator(self) -> None:

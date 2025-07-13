@@ -79,52 +79,6 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         self._reply = reply
         self._sensor_output = None
 
-    def read(self, length: int) -> str | bytes:
-        """Mock reading sensor output.
-
-        Parameters
-        ----------
-        length : `int`
-            The number of characters to read. In the sensor code this is always
-            set to 1 and this is asserted in this method.
-
-        Returns
-        -------
-        `str` | `bytes`
-            A plain text or byte encoded string representing the output of the
-            sensor.
-        """
-        if self.read_generates_error:
-            raise RuntimeError("Raising RuntimeError on purpose.")
-
-        assert length == 1
-
-        terminator = self.sensor.terminator
-        if self.add_null_character_in_terminator:
-            terminator = "\x00".join(self.sensor.terminator)
-
-        if self._sensor_output is None:
-            formatter = common.device.MockTemperatureFormatter()
-            self._sensor_output = (
-                self.sensor.delimiter.join(
-                    formatter.format_output(num_channels=self.num_channels)
-                )
-                + terminator
-            )
-
-        assert self._sensor_output is not None
-        ch = self._sensor_output[self._num_read_calls]
-        self._num_read_calls += 1
-
-        # Reset the number of read calls to mock new sensor output.
-        if self._num_read_calls >= len(self._sensor_output):
-            self._num_read_calls = 0
-
-        if self.return_as_plain_text:
-            return ch
-        else:
-            return ch.encode(self.sensor.charset)
-
     async def wait_for_read_event(self, timeout: float = STD_TIMEOUT) -> None:
         """Clear the read event and then wait for it to be set again.
 
