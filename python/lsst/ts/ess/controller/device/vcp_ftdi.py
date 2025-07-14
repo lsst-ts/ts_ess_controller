@@ -142,11 +142,17 @@ class VcpFtdi(common.device.BaseDevice):
             # next while condition should be safe.
             while not ("\r" in line and "\n" in line):
                 ch = await loop.run_in_executor(None, self.vcp.read, 1)
-                self.log.info(f"Read {self.name} {ch=!r}.")
+                if self.name == "AuxTel-ESS03":
+                    self.log.info(f"Read {self.name} {ch=!r}.")
+                else:
+                    self.log.debug(f"Read {self.name} {ch=!r}.")
                 assert isinstance(ch, str)
                 line += ch
         line = self.enhanced_terminator_regex.sub(self.sensor.terminator, line)
-        self.log.info(f"Returning {self.name} {line=}")
+        if self.name == "AuxTel-ESS03":
+            self.log.info(f"Returning {self.name} {line=}")
+        else:
+            self.log.debug(f"Returning {self.name} {line=}")
         return line
 
     async def handle_readline_exception(self, exception: BaseException) -> None:
