@@ -60,7 +60,12 @@ class VcpFtdi(common.device.BaseDevice):
         Use the mock device or not. Defaults to False.
     read_generates_error : `bool`
         Does reading the divice generate an error or not. Defaults to False.
+    generate_timeout : `bool`
+        Expect a timeout.
     """
+
+    reconnect_sleep = RECONNECT_SLEEP
+    read_timeout = READ_TIMEOUT
 
     def __init__(
         self,
@@ -72,6 +77,7 @@ class VcpFtdi(common.device.BaseDevice):
         log: logging.Logger,
         use_mock_device: bool = False,
         read_generates_error: bool = False,
+        generate_timeout: bool = False,
     ) -> None:
         super().__init__(
             name=name,
@@ -83,7 +89,9 @@ class VcpFtdi(common.device.BaseDevice):
         )
         if use_mock_device:
             self.vcp = MockSerial(
-                read_generates_error=read_generates_error, encode_reply=False
+                read_generates_error=read_generates_error,
+                encode_reply=False,
+                generate_timeout=generate_timeout,
             )
         else:
             self.vcp = Device(
@@ -137,22 +145,20 @@ class VcpFtdi(common.device.BaseDevice):
         # get running loop to run blocking tasks
         loop = asyncio.get_running_loop()
 
-        async with asyncio.timeout(READ_TIMEOUT):
-            # All sensor telemetry lines end either in \r\n or in \n\r so this
-            # next while condition should be safe.
-            while not ("\r" in line and "\n" in line):
-                ch = await loop.run_in_executor(None, self.vcp.read, 1)
-                if self.name == "AuxTel-ESS03":
-                    self.log.info(f"Read {self.name} {ch=!r}.")
-                else:
+        try:
+            async with asyncio.timeout(self.read_timeout):
+                # All sensor telemetry lines end either in \r\n or in \n\r so
+                # this next while condition should be safe.
+                while not ("\r" in line and "\n" in line):
+                    ch = await loop.run_in_executor(None, self.vcp.read, 1)
                     self.log.debug(f"Read {self.name} {ch=!r}.")
-                assert isinstance(ch, str)
-                line += ch
+                    assert isinstance(ch, str)
+                    line += ch
+        except TimeoutError:
+            self.log.exception(f"Timeout reading {self.name}. So far {line=!r}.")
+            raise
         line = self.enhanced_terminator_regex.sub(self.sensor.terminator, line)
-        if self.name == "AuxTel-ESS03":
-            self.log.info(f"Returning {self.name} {line=}")
-        else:
-            self.log.debug(f"Returning {self.name} {line=}")
+        self.log.debug(f"Returning {self.name} {line=}")
         return line
 
     async def handle_readline_exception(self, exception: BaseException) -> None:
@@ -169,10 +175,11 @@ class VcpFtdi(common.device.BaseDevice):
         if not isinstance(exception, asyncio.CancelledError):
             self.log.exception(
                 f"Exception reading device {self.name}. "
-                f"Trying to reconnect after {RECONNECT_SLEEP} seconds."
+                f"Trying to reconnect after {self.reconnect_sleep} seconds."
             )
-            self.is_open = False
-            await asyncio.sleep(RECONNECT_SLEEP)
+            await self.close()
+            await asyncio.sleep(self.reconnect_sleep)
+            raise
 
     async def basic_close(self) -> None:
         """Close the Sensor Device.

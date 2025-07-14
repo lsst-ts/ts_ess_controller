@@ -19,13 +19,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from unittest import mock
-
 from lsst.ts.ess import common, controller
 
 
 class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
-    @mock.patch("lsst.ts.ess.controller.device.vcp_ftdi.RECONNECT_SLEEP", 1.0)
     async def verify_vcp_ftdi(self) -> None:
         self.return_as_plain_text = True
         name = "MockedVcpFtdi"
@@ -40,28 +37,38 @@ class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
             log=self.log,
             use_mock_device=True,
             read_generates_error=self.read_generates_error,
+            generate_timeout=self.generate_timeout,
         )
+        self.device.read_timeout = 1.0
+        self.device.reconnect_sleep = 1.0
+
         await self.device.open()
 
         await self.wait_for_read_event()
         assert self._reply is not None
-        reply_to_check = self._reply[common.Key.TELEMETRY]
-        self.mtt.check_temperature_reply(
-            reply=reply_to_check,
-            name=name,
-            num_channels=self.num_channels,
-            in_error_state=self.read_generates_error,
-        )
+        if self.generate_timeout or self.read_generates_error:
+            assert self._reply == {}
+        else:
+            reply_to_check = self._reply[common.Key.TELEMETRY]
+            self.mtt.check_temperature_reply(
+                reply=reply_to_check,
+                name=name,
+                num_channels=self.num_channels,
+                in_error_state=self.read_generates_error,
+            )
 
         await self.wait_for_read_event()
         assert self._reply is not None
-        reply_to_check = self._reply[common.Key.TELEMETRY]
-        self.mtt.check_temperature_reply(
-            reply=reply_to_check,
-            name=name,
-            num_channels=self.num_channels,
-            in_error_state=self.read_generates_error,
-        )
+        if self.generate_timeout or self.read_generates_error:
+            assert self._reply == {}
+        else:
+            reply_to_check = self._reply[common.Key.TELEMETRY]
+            self.mtt.check_temperature_reply(
+                reply=reply_to_check,
+                name=name,
+                num_channels=self.num_channels,
+                in_error_state=self.read_generates_error,
+            )
 
         await self.device.close()
 
@@ -75,4 +82,8 @@ class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
 
     async def test_vcp_ftdi_with_read_error(self) -> None:
         self.read_generates_error = True
+        await self.verify_vcp_ftdi()
+
+    async def test_vcp_ftdi_with_timeout(self) -> None:
+        self.generate_timeout = True
         await self.verify_vcp_ftdi()

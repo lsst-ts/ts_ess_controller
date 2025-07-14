@@ -21,7 +21,13 @@
 
 __all__ = ["MockSerial"]
 
+import time
+
+# The reply that is repeated over and over.
 MOCK_REPLY = "C01=0022.1443,C02=0023.0320\r\n"
+
+# The amount of timne to sleep [sec] to mimick a timeout.
+TIMEOUT_SLEEP = 30.0
 
 
 class MockSerial:
@@ -32,17 +38,22 @@ class MockSerial:
     Parameters
     ----------
     read_generates_error : `bool`
-        Does reading the divice generate an error or not.
+        Does reading the divice generate a RuntimeError or not.
     encode_reply : `bool`
         Encode the reply or not.
+    generate_timeout : `bool`
+        Does reading the divice take very long or not.
     """
 
-    def __init__(self, read_generates_error: bool, encode_reply: bool) -> None:
+    def __init__(
+        self, read_generates_error: bool, encode_reply: bool, generate_timeout: bool
+    ) -> None:
         self.is_open = False
         self.baudrate = 0
         self.char_count = 0
         self.read_generates_error = read_generates_error
         self.encode_reply = encode_reply
+        self.generate_timeout = generate_timeout
 
     @property
     def closed(self) -> bool:
@@ -58,6 +69,8 @@ class MockSerial:
     def read(self, size: int = 1) -> bytes | str:
         if self.read_generates_error:
             raise RuntimeError("Raising error on purpose.")
+        if self.generate_timeout:
+            time.sleep(TIMEOUT_SLEEP)
         if self.char_count >= len(MOCK_REPLY):
             self.char_count = 0
         b: bytes | str = f"{MOCK_REPLY[self.char_count]}"

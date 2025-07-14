@@ -72,6 +72,7 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         self._reply: typing.Dict[str, typing.List[typing.Union[str, float]]] = {}
         self.add_null_character_in_terminator = False
         self.read_generates_error = False
+        self.generate_timeout = False
 
     async def _callback(
         self, reply: typing.Dict[str, typing.List[typing.Union[str, float]]]
@@ -96,6 +97,6 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         try:
             await asyncio.wait_for(self.device.readline_event.wait(), timeout=timeout)
             self.log.debug("Confirmed that read event has been set.")
-            assert self.read_generates_error is False
+            assert self.read_generates_error is False and self.generate_timeout is False
         except TimeoutError:
-            assert self.read_generates_error is True
+            assert self.read_generates_error is True or self.generate_timeout is True
