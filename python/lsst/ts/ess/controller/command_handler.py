@@ -24,6 +24,7 @@ __all__ = ["CommandHandler", "run_ess_controller"]
 import asyncio
 import logging
 import typing
+import argparse 
 
 from lsst.ts.ess import common
 
@@ -63,6 +64,13 @@ class CommandHandler(common.AbstractCommandHandler):
     """
 
     valid_simulation_modes = (0, 1)
+
+    def __init__(self, callback, simulation_mode=0, use_csv=False, csv_path=None, log=None):
+        self.callback = callback
+        self.simulation_mode = simulation_mode
+        self.use_csv = use_csv
+        self.csv_path = csv_path
+        self.log = log
 
     def create_device(
         self,
@@ -143,6 +151,21 @@ class CommandHandler(common.AbstractCommandHandler):
                 log=self.log,
             )
             return device
+        elif device_configuration[common.Key.DEVICE_TYPE] == "CSV":
+            csv_path = device_configuration.get("csv_path", "sensor_data.csv")
+            self.log.debug(
+                f"Creating CSVDevice with name {device_configuration[common.Key.NAME]} and path {csv_path}"
+            )
+            from lsst.ts.ess.common.device.csv_device import CSVDevice
+
+            device = CSVDevice(
+                name=device_configuration[common.Key.NAME],
+                csv_path=csv_path,
+                sensor=sensor,
+                callback_func=self._callback,
+                log=self.log,
+            )
+            return device
         raise RuntimeError(
             f"Could not get a {device_configuration[common.Key.DEVICE_TYPE]!r} device."
             "Please check the configuration."
@@ -156,8 +179,11 @@ def run_ess_controller() -> None:
     The SocketServer automatically stops once the client exits and at that
     moment this script will exit as well.
     """
-    asyncio.run(_run_ess_controller_impl())
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--csv", help="Read sensor data from CSV file instead of live sensor")
+    args = parser.parse_args()
 
+    asyncio.run(_run_ess_controller_impl(csv_path=args.csv))
 
 async def _run_ess_controller_impl() -> None:
     """Async implementation of run_ess_controller."""
@@ -171,6 +197,10 @@ async def _run_ess_controller_impl() -> None:
     log.info("main method")
     host = "0.0.0.0"
     port = common.CONTROLLER_PORT
+    
+    use_csv = csv_path is not None
+    simulation_mode = 0  # live sensor mode by default
+
     log.info("Constructing the sensor server.")
     # Simulation mode 0 means "connect to the real sensors."
     # Set simulation_mode to 1 to enable simulation mode and connect to a mock
@@ -178,8 +208,14 @@ async def _run_ess_controller_impl() -> None:
     srv = common.SocketServer(
         name="EssSensorsServer", host=host, port=port, simulation_mode=0, log=log
     )
-    command_handler = CommandHandler(callback=srv.write_json, simulation_mode=0)
-    srv.set_command_handler(command_handler)
+    command_handler = CommandHandler(
+        callback=srv.write_json,
+        simulation_mode=simulation_mode,
+        use_csv=use_csv,
+        csv_path=csv_path,
+        log=log,
+    )
+     srv.set_command_handler(command_handler)
     log.info("Starting the sensor server.")
     await srv.start_task
     await srv.done_task
