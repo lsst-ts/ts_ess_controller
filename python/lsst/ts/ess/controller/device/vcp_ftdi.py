@@ -22,6 +22,7 @@
 __all__ = ["VcpFtdi"]
 
 import asyncio
+import datetime
 import logging
 import re
 from typing import Callable
@@ -109,6 +110,9 @@ class VcpFtdi(common.device.BaseDevice):
         self.enhanced_terminator_regex = re.compile(enhanced_terminator)
         self.terminator_regex = re.compile("^.*" + enhanced_terminator + "$")
 
+        # Keep track of the previous time a readline was performed.
+        self.previous_readline_time: datetime.datetime | None = None
+
     async def basic_open(self) -> None:
         """Open the Sensor Device.
 
@@ -158,6 +162,16 @@ class VcpFtdi(common.device.BaseDevice):
             self.log.exception(f"Timeout reading {self.name}. So far {line=!r}.")
             raise
         line = self.enhanced_terminator_regex.sub(self.sensor.terminator, line)
+
+        now = datetime.datetime.now(datetime.UTC)
+        if self.previous_readline_time is not None:
+            interval = (now - self.previous_readline_time).total_seconds()
+            if interval > self.read_timeout:
+                self.log.warning(
+                    f"Previous {self.name} readline was {interval} seconds ago."
+                )
+        self.previous_readline_time = now
+
         self.log.debug(f"Returning {self.name} {line=}")
         return line
 
