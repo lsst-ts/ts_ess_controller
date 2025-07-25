@@ -8,6 +8,15 @@ Version History
 
 .. towncrier release notes start
 
+v0.9.1 (2025-07-25)
+===================
+
+Performance Enhancement
+-----------------------
+
+- Improved the handling of incoming telemetry. (`OSW-620 <https://rubinobs.atlassian.net//browse/OSW-620>`_)
+
+
 v0.9.0 (2025-06-19)
 ===================
 
