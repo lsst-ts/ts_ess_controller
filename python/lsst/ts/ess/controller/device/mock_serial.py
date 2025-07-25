@@ -38,11 +38,11 @@ class MockSerial:
     Parameters
     ----------
     read_generates_error : `bool`
-        Does reading the divice generate a RuntimeError or not.
+        Does reading the device generate a RuntimeError or not.
     encode_reply : `bool`
         Encode the reply or not.
     generate_timeout : `bool`
-        Does reading the divice take very long or not.
+        Does reading the device take very long or not.
     """
 
     def __init__(

@@ -60,7 +60,7 @@ class RpiSerialHat(common.device.BaseDevice):
     use_mock_device : `bool`
         Use the mock device or not. Defaults to False.
     read_generates_error : `bool`
-        Does reading the divice generate an error or not. Defaults to False.
+        Does reading the device generate an error or not. Defaults to False.
     generate_timeout : `bool`
         Expect a timeout.
     """
