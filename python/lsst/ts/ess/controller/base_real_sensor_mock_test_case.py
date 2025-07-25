@@ -72,58 +72,13 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         self._reply: typing.Dict[str, typing.List[typing.Union[str, float]]] = {}
         self.add_null_character_in_terminator = False
         self.read_generates_error = False
+        self.generate_timeout = False
 
     async def _callback(
         self, reply: typing.Dict[str, typing.List[typing.Union[str, float]]]
     ) -> None:
         self._reply = reply
         self._sensor_output = None
-
-    def read(self, length: int) -> str | bytes:
-        """Mock reading sensor output.
-
-        Parameters
-        ----------
-        length : `int`
-            The number of characters to read. In the sensor code this is always
-            set to 1 and this is asserted in this method.
-
-        Returns
-        -------
-        `str` | `bytes`
-            A plain text or byte encoded string representing the output of the
-            sensor.
-        """
-        if self.read_generates_error:
-            raise RuntimeError("Raising RuntimeError on purpose.")
-
-        assert length == 1
-
-        terminator = self.sensor.terminator
-        if self.add_null_character_in_terminator:
-            terminator = "\x00".join(self.sensor.terminator)
-
-        if self._sensor_output is None:
-            formatter = common.device.MockTemperatureFormatter()
-            self._sensor_output = (
-                self.sensor.delimiter.join(
-                    formatter.format_output(num_channels=self.num_channels)
-                )
-                + terminator
-            )
-
-        assert self._sensor_output is not None
-        ch = self._sensor_output[self._num_read_calls]
-        self._num_read_calls += 1
-
-        # Reset the number of read calls to mock new sensor output.
-        if self._num_read_calls >= len(self._sensor_output):
-            self._num_read_calls = 0
-
-        if self.return_as_plain_text:
-            return ch
-        else:
-            return ch.encode(self.sensor.charset)
 
     async def wait_for_read_event(self, timeout: float = STD_TIMEOUT) -> None:
         """Clear the read event and then wait for it to be set again.
@@ -142,6 +97,6 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         try:
             await asyncio.wait_for(self.device.readline_event.wait(), timeout=timeout)
             self.log.debug("Confirmed that read event has been set.")
-            assert self.read_generates_error is False
+            assert self.read_generates_error is False and self.generate_timeout is False
         except TimeoutError:
-            assert self.read_generates_error is True
+            assert self.read_generates_error is True or self.generate_timeout is True

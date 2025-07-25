@@ -22,6 +22,7 @@
 __all__ = ["VcpFtdi"]
 
 import asyncio
+import datetime
 import logging
 import re
 from typing import Callable
@@ -29,8 +30,13 @@ from typing import Callable
 from lsst.ts.ess import common
 from pylibftdi import Device
 
+from .mock_serial import MockSerial
+
 # Reconnect sleep time [seconds].
 RECONNECT_SLEEP = 60.0
+
+# Read timeout [sec].
+READ_TIMEOUT = 10.0
 
 
 class VcpFtdi(common.device.BaseDevice):
@@ -51,7 +57,16 @@ class VcpFtdi(common.device.BaseDevice):
         Callback function to receive the telemetry.
     log : `logging.Logger`
         The logger to create a child logger for.
+    use_mock_device : `bool`
+        Use the mock device or not. Defaults to False.
+    read_generates_error : `bool`
+        Does reading the divice generate an error or not. Defaults to False.
+    generate_timeout : `bool`
+        Expect a timeout.
     """
+
+    reconnect_sleep = RECONNECT_SLEEP
+    read_timeout = READ_TIMEOUT
 
     def __init__(
         self,
@@ -61,6 +76,9 @@ class VcpFtdi(common.device.BaseDevice):
         baud_rate: int,
         callback_func: Callable,
         log: logging.Logger,
+        use_mock_device: bool = False,
+        read_generates_error: bool = False,
+        generate_timeout: bool = False,
     ) -> None:
         super().__init__(
             name=name,
@@ -70,13 +88,20 @@ class VcpFtdi(common.device.BaseDevice):
             callback_func=callback_func,
             log=log,
         )
-        self.vcp: Device = Device(
-            self.device_id,
-            mode="t",
-            encoding="ASCII",
-            lazy_open=True,
-            auto_detach=False,
-        )
+        if use_mock_device:
+            self.vcp = MockSerial(
+                read_generates_error=read_generates_error,
+                encode_reply=False,
+                generate_timeout=generate_timeout,
+            )
+        else:
+            self.vcp = Device(
+                self.device_id,
+                mode="t",
+                encoding="ASCII",
+                lazy_open=True,
+                auto_detach=False,
+            )
 
         # Build a regular expression to use when checking if the sensor has
         # sent the end of a telemetry string. Occasionally an additional
@@ -84,6 +109,9 @@ class VcpFtdi(common.device.BaseDevice):
         enhanced_terminator = ".?".join(self.sensor.terminator)
         self.enhanced_terminator_regex = re.compile(enhanced_terminator)
         self.terminator_regex = re.compile("^.*" + enhanced_terminator + "$")
+
+        # Keep track of the previous time a readline was performed.
+        self.previous_readline_time: datetime.datetime | None = None
 
     async def basic_open(self) -> None:
         """Open the Sensor Device.
@@ -101,10 +129,10 @@ class VcpFtdi(common.device.BaseDevice):
         # next line *needs* to be called after calling open().
         self.vcp.baudrate = self.baud_rate
         if not self.vcp.closed:
-            self.log.debug("FTDI device open.")
+            self.log.info(f"FTDI device {self.device_id} open.")
             self.vcp.flush()
         else:
-            self.log.error("Failed to open the FTDI device.")
+            self.log.error(f"FTDI device {self.device_id} open failed.")
             raise IOError(f"{self.name}: Failed to open the FTDI device.")
 
     async def readline(self) -> str:
@@ -120,11 +148,30 @@ class VcpFtdi(common.device.BaseDevice):
         line: str = ""
         # get running loop to run blocking tasks
         loop = asyncio.get_running_loop()
-        while not self.terminator_regex.match(line):
-            ch = await loop.run_in_executor(None, self.vcp.read, 1)
-            self.log.debug(f"Read {ch=!r}.")
-            line += ch
+
+        try:
+            async with asyncio.timeout(self.read_timeout):
+                # All sensor telemetry lines end either in \r\n or in \n\r so
+                # this next while condition should be safe.
+                while not ("\r" in line and "\n" in line):
+                    ch = await loop.run_in_executor(None, self.vcp.read, 1)
+                    self.log.debug(f"Read {self.name} {ch=!r}.")
+                    assert isinstance(ch, str)
+                    line += ch
+        except TimeoutError:
+            self.log.exception(f"Timeout reading {self.name}. So far {line=!r}.")
+            raise
         line = self.enhanced_terminator_regex.sub(self.sensor.terminator, line)
+
+        now = datetime.datetime.now(datetime.UTC)
+        if self.previous_readline_time is not None:
+            interval = (now - self.previous_readline_time).total_seconds()
+            if interval > self.read_timeout:
+                self.log.warning(
+                    f"Previous {self.name} readline was {interval} seconds ago."
+                )
+        self.previous_readline_time = now
+
         self.log.debug(f"Returning {self.name} {line=}")
         return line
 
@@ -139,12 +186,14 @@ class VcpFtdi(common.device.BaseDevice):
         exception : `BaseException`
             The exception to handle.
         """
-        self.log.exception(
-            f"Exception reading device {self.name}. "
-            f"Trying to reconnect after {RECONNECT_SLEEP} seconds."
-        )
-        self.is_open = False
-        await asyncio.sleep(RECONNECT_SLEEP)
+        if not isinstance(exception, asyncio.CancelledError):
+            self.log.exception(
+                f"Exception reading device {self.name}. "
+                f"Trying to reconnect after {self.reconnect_sleep} seconds."
+            )
+            await self.close()
+            await asyncio.sleep(self.reconnect_sleep)
+            raise
 
     async def basic_close(self) -> None:
         """Close the Sensor Device.
@@ -155,7 +204,7 @@ class VcpFtdi(common.device.BaseDevice):
         """
         self.vcp.close()
         if self.vcp.closed:
-            self.log.debug("FTDI device closed.")
+            self.log.info(f"FTDI device {self.device_id} closed.")
         else:
-            self.log.debug("FTDI device failed to close.")
+            self.log.info(f"FTDI device {self.device_id} close failed.")
             raise IOError(f"VcpFtdi:{self.name}: Failed to close the FTDI device.")
