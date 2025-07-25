@@ -19,14 +19,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from unittest import mock
-
 from lsst.ts.ess import common, controller
 
 
 class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
-    @mock.patch("lsst.ts.ess.controller.device.rpi_serial_hat.Serial", new=mock.Mock)
-    @mock.patch("lsst.ts.ess.controller.device.rpi_serial_hat.RECONNECT_SLEEP", 1.0)
     async def verify_rpi_serial_hat(self) -> None:
         self.return_as_plain_text = False
         name = "MockedRpiSerialHat"
@@ -39,38 +35,41 @@ class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
             baud_rate=19200,
             callback_func=self._callback,
             log=self.log,
+            use_mock_device=True,
+            read_generates_error=self.read_generates_error,
+            generate_timeout=self.generate_timeout,
         )
-        # Set this first so no mock related exception is generated when the
-        # device gets opened.
-        type(self.device.ser).read = self.read
+        self.device.read_timeout = 1.0
+        self.device.reconnect_sleep = 1.0
 
-        type(self.device.ser).open = mock.MagicMock()
-        type(self.device.ser).close = mock.MagicMock()
-
-        type(self.device.ser).is_open = mock.PropertyMock(return_value=False)
         await self.device.open()
 
         await self.wait_for_read_event()
         assert self._reply is not None
-        reply_to_check = self._reply[common.Key.TELEMETRY]
-        self.mtt.check_temperature_reply(
-            reply=reply_to_check,
-            name=name,
-            num_channels=self.num_channels,
-            in_error_state=self.read_generates_error,
-        )
+        if self.generate_timeout or self.read_generates_error:
+            assert self._reply == {}
+        else:
+            reply_to_check = self._reply[common.Key.TELEMETRY]
+            self.mtt.check_temperature_reply(
+                reply=reply_to_check,
+                name=name,
+                num_channels=self.num_channels,
+                in_error_state=self.read_generates_error,
+            )
 
         await self.wait_for_read_event()
         assert self._reply is not None
-        reply_to_check = self._reply[common.Key.TELEMETRY]
-        self.mtt.check_temperature_reply(
-            reply=reply_to_check,
-            name=name,
-            num_channels=self.num_channels,
-            in_error_state=self.read_generates_error,
-        )
+        if self.generate_timeout or self.read_generates_error:
+            assert self._reply == {}
+        else:
+            reply_to_check = self._reply[common.Key.TELEMETRY]
+            self.mtt.check_temperature_reply(
+                reply=reply_to_check,
+                name=name,
+                num_channels=self.num_channels,
+                in_error_state=self.read_generates_error,
+            )
 
-        type(self.device.ser).is_open = mock.PropertyMock(return_value=True)
         await self.device.close()
 
     async def test_rpi_serial_hat_with_normal_terminator(self) -> None:
@@ -83,4 +82,8 @@ class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
 
     async def test_rpi_serial_hat_with_read_error(self) -> None:
         self.read_generates_error = True
+        await self.verify_rpi_serial_hat()
+
+    async def test_rpi_serial_hat_with_timeout(self) -> None:
+        self.generate_timeout = True
         await self.verify_rpi_serial_hat()
