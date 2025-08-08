@@ -27,3 +27,12 @@ asyncio_mode = "auto"
 
 [project.optional-dependencies]
 dev = ["documenteer[pipelines]"]
+
+[tool.towncrier]
+package = "lsst.ts.ess.controller"
+directory = "changes"
+filename = "CHANGES.rst"
+title_format = "Release {version} ({project_date})"
+issue_format = " #{issue}"
+underlines = ["-", "^", "~"]
+
