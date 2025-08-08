@@ -19,7 +19,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .mock_serial import *
-from .rpi_serial_hat import *
-from .vcp_ftdi import *
-from .csv import *
+from .mock_serial import MockSerial
+from .rpi_serial_hat import RpiSerialHat
+from .vcp_ftdi import VcpFtdi
+from .csv import CSVDevice
+
+__all__ = [
+    "MockSerial",
+    "RpiSerialHat",
+    "VcpFtdi",
+    "CSVDevice",
+]

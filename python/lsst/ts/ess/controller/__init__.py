@@ -19,12 +19,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-try:
-    from .version import __version__
-except ImportError:
-    __version__ = "?"
-
-# Import sub modules
 from . import device
-from .base_real_sensor_mock_test_case import *
-from .command_handler import *
+
+from .base_real_sensor_mock_test_case import BaseRealSensorMockTestCase
+from .command_handler import CommandHandler, run_ess_controller
+
+__all__ = [
+    "device",
+    "BaseRealSensorMockTestCase",
+    "CommandHandler",
+    "run_ess_controller",
+]
