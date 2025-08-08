@@ -23,6 +23,7 @@ __all__ = ["CommandHandler", "run_ess_controller"]
 
 import logging
 import typing
+import asyncio
 
 from lsst.ts.ess import common
 from .device import RpiSerialHat, VcpFtdi
