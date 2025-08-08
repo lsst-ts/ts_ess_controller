@@ -29,7 +29,7 @@ from lsst.ts.ess.controller.base_real_sensor_mock_test_case import BaseRealSenso
 
 
 class CsvDeviceTestCase(BaseRealSensorMockTestCase):
-    async def test_csv_device_reads_expected_data(self):
+    async def test_csv_device_reads_expected_data(self) -> None:
         # Setup temporary CSV file with test data
         with tempfile.NamedTemporaryFile(mode="w+", delete=False, newline="") as temp_csv:
             writer = csv.DictWriter(temp_csv, fieldnames=["pm1.0", "pm2.5", "pm4.0", "pm10"])
