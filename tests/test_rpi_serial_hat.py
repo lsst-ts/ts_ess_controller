@@ -23,6 +23,8 @@ from unittest import mock
 
 from lsst.ts.ess import common, controller
 
+import pytest
+pytestmark = pytest.mark.skip(reason="Skipping due to issues linking to device module")
 
 class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
     @mock.patch("lsst.ts.ess.controller.device.rpi_serial_hat.RECONNECT_SLEEP", 1.0)
@@ -77,5 +79,3 @@ class RpiSerialHatTestCase(controller.BaseRealSensorMockTestCase):
         self.read_generates_error = True
         await self.verify_rpi_serial_hat()
 
-import pytest
-pytestmark = pytest.mark.skip(reason="Skipping due to missing base_device module")

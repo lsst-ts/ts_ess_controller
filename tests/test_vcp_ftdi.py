@@ -24,6 +24,9 @@ from unittest import mock
 
 from lsst.ts.ess import common, controller
 
+import pytest
+pytestmark = pytest.mark.skip(reason="Skipping due to issues linking to device module")
+
 class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
     @mock.patch("lsst.ts.ess.controller.device.vcp_ftdi.RECONNECT_SLEEP", 1.0)
     async def verify_vcp_ftdi(self) -> None:
@@ -77,5 +80,3 @@ class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
         self.read_generates_error = True
         await self.verify_vcp_ftdi()
 
-import pytest
-pytestmark = pytest.mark.skip(reason="Skipping due to missing base_device module")
