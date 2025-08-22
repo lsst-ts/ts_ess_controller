@@ -19,8 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import pytest
-pytestmark = pytest.mark.skip(reason="Skipping due to device linking issues")
 
 from unittest import mock
 
@@ -78,3 +76,6 @@ class VcpFtdiTestCase(controller.BaseRealSensorMockTestCase):
     async def test_vcp_ftdi_with_read_error(self) -> None:
         self.read_generates_error = True
         await self.verify_vcp_ftdi()
+
+import pytest
+pytestmark = pytest.mark.skip(reason="Skipping due to missing base_device module")

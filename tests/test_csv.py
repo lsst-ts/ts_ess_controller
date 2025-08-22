@@ -19,8 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import pytest
-pytestmark = pytest.mark.skip(reason="Skipping due to issues linking to device module")
 
 import os
 import tempfile
@@ -31,8 +29,6 @@ from lsst.ts.ess.controller.device.csv import CSVDevice
 from lsst.ts.ess.common.sensor.sps30 import Sps30Sensor
 from lsst.ts.ess.controller.base_real_sensor_mock_test_case import BaseRealSensorMockTestCase
 
-import pytest
-pytestmark = pytest.mark.skip(reason="Skipping due to device linking issues")
 
 class CsvDeviceTestCase(BaseRealSensorMockTestCase):
     async def test_csv_device_reads_expected_data(self) -> None:
@@ -71,3 +67,6 @@ class CsvDeviceTestCase(BaseRealSensorMockTestCase):
         await self.device.close()
         os.remove(temp_csv_path)
 
+
+import pytest
+pytestmark = pytest.mark.skip(reason="Skipping due to missing base_device module")

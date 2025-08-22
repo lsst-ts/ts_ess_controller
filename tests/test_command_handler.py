@@ -26,8 +26,6 @@ import unittest
 from lsst.ts.ess import common, controller
 from lsst.ts.ess.common.test_utils import MockTestTools
 
-import pytest
-pytestmark = pytest.mark.skip(reason="Skipping due to device linking issues")
 
 class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
@@ -238,3 +236,6 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
 
         await self.command_handler.stop_sending_telemetry()
         assert self.command_handler._started is False
+
+import pytest
+pytestmark = pytest.mark.skip(reason="Skipping due to missing base_device module")
