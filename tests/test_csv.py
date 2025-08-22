@@ -22,11 +22,11 @@
 import os
 import tempfile
 import csv
+from typing import Any
 
 from lsst.ts.ess.controller.device.csv import CSVDevice
 from lsst.ts.ess.common.sensor.sps30 import Sps30Sensor
 from lsst.ts.ess.controller.base_real_sensor_mock_test_case import BaseRealSensorMockTestCase
-
 
 class CsvDeviceTestCase(BaseRealSensorMockTestCase):
     async def test_csv_device_reads_expected_data(self) -> None:
@@ -48,11 +48,12 @@ class CsvDeviceTestCase(BaseRealSensorMockTestCase):
             log=self.log,
         )
 
-        # Read first line
         await self.device.open()
+
+        # Read first line
         await self.wait_for_read_event()
         assert self._reply is not None
-        telemetry = self._reply["telemetry"]
+        telemetry: dict[str, Any] = self._reply["telemetry"]
         assert telemetry["pm1.0"] == 0.1
         assert telemetry["pm2.5"] == 0.2
 
@@ -63,3 +64,4 @@ class CsvDeviceTestCase(BaseRealSensorMockTestCase):
 
         await self.device.close()
         os.remove(temp_csv_path)
+

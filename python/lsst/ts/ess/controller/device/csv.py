@@ -1,7 +1,6 @@
 import csv
 from typing import Any
-from .base_device import BaseDevice
-
+from lsst.ts.ess.common.device.base_device import BaseDevice
 
 class CSVDevice(BaseDevice):
     def __init__(
