@@ -20,7 +20,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import pytest
-pytestmark = pytest.mark.skip(reason="Skipping due to issues linking to device module")
+pytestmark = pytest.mark.skip(reason="Skipping due to device linking issues")
 
 from unittest import mock
 
