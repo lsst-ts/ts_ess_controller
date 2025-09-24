@@ -8,6 +8,15 @@ Version History
 
 .. towncrier release notes start
 
+v0.9.2 (2025-09-24)
+===================
+
+Bug Fixes
+---------
+
+- Fixed hanging unit test. (`OSW-1120 <https://rubinobs.atlassian.net//browse/OSW-1120>`_)
+
+
 v0.9.1 (2025-07-25)
 ===================
 
