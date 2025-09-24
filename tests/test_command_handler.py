@@ -85,13 +85,19 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             device_config_03.name: device_config_03,
             device_config_04.name: device_config_04,
         }
-        self.responses: typing.List[typing.List[typing.Union[str, float]]] = []
+        self.responses: dict[str, typing.Any] = {}
 
-    async def callback(self, response: typing.List[typing.Union[str, float]]) -> None:
-        self.responses.append(response)
+    async def callback(self, response: dict[str, typing.Any]) -> None:
+        if common.Key.RESPONSE in response:
+            self.responses[common.Key.RESPONSE] = response
+        elif common.Key.TELEMETRY in response:
+            telemetry = response[common.Key.TELEMETRY]
+            name = telemetry[common.Key.NAME]
+            self.responses[name] = telemetry
 
     def assert_response(self, response_code: str) -> None:
-        response = self.responses.pop()
+        response = self.responses[common.Key.RESPONSE]
+        del self.responses[common.Key.RESPONSE]
         assert response[common.Key.RESPONSE] == response_code
 
     async def test_configure(self) -> None:
@@ -211,28 +217,27 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
         while len(self.responses) < len(self.device_configs):
             await asyncio.sleep(0.5)
 
+        await self.command_handler.stop_sending_telemetry()
+        assert self.command_handler._started is False
+
         devices_names_checked: typing.Set[str] = set()
-        while len(devices_names_checked) != len(self.device_configs):
-            reply = self.responses.pop()
-            name = reply[common.Key.TELEMETRY][common.Key.NAME]
+        for response in self.responses:
+            reply = self.responses[response]
+            name = reply[common.Key.NAME]
             devices_names_checked.add(name)
             device_config = self.device_configs[name]
-            reply_to_check = reply[common.Key.TELEMETRY]
             if device_config.sens_type == common.SensorType.TEMPERATURE:
                 num_channels = device_config.num_channels
                 mtt.check_temperature_reply(
-                    reply=reply_to_check, name=name, num_channels=num_channels
+                    reply=reply, name=name, num_channels=num_channels
                 )
             elif device_config.sens_type == common.SensorType.HX85A:
-                mtt.check_hx85a_reply(reply=reply_to_check, name=name)
+                mtt.check_hx85a_reply(reply=reply, name=name)
             elif device_config.sens_type == common.SensorType.HX85BA:
-                mtt.check_hx85ba_reply(reply=reply_to_check, name=name)
+                mtt.check_hx85ba_reply(reply=reply, name=name)
             elif device_config.sens_type == common.SensorType.CSAT3B:
-                mtt.check_csat3b_reply(reply=reply_to_check, name=name)
+                mtt.check_csat3b_reply(reply=reply, name=name)
             else:
                 raise ValueError(
                     f"Unsupported sensor type {device_config.sens_type} encountered."
                 )
-
-        await self.command_handler.stop_sending_telemetry()
-        assert self.command_handler._started is False
