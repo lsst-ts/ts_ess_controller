@@ -21,6 +21,7 @@
 
 __all__ = ["CommandHandler", "run_ess_controller"]
 
+import argparse
 import asyncio
 import logging
 import typing
@@ -104,9 +105,10 @@ class CommandHandler(common.AbstractCommandHandler):
             self.log.debug(
                 f"Creating MockDevice with name {device_configuration[common.Key.NAME]} and sensor {sensor}"
             )
+            device_id = device_configuration.get(common.Key.FTDI_ID, common.Key.SERIAL_PORT)
             device: common.device.BaseDevice = common.device.MockDevice(
                 name=device_configuration[common.Key.NAME],
-                device_id=device_configuration[common.Key.FTDI_ID],
+                device_id=device_id,
                 sensor=sensor,
                 callback_func=self._callback,
                 log=self.log,
@@ -166,16 +168,21 @@ async def _run_ess_controller_impl() -> None:
     )
     log = logging.getLogger()
 
+    parser = argparse.ArgumentParser("Run ESS Controller")
+    parser.add_argument("--simulate", default=False, action="store_true")
+
+    args = parser.parse_args()
+    simulate = 1 if hasattr(args, "simulate") else 0
+
     log.info("main method")
     host = "0.0.0.0"
     port = common.CONTROLLER_PORT
     log.info("Constructing the sensor server.")
-    # Simulation mode 0 means "connect to the real sensors."
-    # Set simulation_mode to 1 to enable simulation mode and connect to a mock
-    # sensor.
-    srv = common.SocketServer(name="EssSensorsServer", host=host, port=port, simulation_mode=0, log=log)
-    command_handler = CommandHandler(callback=srv.write_json, simulation_mode=0)
+
+    srv = common.SocketServer(name="EssSensorsServer", host=host, port=port, log=log)
+    command_handler = CommandHandler(callback=srv.write_json, simulation_mode=simulate)
     srv.set_command_handler(command_handler)
+
     log.info("Starting the sensor server.")
     await srv.start_task
     await srv.done_task
