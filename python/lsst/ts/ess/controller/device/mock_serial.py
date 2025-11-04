@@ -45,9 +45,7 @@ class MockSerial:
         Does reading the device take very long or not.
     """
 
-    def __init__(
-        self, read_generates_error: bool, encode_reply: bool, generate_timeout: bool
-    ) -> None:
+    def __init__(self, read_generates_error: bool, encode_reply: bool, generate_timeout: bool) -> None:
         self.is_open = False
         self.baudrate = 0
         self.char_count = 0

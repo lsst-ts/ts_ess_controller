@@ -99,9 +99,7 @@ class CommandHandler(common.AbstractCommandHandler):
         In all other cases, the architecture of the platform is
         irrelevant.
         """
-        sensor = common.sensor.create_sensor(
-            device_configuration=device_configuration, log=self.log
-        )
+        sensor = common.sensor.create_sensor(device_configuration=device_configuration, log=self.log)
         if self.simulation_mode == 1:
             self.log.debug(
                 f"Creating MockDevice with name {device_configuration[common.Key.NAME]} and sensor {sensor}"
@@ -175,9 +173,7 @@ async def _run_ess_controller_impl() -> None:
     # Simulation mode 0 means "connect to the real sensors."
     # Set simulation_mode to 1 to enable simulation mode and connect to a mock
     # sensor.
-    srv = common.SocketServer(
-        name="EssSensorsServer", host=host, port=port, simulation_mode=0, log=log
-    )
+    srv = common.SocketServer(name="EssSensorsServer", host=host, port=port, simulation_mode=0, log=log)
     command_handler = CommandHandler(callback=srv.write_json, simulation_mode=0)
     srv.set_command_handler(command_handler)
     log.info("Starting the sensor server.")

@@ -58,9 +58,7 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.log = logging.getLogger(type(self).__name__)
         self.num_channels = 1
-        self.sensor = common.sensor.TemperatureSensor(
-            num_channels=self.num_channels, log=self.log
-        )
+        self.sensor = common.sensor.TemperatureSensor(num_channels=self.num_channels, log=self.log)
         self.return_as_plain_text = True
         self.mtt = MockTestTools()
 
@@ -74,9 +72,7 @@ class BaseRealSensorMockTestCase(unittest.IsolatedAsyncioTestCase):
         self.read_generates_error = False
         self.generate_timeout = False
 
-    async def _callback(
-        self, reply: typing.Dict[str, typing.List[typing.Union[str, float]]]
-    ) -> None:
+    async def _callback(self, reply: typing.Dict[str, typing.List[typing.Union[str, float]]]) -> None:
         self._reply = reply
         self._sensor_output = None
 
