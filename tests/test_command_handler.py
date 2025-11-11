@@ -29,9 +29,7 @@ from lsst.ts.ess.common.test_utils import MockTestTools
 
 class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
-        self.command_handler = controller.CommandHandler(
-            callback=self.callback, simulation_mode=1
-        )
+        self.command_handler = controller.CommandHandler(callback=self.callback, simulation_mode=1)
         assert self.command_handler.configuration is None
 
         # Despite simulation_mode being set to 1, full fledged configuration is
@@ -228,9 +226,7 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             device_config = self.device_configs[name]
             if device_config.sens_type == common.SensorType.TEMPERATURE:
                 num_channels = device_config.num_channels
-                mtt.check_temperature_reply(
-                    reply=reply, name=name, num_channels=num_channels
-                )
+                mtt.check_temperature_reply(reply=reply, name=name, num_channels=num_channels)
             elif device_config.sens_type == common.SensorType.HX85A:
                 mtt.check_hx85a_reply(reply=reply, name=name)
             elif device_config.sens_type == common.SensorType.HX85BA:
@@ -238,6 +234,4 @@ class CommandHandlerTestCase(unittest.IsolatedAsyncioTestCase):
             elif device_config.sens_type == common.SensorType.CSAT3B:
                 mtt.check_csat3b_reply(reply=reply, name=name)
             else:
-                raise ValueError(
-                    f"Unsupported sensor type {device_config.sens_type} encountered."
-                )
+                raise ValueError(f"Unsupported sensor type {device_config.sens_type} encountered.")

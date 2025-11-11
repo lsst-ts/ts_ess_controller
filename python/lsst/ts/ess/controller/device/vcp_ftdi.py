@@ -167,9 +167,7 @@ class VcpFtdi(common.device.BaseDevice):
         if self.previous_readline_time is not None:
             interval = (now - self.previous_readline_time).total_seconds()
             if interval > self.read_timeout:
-                self.log.warning(
-                    f"Previous {self.name} readline was {interval} seconds ago."
-                )
+                self.log.warning(f"Previous {self.name} readline was {interval} seconds ago.")
         self.previous_readline_time = now
 
         self.log.debug(f"Returning {self.name} {line=}")
