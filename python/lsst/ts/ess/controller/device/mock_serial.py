@@ -24,7 +24,7 @@ __all__ = ["MockSerial"]
 import time
 
 # The reply that is repeated over and over.
-MOCK_REPLY = "C01=0022.1443,C02=0023.0320\r\n"
+MOCK_REPLY = "C01=-006.1443,C02=-005.0320\r\n"
 
 # The amount of timne to sleep [sec] to mimick a timeout.
 TIMEOUT_SLEEP = 30.0
