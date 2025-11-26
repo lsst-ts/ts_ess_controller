@@ -28,6 +28,7 @@ import typing
 
 from lsst.ts.ess import common
 
+from . import __version__
 from .device import RpiSerialHat, VcpFtdi
 
 
@@ -172,17 +173,18 @@ async def _run_ess_controller_impl() -> None:
     parser.add_argument("--simulate", default=False, action="store_true")
 
     args = parser.parse_args()
-    simulate = 1 if hasattr(args, "simulate") else 0
+    simulate = 1 if args.simulate else 0
 
     log.info("main method")
     host = "0.0.0.0"
     port = common.CONTROLLER_PORT
-    log.info("Constructing the sensor server.")
 
     srv = common.SocketServer(name="EssSensorsServer", host=host, port=port, log=log)
     command_handler = CommandHandler(callback=srv.write_json, simulation_mode=simulate)
     srv.set_command_handler(command_handler)
 
-    log.info("Starting the sensor server.")
+    sim_mode_str = " in normal mode." if simulate == 0 else " in simulation mode."
+    log.info(f"Starting ESS Controller listening on port {srv.port}{sim_mode_str}")
+    log.info(f"ts_ess_controller {__version__}, ts_ess_common {common.__version__}")
     await srv.start_task
     await srv.done_task
