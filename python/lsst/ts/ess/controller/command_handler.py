@@ -29,7 +29,7 @@ import typing
 from lsst.ts.ess import common
 
 from . import __version__
-from .device import RpiSerialHat, VcpFtdi
+from .device import RpiSerialHat, SensirionSps30, VcpFtdi
 
 
 class CommandHandler(common.AbstractCommandHandler):
@@ -104,7 +104,7 @@ class CommandHandler(common.AbstractCommandHandler):
         sensor = common.sensor.create_sensor(device_configuration=device_configuration, log=self.log)
         if self.simulation_mode == 1:
             self.log.debug(
-                f"Creating MockDevice with name {device_configuration[common.Key.NAME]} and sensor {sensor}"
+                f"Creating MockDevice with name {device_configuration[common.Key.NAME]} and sensor {sensor}."
             )
             device_id = device_configuration.get(common.Key.FTDI_ID, common.Key.SERIAL_PORT)
             device: common.device.BaseDevice = common.device.MockDevice(
@@ -119,7 +119,7 @@ class CommandHandler(common.AbstractCommandHandler):
         elif device_configuration[common.Key.DEVICE_TYPE] == common.DeviceType.FTDI:
             self.log.debug(
                 f"Creating VcpFtdi device with name {device_configuration[common.Key.NAME]} "
-                f"and sensor {sensor}"
+                f"and sensor {sensor}."
             )
             device = VcpFtdi(
                 name=device_configuration[common.Key.NAME],
@@ -133,7 +133,7 @@ class CommandHandler(common.AbstractCommandHandler):
         elif device_configuration[common.Key.DEVICE_TYPE] == common.DeviceType.SERIAL:
             self.log.debug(
                 f"Creating RpiSerialHat device with name {device_configuration[common.Key.NAME]} "
-                f"and sensor {sensor}"
+                f"and sensor {sensor}."
             )
             device = RpiSerialHat(
                 name=device_configuration[common.Key.NAME],
@@ -144,6 +144,21 @@ class CommandHandler(common.AbstractCommandHandler):
                 log=self.log,
             )
             return device
+        elif device_configuration[common.Key.DEVICE_TYPE] == common.DeviceType.SENSIRION:
+            self.log.debug(
+                f"Creating Sensirion SPS30 device with name {device_configuration[common.Key.NAME]} "
+                f"and sensor {sensor}."
+            )
+            device = SensirionSps30(
+                name=device_configuration[common.Key.NAME],
+                device_id=device_configuration[common.Key.SERIAL_PORT],
+                sensor=sensor,
+                baud_rate=device_configuration[common.Key.BAUD_RATE],
+                callback_func=self._callback,
+                log=self.log,
+            )
+            return device
+
         raise RuntimeError(
             f"Could not get a {device_configuration[common.Key.DEVICE_TYPE]!r} device."
             "Please check the configuration."
@@ -151,7 +166,7 @@ class CommandHandler(common.AbstractCommandHandler):
 
 
 def run_ess_controller() -> None:
-    """Main method that, when executed in stand alone mode, starts the socket
+    """Main method that, when executed in stand-alone mode, starts the socket
     server.
 
     The SocketServer automatically stops once the client exits and at that

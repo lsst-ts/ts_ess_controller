@@ -27,8 +27,9 @@ import logging
 import re
 from typing import Callable
 
-from lsst.ts.ess import common
 from pylibftdi import Device
+
+from lsst.ts.ess import common
 
 from .mock_serial import MockSerial
 
