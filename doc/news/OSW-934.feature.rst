@@ -1,1 +1,0 @@
-Added support for the SPS30 particle sensor.
