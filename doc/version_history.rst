@@ -8,6 +8,21 @@ Version History
 
 .. towncrier release notes start
 
+v0.10.0 (2026-01-08)
+====================
+
+New Features
+------------
+
+- Added support for the SPS30 particle sensor. (`OSW-934 <https://rubinobs.atlassian.net//browse/OSW-934>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Formatted imports with ruff. (`OSW-1544 <https://rubinobs.atlassian.net//browse/OSW-1544>`_)
+
+
 v0.9.4 (2025-11-26)
 ===================
 
