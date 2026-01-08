@@ -19,6 +19,7 @@ test:
     - ts-utils
     - pylibftdi
     - aioserial
+    - sensirion-sps030
   source_files:
     - python
     - bin
@@ -46,3 +47,4 @@ requirements:
     - ts-ess-common
     - pylibftdi
     - aioserial
+    - sensirion-sps030

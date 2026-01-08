@@ -19,19 +19,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["RpiSerialHat"]
+__all__ = ["SensirionSps30"]
 
 import asyncio
 import datetime
 import logging
-import re
 from typing import Callable
 
-from serial import Serial, SerialException
+from sensirion_sps030 import Sensirion, SensirionReading
 
+from lsst.ts import utils
 from lsst.ts.ess import common
-
-from .mock_serial import MockSerial
 
 # Reconnect sleep time [seconds].
 RECONNECT_SLEEP = 60.0
@@ -40,8 +38,8 @@ RECONNECT_SLEEP = 60.0
 READ_TIMEOUT = 10.0
 
 
-class RpiSerialHat(common.device.BaseDevice):
-    """Raspberry Pi serial device connected to the hat.
+class SensirionSps30(common.device.BaseDevice):
+    """Sensirion SPS30 telemetry reader.
 
     Parameters
     ----------
@@ -50,24 +48,15 @@ class RpiSerialHat(common.device.BaseDevice):
     device_id : `str`
         The hardware device ID to connect to. This needs to be a physical ID
         (e.g. /dev/ttyUSB0).
-    sensor : `BaseSensor`
-        The sensor that produces the telemetry.
-    baud_rate : `int`
-        The baud rate of the sensor.
     callback_func : `Callable`
         Callback function to receive the telemetry.
     log : `logging.Logger`
         The logger to create a child logger for.
-    use_mock_device : `bool`
-        Use the mock device or not. Defaults to False.
-    read_generates_error : `bool`
-        Does reading the device generate an error or not. Defaults to False.
-    generate_timeout : `bool`
-        Expect a timeout.
     """
 
     reconnect_sleep = RECONNECT_SLEEP
     read_timeout = READ_TIMEOUT
+    particle_sizes_string = ",".join(str(size) for size in common.PARTICLE_SIZES)
 
     def __init__(
         self,
@@ -77,42 +66,16 @@ class RpiSerialHat(common.device.BaseDevice):
         baud_rate: int,
         callback_func: Callable,
         log: logging.Logger,
-        use_mock_device: bool = False,
-        read_generates_error: bool = False,
-        generate_timeout: bool = False,
     ) -> None:
         super().__init__(
             name=name,
             device_id=device_id,
             sensor=sensor,
-            baud_rate=baud_rate,
+            baud_rate=0,
             callback_func=callback_func,
             log=log,
         )
-        try:
-            if use_mock_device:
-                self.ser = MockSerial(
-                    read_generates_error=read_generates_error,
-                    encode_reply=True,
-                    generate_timeout=generate_timeout,
-                )
-            else:
-                self.ser = Serial(port=device_id, baudrate=self.baud_rate)
-        except SerialException as e:
-            self.log.exception(f"{e!r}")
-            # Unrecoverable error, so propagate error
-            raise
-
-        # Keep track of whether the first telemetry from the sensor have been
-        # read or not. If not then decoding errors will be ignored.
-        self.first_telemetry_read = False
-
-        # Build a regular expression to use when checking if the sensor has
-        # sent the end of a telemetry string. Occasionally an additional
-        # NULL character may show up so we need to check for that.
-        enhanced_terminator = ".?".join(self.sensor.terminator)
-        self.enhanced_terminator_regex = re.compile(enhanced_terminator)
-        self.terminator_regex = re.compile("^.*" + enhanced_terminator + "$")
+        self.sensirion: Sensirion | None = None
 
         # Keep track of the previous time a readline was performed.
         self.previous_readline_time: datetime.datetime | None = None
@@ -125,15 +88,8 @@ class RpiSerialHat(common.device.BaseDevice):
         ------
         IOError if serial communications port fails to open.
         """
-        if not self.ser.is_open:
-            try:
-                self.ser.open()
-                self.log.info(f"Serial port {self.device_id} opened.")
-            except SerialException as e:
-                self.log.exception(f"Serial port {self.device_id} open failed.")
-                raise e
-        else:
-            self.log.info(f"Serial port {self.device_id} already open.")
+        if self.sensirion is None:
+            self.sensirion = Sensirion(port=self.device_id)
 
     async def readline(self) -> str:
         """Read a line of telemetry from the device.
@@ -151,18 +107,10 @@ class RpiSerialHat(common.device.BaseDevice):
 
         try:
             async with asyncio.timeout(self.read_timeout):
-                # All sensor telemetry lines end either in \r\n or in \n\r so
-                # this next while condition should be safe.
-                while not ("\r" in line and "\n" in line):
-                    b_ch = await loop.run_in_executor(None, self.ser.read, 1)
-                    assert isinstance(b_ch, bytes)
-                    ch = b_ch.decode(encoding=self.sensor.charset)
-                    self.log.debug(f"Read {self.name} {ch=!r}.")
-                    line += ch
+                line = await loop.run_in_executor(None, self._blocking_readline)
         except TimeoutError:
             self.log.exception(f"Timeout reading {self.name}. So far {line=!r}.")
             raise
-        line = self.enhanced_terminator_regex.sub(self.sensor.terminator, line)
 
         now = datetime.datetime.now(datetime.UTC)
         if self.previous_readline_time is not None:
@@ -171,7 +119,23 @@ class RpiSerialHat(common.device.BaseDevice):
                 self.log.warning(f"Previous {self.name} readline was {interval} seconds ago.")
         self.previous_readline_time = now
 
-        self.log.debug(f"Returning {self.name} {line=}")
+        self.log.debug(f"Returning {self.name} {line=}.")
+        return line
+
+    def _blocking_readline(self) -> str:
+        assert self.sensirion is not None
+        measurement: SensirionReading = self.sensirion.read_measurement()
+        timestamp_utc = datetime.datetime.strptime(measurement.timestamp, "%Y-%m-%d %H:%M:%S").astimezone(
+            datetime.timezone.utc
+        )
+        current_tai = utils.tai_from_utc_unix(timestamp_utc.timestamp())
+        line = (
+            f"{common.sensor.Sps30Sensor.START_CHAR}Test 1,{current_tai},{self.particle_sizes_string},"
+            f"{0.0},{measurement.pm1},{measurement.pm25},{measurement.pm4},{measurement.pm10},"
+            f"{measurement.n05},{measurement.n1},{measurement.n25},{measurement.n4},{measurement.n10},"
+            f"{measurement.tps},Test 2,{common.sensor.Sps30Sensor.GOOD_STATUS}"
+            f"{common.sensor.Sps30Sensor.END_CHAR}"
+        )
         return line
 
     async def handle_readline_exception(self, exception: BaseException) -> None:
@@ -195,14 +159,7 @@ class RpiSerialHat(common.device.BaseDevice):
             raise
 
     async def basic_close(self) -> None:
-        """Close the Sensor Device.
-
-        Raises
-        ------
-        IOError if virtual communications port fails to close.
-        """
-        if self.ser.is_open:
-            self.ser.close()
-            self.log.info(f"Serial port {self.device_id} closed.")
-        else:
-            self.log.info(f"Serial port {self.device_id} already closed.")
+        """Close the Sensor Device."""
+        assert self.sensirion is not None
+        self.sensirion.stop_measurement()
+        self.sensirion = None
