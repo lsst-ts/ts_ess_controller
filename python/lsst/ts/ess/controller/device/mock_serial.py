@@ -21,10 +21,15 @@
 
 __all__ = ["MockSerial"]
 
+import random
 import time
 
+from lsst.ts.ess import common
+
 # The reply that is repeated over and over.
-MOCK_REPLY = "C01=-006.1443,C02=-005.0320\r\n"
+TEMP_1 = random.uniform(common.device.MockTemperatureConfig.min, common.device.MockTemperatureConfig.max)
+TEMP_2 = random.uniform(common.device.MockTemperatureConfig.min, common.device.MockTemperatureConfig.max)
+MOCK_REPLY = f"C01={TEMP_1:09.4f},C02={TEMP_2:09.4f}\r\n"
 
 # The amount of timne to sleep [sec] to mimick a timeout.
 TIMEOUT_SLEEP = 30.0
