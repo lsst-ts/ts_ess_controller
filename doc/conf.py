@@ -21,16 +21,8 @@
 This configuration only affects single-package Sphinx documentation builds.
 """
 
-from typing import TYPE_CHECKING
-
-from documenteer.conf.pipelinespkg import *  # noqa
-
-# This "if" works around a mypy problem with implicit namespaces.
-# The symptom is:
-# /opt/.../miniconda3-py38.../python/lsst/__init__.py:14:
-#   error: Cannot determine type of "__path__"
-if not TYPE_CHECKING:
-    import lsst.ts.ess.controller  # noqa
+import lsst.ts.ess.controller  # noqa
+from documenteer.conf.guide import *  # noqa
 
 project = "ts_ess_controller"
 html_theme_options["logotext"] = project  # type: ignore # noqa
@@ -38,3 +30,5 @@ html_title = project
 html_short_title = project
 
 intersphinx_mapping["ts_tcpip"] = ("https://ts-tcpip.lsst.io", None)  # type: ignore # noqa
+intersphinx_mapping["ts_utils"] = ("https://ts-utils.lsst.io", None)  # type: ignore # noqa
+intersphinx_mapping["ts_ess_common"] = ("https://ts-ess-common.lsst.io", None)  # type: ignore # noqa

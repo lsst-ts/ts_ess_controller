@@ -20,6 +20,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+import math
 from unittest.mock import patch
 
 import sensirion_sps030
@@ -60,21 +61,53 @@ class SensirionSps30TestCase(controller.BaseRealSensorMockTestCase):
             assert self._reply is not None
             reply_to_check = self._reply[common.Key.TELEMETRY]
             telemetry = reply_to_check[common.Key.SENSOR_TELEMETRY]
-            assert telemetry[2] == 0.5
-            assert telemetry[3] == 1.0
-            assert telemetry[4] == 2.5
-            assert telemetry[5] == 4.0
-            assert telemetry[6] == 10.0
-            assert telemetry[7] == 0.0
-            assert telemetry[8] == measurement.pm1
-            assert telemetry[9] == measurement.pm25
-            assert telemetry[10] == measurement.pm4
-            assert telemetry[11] == measurement.pm10
-            assert telemetry[12] == measurement.n05
-            assert telemetry[13] == measurement.n1
-            assert telemetry[14] == measurement.n25
-            assert telemetry[15] == measurement.n4
-            assert telemetry[16] == measurement.n10
-            assert telemetry[17] == measurement.tps
+            assert telemetry[1] == 0.5
+            assert telemetry[2] == 1.0
+            assert telemetry[3] == 2.5
+            assert telemetry[4] == 4.0
+            assert telemetry[5] == 10.0
+            assert telemetry[6] == 0.0
+            assert telemetry[7] == measurement.pm1
+            assert telemetry[8] == measurement.pm25
+            assert telemetry[9] == measurement.pm4
+            assert telemetry[10] == measurement.pm10
+            assert telemetry[11] == measurement.n05
+            assert telemetry[12] == measurement.n1
+            assert telemetry[13] == measurement.n25
+            assert telemetry[14] == measurement.n4
+            assert telemetry[15] == measurement.n10
+            assert telemetry[16] == measurement.tps
+
+            await self.device.close()
+
+    async def test_sensirion_sps30_serial_error(self) -> None:
+        with (
+            patch.object(sensirion_sps030.Sensirion, "read_measurement") as mock_read_measurement,
+            patch.object(sensirion_sps030.Sensirion, "reset"),
+            patch.object(sensirion_sps030.Sensirion, "_rx"),
+            patch.object(sensirion_sps030.Sensirion, "_tx"),
+            patch.object(serial.Serial, "open"),
+        ):
+            mock_read_measurement.side_effect = serial.SerialException
+
+            log = logging.getLogger(type(self).__name__)
+            sensor = common.sensor.Sps30Sensor(log=log)
+            self.device = controller.device.SensirionSps30(
+                name="Test",
+                device_id="/dev/ttyUSB0",
+                sensor=sensor,
+                baud_rate=0,
+                callback_func=self._callback,
+                log=log,
+            )
+            await self.device.open()
+
+            # Validate the telemetry.
+            await self.wait_for_read_event()
+            assert self._reply is not None
+            reply_to_check = self._reply[common.Key.TELEMETRY]
+            telemetry = reply_to_check[common.Key.SENSOR_TELEMETRY]
+            for i in range(2, 18):
+                assert math.isnan(float(telemetry[i]))
 
             await self.device.close()
