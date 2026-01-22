@@ -26,7 +26,8 @@ import datetime
 import logging
 from typing import Callable
 
-from sensirion_sps030 import Sensirion, SensirionReading
+import serial
+from sensirion_sps030 import Sensirion, SensirionException, SensirionReading
 
 from lsst.ts import utils
 from lsst.ts.ess import common
@@ -36,6 +37,9 @@ RECONNECT_SLEEP = 60.0
 
 # Read timeout [sec].
 READ_TIMEOUT = 10.0
+
+# Sleep time [sec] between stopping and restarting measurements.
+STOP_START_SLEEP = 0.02
 
 
 class SensirionSps30(common.device.BaseDevice):
@@ -56,7 +60,6 @@ class SensirionSps30(common.device.BaseDevice):
 
     reconnect_sleep = RECONNECT_SLEEP
     read_timeout = READ_TIMEOUT
-    particle_sizes_string = ",".join(str(size) for size in common.PARTICLE_SIZES)
 
     def __init__(
         self,
@@ -89,7 +92,10 @@ class SensirionSps30(common.device.BaseDevice):
         IOError if serial communications port fails to open.
         """
         if self.sensirion is None:
-            self.sensirion = Sensirion(port=self.device_id)
+            self.sensirion = Sensirion(
+                port=self.device_id, log_level=logging.ERROR, auto_start=False, retries=1
+            )
+        self.sensirion.start_measurement()
 
     async def readline(self) -> str:
         """Read a line of telemetry from the device.
@@ -108,6 +114,13 @@ class SensirionSps30(common.device.BaseDevice):
         try:
             async with asyncio.timeout(self.read_timeout):
                 line = await loop.run_in_executor(None, self._blocking_readline)
+        except (serial.SerialException, SensirionException):
+            assert self.sensirion is not None
+            self.log.debug("Stopping measurements.")
+            self.sensirion.stop_measurement()
+            await asyncio.sleep(STOP_START_SLEEP)
+            self.log.debug("Starting measurements.")
+            self.sensirion.start_measurement()
         except TimeoutError:
             self.log.exception(f"Timeout reading {self.name}. So far {line=!r}.")
             raise
@@ -130,11 +143,9 @@ class SensirionSps30(common.device.BaseDevice):
         )
         current_tai = utils.tai_from_utc_unix(timestamp_utc.timestamp())
         line = (
-            f"{common.sensor.Sps30Sensor.START_CHAR}Test 1,{current_tai},{self.particle_sizes_string},"
-            f"{0.0},{measurement.pm1},{measurement.pm25},{measurement.pm4},{measurement.pm10},"
+            f"{current_tai},{0.0},{measurement.pm1},{measurement.pm25},{measurement.pm4},{measurement.pm10},"
             f"{measurement.n05},{measurement.n1},{measurement.n25},{measurement.n4},{measurement.n10},"
-            f"{measurement.tps},Test 2,{common.sensor.Sps30Sensor.GOOD_STATUS}"
-            f"{common.sensor.Sps30Sensor.END_CHAR}"
+            f"{measurement.tps}"
         )
         return line
 
