@@ -8,6 +8,15 @@ Version History
 
 .. towncrier release notes start
 
+v0.10.3 (2026-01-26)
+====================
+
+Performance Enhancement
+-----------------------
+
+- Improved particle sensor code to handle read errors better once more. (`OSW-1749 <https://rubinobs.atlassian.net//browse/OSW-1749>`_)
+
+
 v0.10.2 (2026-01-22)
 ====================
 
