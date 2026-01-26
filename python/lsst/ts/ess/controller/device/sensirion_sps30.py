@@ -26,8 +26,7 @@ import datetime
 import logging
 from typing import Callable
 
-import serial
-from sensirion_sps030 import Sensirion, SensirionException, SensirionReading
+from sensirion_sps030 import Sensirion, SensirionReading
 
 from lsst.ts import utils
 from lsst.ts.ess import common
@@ -114,16 +113,16 @@ class SensirionSps30(common.device.BaseDevice):
         try:
             async with asyncio.timeout(self.read_timeout):
                 line = await loop.run_in_executor(None, self._blocking_readline)
-        except (serial.SerialException, SensirionException):
+        except TimeoutError:
+            self.log.exception(f"Timeout reading {self.name}. So far {line=!r}.")
+            raise
+        except BaseException:
             assert self.sensirion is not None
             self.log.debug("Stopping measurements.")
             self.sensirion.stop_measurement()
             await asyncio.sleep(STOP_START_SLEEP)
             self.log.debug("Starting measurements.")
             self.sensirion.start_measurement()
-        except TimeoutError:
-            self.log.exception(f"Timeout reading {self.name}. So far {line=!r}.")
-            raise
 
         now = datetime.datetime.now(datetime.UTC)
         if self.previous_readline_time is not None:
