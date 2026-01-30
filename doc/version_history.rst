@@ -8,6 +8,15 @@ Version History
 
 .. towncrier release notes start
 
+v0.11.0 (2026-01-31)
+====================
+
+New Features
+------------
+
+- Completely rewrote the SPS30 interface. (`OSW-1713 <https://rubinobs.atlassian.net//browse/OSW-1713>`_)
+
+
 v0.10.3 (2026-01-26)
 ====================
 
