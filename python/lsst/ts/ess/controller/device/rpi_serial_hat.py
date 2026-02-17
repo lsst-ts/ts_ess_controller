@@ -190,7 +190,7 @@ class RpiSerialHat(common.device.BaseDevice):
                 f"Exception reading device {self.name}. "
                 f"Trying to reconnect after {self.reconnect_sleep} seconds."
             )
-            await self.close()
+            await self.basic_close()
             await asyncio.sleep(self.reconnect_sleep)
             raise
 
