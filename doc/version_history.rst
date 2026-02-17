@@ -8,6 +8,15 @@ Version History
 
 .. towncrier release notes start
 
+v0.11.1 (2026-02-17)
+====================
+
+Bug Fixes
+---------
+
+- Fixed a bug closing the devices. (`OSW-1829 <https://rubinobs.atlassian.net//browse/OSW-1829>`_)
+
+
 v0.11.0 (2026-01-31)
 ====================
 
