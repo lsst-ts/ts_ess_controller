@@ -484,20 +484,20 @@ class SensirionSps30(common.device.BaseDevice):
                 f"Exception reading device {self.name}. "
                 f"Trying to reconnect after {self.reconnect_sleep} seconds."
             )
-            await self.close()
+            await self.basic_close()
             await asyncio.sleep(self.reconnect_sleep)
             raise
 
     async def basic_close(self) -> None:
         """Close the Sensor Device."""
-        assert self.sps30 is not None
-
-        # This may result in an exception which is swallowed by the method.
-        # The result is that the measurements are not stopped, which is not a
-        # problem because the telemetry is not read anymore and the sensor
-        # doesn't suffer from it. But it is one of the reasons why this same
-        # method is called when a connection to the sensor is made.
-        try:
-            await self.sps30.stop_measurement()
-        finally:
-            self.sps30 = None
+        if self.sps30 is not None:
+            # This may result in an exception which is swallowed by the method.
+            # The result is that the measurements are not stopped, which is not
+            # a problem because the telemetry is not read anymore and the
+            # sensor doesn't suffer from it. But it is one of the reasons why
+            # this same method is called when a connection to the sensor is
+            # made.
+            try:
+                await self.sps30.stop_measurement()
+            finally:
+                self.sps30 = None
